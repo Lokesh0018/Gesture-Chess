@@ -38,4 +38,30 @@ const board = () => {
 }
 window.onload = () => {
     board();
+    let choice = true;
+
+    document.querySelector(".container").addEventListener("click", (e) => {
+        const piece = e.target;
+
+        if (!piece.matches("img")) return;
+
+        if (choice && piece.classList.contains("White")) {
+            console.log(piece.className, piece.dataset.value);
+            if(piece.dataset.value === "Pawn"){
+                const i = piece.dataset.i;
+                const j = piece.dataset.j;
+                if(i==6){
+                    const m1 = document.querySelectorAll(`[data-i="5"][data-j="${j}"]`)[0];
+                    m1.classList.add("dot");
+                    const m2 = document.querySelectorAll(`[data-i="4"][data-j="${j}"]`)[0];
+                    m2.classList.add("dot");
+                }
+            }
+            choice = false;
+        }
+        else if (!choice && piece.classList.contains("Black")) {
+            console.log(piece.className, piece.dataset.value);
+            choice = true;
+        }
+    });
 };
