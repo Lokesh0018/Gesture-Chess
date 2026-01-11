@@ -1,0 +1,38 @@
+body {
+}
+
+.container {
+    display: grid;
+    grid-template-rows: repeat(8, 1fr);
+    grid-template-columns: repeat(8, 1fr);
+    width: 415px;
+    box-shadow: 0 0 10px #000000;
+}
+
+.child {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(0, 0, 0);
+    height: 50px;
+    width: 50px;
+    transition: all ease 0.5s;
+}
+
+.child:hover {
+    transform: scale(1.5);
+}
+
+.black {
+    background-color: grey;
+}
+
+img {
+    width: 40px;
+    cursor: pointer;
+}
+
+.dot {
+    border: 1.5px solid black;
+    box-shadow: 0 0 10px black;
+}
