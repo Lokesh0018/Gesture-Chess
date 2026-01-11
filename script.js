@@ -38,30 +38,118 @@ const board = () => {
 }
 window.onload = () => {
     board();
-    let choice = true;
+    let currentTurn = "White";
+    let selectedPiece = null;
 
-    document.querySelector(".container").addEventListener("click", (e) => {
-        const piece = e.target;
+    const clearDots = () => {
+        document.querySelectorAll('.dot').forEach(el => el.classList.remove('dot'));
+    };
 
-        if (!piece.matches("img")) return;
+    const getSquare = (i, j) => document.querySelector(`.child[data-i="${i}"][data-j="${j}"]`);
+    
+    const getPiece = (i, j) => {
+        const sq = getSquare(i, j);
+        return sq ? sq.querySelector('img') : null;
+    };
 
-        if (choice && piece.classList.contains("White")) {
-            console.log(piece.className, piece.dataset.value);
-            if(piece.dataset.value === "Pawn"){
-                const i = piece.dataset.i;
-                const j = piece.dataset.j;
-                if(i==6){
-                    const m1 = document.querySelectorAll(`[data-i="5"][data-j="${j}"]`)[0];
-                    m1.classList.add("dot");
-                    const m2 = document.querySelectorAll(`[data-i="4"][data-j="${j}"]`)[0];
-                    m2.classList.add("dot");
+    const markMove = (i, j) => {
+        if (i < 0 || i > 7 || j < 0 || j > 7) return false;
+        const square = getSquare(i, j);
+        const piece = getPiece(i, j);
+        
+        if (!piece) {
+            square.classList.add('dot');
+            return true;
+        } else if (!piece.classList.contains(currentTurn)) {
+            square.classList.add('dot');
+            return false;
+        }
+        return false;
+    };
+
+    const showMoves = (piece) => {
+        clearDots();
+        selectedPiece = piece;
+        const i = parseInt(piece.dataset.i);
+        const j = parseInt(piece.dataset.j);
+        const type = piece.dataset.value;
+
+        const castRay = (di, dj, maxSteps = 7) => {
+            for (let step = 1; step <= maxSteps; step++) {
+                if (!markMove(i + di * step, j + dj * step)) break;
+            }
+        };
+
+        if (type === 'Rook' || type === 'Queen') {
+            castRay(1, 0); castRay(-1, 0); castRay(0, 1); castRay(0, -1);
+        }
+        if (type === 'Bishop' || type === 'Queen') {
+            castRay(1, 1); castRay(1, -1); castRay(-1, 1); castRay(-1, -1);
+        }
+        if (type === 'King') {
+            castRay(1, 0, 1); castRay(-1, 0, 1); castRay(0, 1, 1); castRay(0, -1, 1);
+            castRay(1, 1, 1); castRay(1, -1, 1); castRay(-1, 1, 1); castRay(-1, -1, 1);
+        }
+        if (type === 'Horse') {
+            const moves = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]];
+            moves.forEach(([di, dj]) => castRay(di, dj, 1));
+        }
+        if (type === 'Pawn') {
+            const dir = currentTurn === 'White' ? -1 : 1;
+            const startRow = currentTurn === 'White' ? 6 : 1;
+            
+           
+            if (i + dir >= 0 && i + dir <= 7 && !getPiece(i + dir, j)) {
+                getSquare(i + dir, j).classList.add('dot');
+               
+                if (i === startRow && !getPiece(i + 2 * dir, j)) {
+                    getSquare(i + 2 * dir, j).classList.add('dot');
                 }
             }
-            choice = false;
+           
+            [-1, 1].forEach(dj => {
+                if (i + dir >= 0 && i + dir <= 7 && j + dj >= 0 && j + dj <= 7) {
+                    const targetPiece = getPiece(i + dir, j + dj);
+                    if (targetPiece && !targetPiece.classList.contains(currentTurn)) {
+                        getSquare(i + dir, j + dj).classList.add('dot');
+                    }
+                }
+            });
         }
-        else if (!choice && piece.classList.contains("Black")) {
-            console.log(piece.className, piece.dataset.value);
-            choice = true;
+    };
+
+    const movePiece = (square) => {
+        const existingPiece = square.querySelector('img');
+        if (existingPiece) {
+            existingPiece.remove();
+        }
+
+        selectedPiece.dataset.i = square.dataset.i;
+        selectedPiece.dataset.j = square.dataset.j;
+        square.appendChild(selectedPiece);
+
+        clearDots();
+        selectedPiece = null;
+        currentTurn = currentTurn === 'White' ? 'Black' : 'White';
+    };
+
+    document.querySelector(".container").addEventListener("click", (e) => {
+        const target = e.target;
+        const square = target.classList.contains('child') ? target : target.parentElement;
+
+       
+        if (square && square.classList.contains('dot')) {
+            movePiece(square);
+            return;
+        }
+
+       
+        if (target.matches("img") && target.classList.contains(currentTurn)) {
+            showMoves(target);
+        } else {
+           
+            clearDots();
+            selectedPiece = null;
         }
     });
 };
