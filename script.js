@@ -118,6 +118,49 @@ window.onload = () => {
         }
     };
 
+    const showPromotionModal = (piece, turn, callback) => {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        overlay.style.zIndex = '999';
+
+        const modal = document.createElement('div');
+        modal.style.position = 'fixed';
+        modal.style.top = '50%';
+        modal.style.left = '50%';
+        modal.style.transform = 'translate(-50%, -50%)';
+        modal.style.backgroundColor = '#fff';
+        modal.style.padding = '20px';
+        modal.style.borderRadius = '8px';
+        modal.style.display = 'flex';
+        modal.style.gap = '15px';
+        modal.style.zIndex = '1000';
+
+        const choices = ['Queen', 'Rook', 'Horse', 'Bishop'];
+        choices.forEach(choice => {
+            const img = document.createElement('img');
+            img.src = `./pieces/${turn}${choice}.png`;
+            img.style.cursor = 'pointer';
+            img.style.width = '60px';
+            img.style.height = '60px';
+            img.onclick = () => {
+                piece.dataset.value = choice;
+                piece.src = `./pieces/${turn}${choice}.png`;
+                document.body.removeChild(modal);
+                document.body.removeChild(overlay);
+                callback();
+            };
+            modal.appendChild(img);
+        });
+
+        document.body.appendChild(overlay);
+        document.body.appendChild(modal);
+    };
+
     const movePiece = (square) => {
         const existingPiece = square.querySelector('img');
         if (existingPiece) {
@@ -131,12 +174,12 @@ window.onload = () => {
         if (selectedPiece.dataset.value === 'Pawn') {
             const row = parseInt(selectedPiece.dataset.i);
             if ((currentTurn === 'White' && row === 0) || (currentTurn === 'Black' && row === 7)) {
-                let choice = prompt("Promote pawn to: Queen, Rook, Horse, or Bishop?", "Queen");
-                const validChoices = ['Queen', 'Rook', 'Horse', 'Bishop'];
-                if (!validChoices.includes(choice)) choice = 'Queen';
-                
-                selectedPiece.dataset.value = choice;
-                selectedPiece.src = `./pieces/${currentTurn}${choice}.png`;
+                showPromotionModal(selectedPiece, currentTurn, () => {
+                    clearDots();
+                    selectedPiece = null;
+                    currentTurn = currentTurn === 'White' ? 'Black' : 'White';
+                });
+                return;
             }
         }
 
