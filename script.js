@@ -52,31 +52,140 @@ window.onload = () => {
         return sq ? sq.querySelector('img') : null;
     };
 
-    const markMove = (i, j) => {
-        if (i < 0 || i > 7 || j < 0 || j > 7) return false;
-        const square = getSquare(i, j);
-        const piece = getPiece(i, j);
+    const isUnderAttack = (r, c, color) => {
+        const enemy = color === 'White' ? 'Black' : 'White';
         
-        if (!piece) {
-            square.classList.add('dot');
-            return true;
-        } else if (!piece.classList.contains(currentTurn)) {
-            square.classList.add('dot');
+        const checkRay = (dr, dc, pieces, maxSteps = 7) => {
+            for(let step = 1; step <= maxSteps; step++) {
+                const nr = r + dr * step;
+                const nc = c + dc * step;
+                if(nr < 0 || nr > 7 || nc < 0 || nc > 7) break;
+                const p = getPiece(nr, nc);
+                if(p) {
+                    if(p.classList.contains(enemy) && pieces.includes(p.dataset.value)) return true;
+                    break;
+                }
+            }
+            return false;
+        };
+
+        if(checkRay(1, 0, ['Rook', 'Queen'])) return true;
+        if(checkRay(-1, 0, ['Rook', 'Queen'])) return true;
+        if(checkRay(0, 1, ['Rook', 'Queen'])) return true;
+        if(checkRay(0, -1, ['Rook', 'Queen'])) return true;
+
+        if(checkRay(1, 1, ['Bishop', 'Queen'])) return true;
+        if(checkRay(1, -1, ['Bishop', 'Queen'])) return true;
+        if(checkRay(-1, 1, ['Bishop', 'Queen'])) return true;
+        if(checkRay(-1, -1, ['Bishop', 'Queen'])) return true;
+
+        const knightMoves = [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+        for(let [dr, dc] of knightMoves) {
+            const nr = r + dr, nc = c + dc;
+            if(nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+                const p = getPiece(nr, nc);
+                if(p && p.classList.contains(enemy) && p.dataset.value === 'Horse') return true;
+            }
+        }
+
+        if (color === 'White') {
+            for(let dc of [-1, 1]) {
+                const nr = r - 1, nc = c + dc;
+                if(nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+                    const p = getPiece(nr, nc);
+                    if(p && p.classList.contains('Black') && p.dataset.value === 'Pawn') return true;
+                }
+            }
+        } else {
+            for(let dc of [-1, 1]) {
+                const nr = r + 1, nc = c + dc;
+                if(nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+                    const p = getPiece(nr, nc);
+                    if(p && p.classList.contains('White') && p.dataset.value === 'Pawn') return true;
+                }
+            }
+        }
+
+        if(checkRay(1,0,['King'],1) || checkRay(-1,0,['King'],1) || 
+           checkRay(0,1,['King'],1) || checkRay(0,-1,['King'],1) ||
+           checkRay(1,1,['King'],1) || checkRay(1,-1,['King'],1) || 
+           checkRay(-1,1,['King'],1) || checkRay(-1,-1,['King'],1)) return true;
+
+        return false;
+    };
+
+    const isMoveSafe = (startI, startJ, targetI, targetJ) => {
+        const startSq = getSquare(startI, startJ);
+        const targetSq = getSquare(targetI, targetJ);
+        const piece = getPiece(startI, startJ);
+        const targetPiece = getPiece(targetI, targetJ);
+        
+        if (targetPiece) targetSq.removeChild(targetPiece);
+        targetSq.appendChild(piece);
+        piece.dataset.i = targetI;
+        piece.dataset.j = targetJ;
+        
+        let kingSq = null;
+        const king = document.querySelector(`.child img.${currentTurn}[data-value="King"]`);
+        if (king) {
+            kingSq = {i: parseInt(king.dataset.i), j: parseInt(king.dataset.j)};
+        }
+        
+        let safe = true;
+        if (kingSq) {
+            safe = !isUnderAttack(kingSq.i, kingSq.j, currentTurn);
+        }
+        
+        startSq.appendChild(piece);
+        piece.dataset.i = startI;
+        piece.dataset.j = startJ;
+        if (targetPiece) targetSq.appendChild(targetPiece);
+        
+        return safe;
+    };
+
+    const markMove = (targetI, targetJ, startI, startJ) => {
+        if (targetI < 0 || targetI > 7 || targetJ < 0 || targetJ > 7) return false;
+        const square = getSquare(targetI, targetJ);
+        const targetPiece = getPiece(targetI, targetJ);
+        
+        let isValidCaptureOrEmpty = false;
+        let continueRay = false;
+
+        if (!targetPiece) {
+            isValidCaptureOrEmpty = true;
+            continueRay = true;
+        } else if (!targetPiece.classList.contains(currentTurn)) {
+            isValidCaptureOrEmpty = true;
+            continueRay = false;
+        } else {
             return false;
         }
-        return false;
+
+        if (isValidCaptureOrEmpty) {
+            if (isMoveSafe(startI, startJ, targetI, targetJ)) {
+                square.classList.add('dot');
+            }
+        }
+        return continueRay;
     };
 
     const showMoves = (piece) => {
         clearDots();
         selectedPiece = piece;
-        const i = parseInt(piece.dataset.i);
-        const j = parseInt(piece.dataset.j);
+        const startI = parseInt(piece.dataset.i);
+        const startJ = parseInt(piece.dataset.j);
         const type = piece.dataset.value;
 
         const castRay = (di, dj, maxSteps = 7) => {
             for (let step = 1; step <= maxSteps; step++) {
-                if (!markMove(i + di * step, j + dj * step)) break;
+                if (!markMove(startI + di * step, startJ + dj * step, startI, startJ)) break;
+            }
+        };
+
+        const addDotIfSafe = (targetI, targetJ) => {
+            if (isMoveSafe(startI, startJ, targetI, targetJ)) {
+                getSquare(targetI, targetJ).classList.add('dot');
             }
         };
 
@@ -99,19 +208,19 @@ window.onload = () => {
             const startRow = currentTurn === 'White' ? 6 : 1;
             
            
-            if (i + dir >= 0 && i + dir <= 7 && !getPiece(i + dir, j)) {
-                getSquare(i + dir, j).classList.add('dot');
+            if (startI + dir >= 0 && startI + dir <= 7 && !getPiece(startI + dir, startJ)) {
+                addDotIfSafe(startI + dir, startJ);
                
-                if (i === startRow && !getPiece(i + 2 * dir, j)) {
-                    getSquare(i + 2 * dir, j).classList.add('dot');
+                if (startI === startRow && !getPiece(startI + 2 * dir, startJ)) {
+                    addDotIfSafe(startI + 2 * dir, startJ);
                 }
             }
            
             [-1, 1].forEach(dj => {
-                if (i + dir >= 0 && i + dir <= 7 && j + dj >= 0 && j + dj <= 7) {
-                    const targetPiece = getPiece(i + dir, j + dj);
+                if (startI + dir >= 0 && startI + dir <= 7 && startJ + dj >= 0 && startJ + dj <= 7) {
+                    const targetPiece = getPiece(startI + dir, startJ + dj);
                     if (targetPiece && !targetPiece.classList.contains(currentTurn)) {
-                        getSquare(i + dir, j + dj).classList.add('dot');
+                        addDotIfSafe(startI + dir, startJ + dj);
                     }
                 }
             });
