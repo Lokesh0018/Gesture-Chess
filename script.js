@@ -128,6 +128,18 @@ window.onload = () => {
         selectedPiece.dataset.j = square.dataset.j;
         square.appendChild(selectedPiece);
 
+        if (selectedPiece.dataset.value === 'Pawn') {
+            const row = parseInt(selectedPiece.dataset.i);
+            if ((currentTurn === 'White' && row === 0) || (currentTurn === 'Black' && row === 7)) {
+                let choice = prompt("Promote pawn to: Queen, Rook, Horse, or Bishop?", "Queen");
+                const validChoices = ['Queen', 'Rook', 'Horse', 'Bishop'];
+                if (!validChoices.includes(choice)) choice = 'Queen';
+                
+                selectedPiece.dataset.value = choice;
+                selectedPiece.src = `./pieces/${currentTurn}${choice}.png`;
+            }
+        }
+
         clearDots();
         selectedPiece = null;
         currentTurn = currentTurn === 'White' ? 'Black' : 'White';
