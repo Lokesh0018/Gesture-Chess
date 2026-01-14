@@ -63,6 +63,7 @@ window.onload = () => {
 
     const clearDots = () => {
         document.querySelectorAll('.dot').forEach(el => el.classList.remove('dot'));
+        document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
     };
 
     const getSquare = (i, j) => document.querySelector(`.child[data-i="${i}"][data-j="${j}"]`);
@@ -196,6 +197,7 @@ window.onload = () => {
         const startI = parseInt(piece.dataset.i);
         const startJ = parseInt(piece.dataset.j);
         const type = piece.dataset.value;
+        getSquare(startI, startJ).classList.add('selected');
 
         const castRay = (di, dj, maxSteps = 7) => {
             for (let step = 1; step <= maxSteps; step++) {
