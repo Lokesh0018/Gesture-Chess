@@ -270,6 +270,41 @@ window.onload = () => {
         document.body.appendChild(modal);
     };
 
+    const showCheckMessage = () => {
+        const msg = document.createElement('div');
+        msg.innerText = "Check!";
+        msg.style.position = 'fixed';
+        msg.style.top = '20px';
+        msg.style.left = '50%';
+        msg.style.transform = 'translateX(-50%)';
+        msg.style.backgroundColor = '#ff4444';
+        msg.style.color = '#fff';
+        msg.style.padding = '10px 20px';
+        msg.style.fontSize = '24px';
+        msg.style.fontWeight = 'bold';
+        msg.style.borderRadius = '5px';
+        msg.style.zIndex = '1000';
+        msg.style.pointerEvents = 'none';
+        msg.style.transition = 'opacity 0.5s';
+        document.body.appendChild(msg);
+        
+        setTimeout(() => {
+            msg.style.opacity = '0';
+            setTimeout(() => document.body.removeChild(msg), 500);
+        }, 2000);
+    };
+
+    const postMoveChecks = () => {
+        const king = document.querySelector(`.child img.${currentTurn}[data-value="King"]`);
+        if (king) {
+            const kingI = parseInt(king.dataset.i);
+            const kingJ = parseInt(king.dataset.j);
+            if (isUnderAttack(kingI, kingJ, currentTurn)) {
+                showCheckMessage();
+            }
+        }
+    };
+
     const movePiece = (square) => {
         const existingPiece = square.querySelector('img');
         if (existingPiece) {
@@ -287,6 +322,7 @@ window.onload = () => {
                     clearDots();
                     selectedPiece = null;
                     currentTurn = currentTurn === 'White' ? 'Black' : 'White';
+                    postMoveChecks();
                 });
                 return;
             }
@@ -295,6 +331,7 @@ window.onload = () => {
         clearDots();
         selectedPiece = null;
         currentTurn = currentTurn === 'White' ? 'Black' : 'White';
+        postMoveChecks();
     };
 
     document.querySelector(".container").addEventListener("click", (e) => {
