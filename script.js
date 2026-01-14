@@ -41,6 +41,26 @@ window.onload = () => {
     let currentTurn = "White";
     let selectedPiece = null;
 
+    const leftPanel = document.createElement("div");
+    leftPanel.style.position = "absolute";
+    leftPanel.style.left = "20px";
+    leftPanel.style.top = "50px";
+    leftPanel.style.width = "120px";
+    leftPanel.style.display = "flex";
+    leftPanel.style.flexWrap = "wrap";
+    leftPanel.style.gap = "5px";
+    document.body.appendChild(leftPanel);
+
+    const rightPanel = document.createElement("div");
+    rightPanel.style.position = "absolute";
+    rightPanel.style.right = "20px";
+    rightPanel.style.top = "50px";
+    rightPanel.style.width = "120px";
+    rightPanel.style.display = "flex";
+    rightPanel.style.flexWrap = "wrap";
+    rightPanel.style.gap = "5px";
+    document.body.appendChild(rightPanel);
+
     const clearDots = () => {
         document.querySelectorAll('.dot').forEach(el => el.classList.remove('dot'));
     };
@@ -308,7 +328,13 @@ window.onload = () => {
     const movePiece = (square) => {
         const existingPiece = square.querySelector('img');
         if (existingPiece) {
-            existingPiece.remove();
+            existingPiece.style.width = "40px";
+            existingPiece.style.height = "40px";
+            if (existingPiece.classList.contains("White")) {
+                leftPanel.appendChild(existingPiece);
+            } else if (existingPiece.classList.contains("Black")) {
+                rightPanel.appendChild(existingPiece);
+            }
         }
 
         selectedPiece.dataset.i = square.dataset.i;
