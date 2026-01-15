@@ -31,7 +31,13 @@ const board = () => {
                 p = `<img src="./pieces/BlackPawn.png" data-i="${i}" data-j="${j}" data-value="Pawn" class="Black"/>`;
             if (i === 6)
                 p = `<img src="./pieces/WhitePawn.png" data-i="${i}" data-j="${j}" data-value="Pawn" class="White"/>`;
-            child += `<div class="child ${colorClass}" data-i="${i}" data-j="${j}">${p}</div>`;
+            
+            let coords = "";
+            const textColor = (i + j) % 2 === 0 ? "#fff" : "#000";
+            if (j === 0) coords += `<span style="position:absolute; top:2px; left:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${8 - i}</span>`;
+            if (i === 7) coords += `<span style="position:absolute; bottom:2px; right:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${String.fromCharCode(97 + j)}</span>`;
+
+            child += `<div class="child ${colorClass}" style="position:relative;" data-i="${i}" data-j="${j}">${coords}${p}</div>`;
         }
     }
     c1.innerHTML = child;
@@ -41,25 +47,37 @@ window.onload = () => {
     let currentTurn = "White";
     let selectedPiece = null;
 
+    const turnIndicator = document.createElement("h2");
+    turnIndicator.innerText = "White's Turn";
+    turnIndicator.style.textAlign = "center";
+    turnIndicator.style.fontFamily = "sans-serif";
+    document.body.insertBefore(turnIndicator, document.body.firstChild);
+
+    const mainWrapper = document.createElement("div");
+    mainWrapper.style.display = "flex";
+    mainWrapper.style.justifyContent = "center";
+    mainWrapper.style.alignItems = "flex-start";
+    mainWrapper.style.gap = "30px";
+    mainWrapper.style.padding = "20px";
+    
+    const c1 = container[0];
+    c1.parentNode.insertBefore(mainWrapper, c1);
+
     const leftPanel = document.createElement("div");
-    leftPanel.style.position = "absolute";
-    leftPanel.style.left = "20px";
-    leftPanel.style.top = "50px";
     leftPanel.style.width = "120px";
     leftPanel.style.display = "flex";
     leftPanel.style.flexWrap = "wrap";
     leftPanel.style.gap = "5px";
-    document.body.appendChild(leftPanel);
 
     const rightPanel = document.createElement("div");
-    rightPanel.style.position = "absolute";
-    rightPanel.style.right = "20px";
-    rightPanel.style.top = "50px";
     rightPanel.style.width = "120px";
     rightPanel.style.display = "flex";
     rightPanel.style.flexWrap = "wrap";
     rightPanel.style.gap = "5px";
-    document.body.appendChild(rightPanel);
+
+    mainWrapper.appendChild(leftPanel);
+    mainWrapper.appendChild(c1);
+    mainWrapper.appendChild(rightPanel);
 
     const clearDots = () => {
         document.querySelectorAll('.dot').forEach(el => el.classList.remove('dot'));
@@ -350,6 +368,7 @@ window.onload = () => {
                     clearDots();
                     selectedPiece = null;
                     currentTurn = currentTurn === 'White' ? 'Black' : 'White';
+                    turnIndicator.innerText = `${currentTurn}'s Turn`;
                     postMoveChecks();
                 });
                 return;
@@ -359,6 +378,7 @@ window.onload = () => {
         clearDots();
         selectedPiece = null;
         currentTurn = currentTurn === 'White' ? 'Black' : 'White';
+        turnIndicator.innerText = `${currentTurn}'s Turn`;
         postMoveChecks();
     };
 
