@@ -3,34 +3,26 @@ const container = document.getElementsByClassName("container");
 const board = () => {
     const c1 = container[0];
     let child = "";
+    const initialBoard = [
+        ['BlackRook', 'BlackHorse', 'BlackBishop', 'BlackKing', 'BlackQueen', 'BlackBishop', 'BlackHorse', 'BlackRook'],
+        Array(8).fill('BlackPawn'),
+        Array(8).fill(null),
+        Array(8).fill(null),
+        Array(8).fill(null),
+        Array(8).fill(null),
+        Array(8).fill('WhitePawn'),
+        ['WhiteRook', 'WhiteHorse', 'WhiteBishop', 'WhiteKing', 'WhiteQueen', 'WhiteBishop', 'WhiteHorse', 'WhiteRook']
+    ];
     for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
             const colorClass = (i + j) % 2 === 0 ? "black" : "white";
             let p = "";
-            if ((i === 0 && j === 0) || (i === 0 && j === 7))
-                p = `<img src="./pieces/BlackRook.png" data-i="${i}" data-j="${j}" data-value="Rook" class="Black"/>`;
-            if ((i === 7 && j === 0) || (i === 7 && j === 7))
-                p = `<img src="./pieces/WhiteRook.png" data-i="${i}" data-j="${j}" data-value="Rook" class="White"/>`;
-            if ((i === 0 && j === 1) || (i === 0 && j === 6))
-                p = `<img src="./pieces/BlackHorse.png" data-i="${i}" data-j="${j}" data-value="Horse" class="Black"/>`;
-            if ((i === 7 && j === 1) || (i === 7 && j === 6))
-                p = `<img src="./pieces/WhiteHorse.png" data-i="${i}" data-j="${j}" data-value="Horse" class="White"/>`;
-            if ((i === 0 && j === 2) || (i === 0 && j === 5))
-                p = `<img src="./pieces/BlackBishop.png" data-i="${i}" data-j="${j}" data-value="Bishop" class="Black"/>`;
-            if ((i === 7 && j === 2) || (i === 7 && j === 5))
-                p = `<img src="./pieces/WhiteBishop.png" data-i="${i}" data-j="${j}" data-value="Bishop" class="White"/>`;
-            if (i === 0 && j === 3)
-                p = `<img src="./pieces/BlackKing.png" data-i="${i}" data-j="${j}" data-value="King" class="Black"/>`;
-            if (i === 7 && j === 3)
-                p = `<img src="./pieces/WhiteKing.png" data-i="${i}" data-j="${j}" data-value="King" class="White"/>`;
-            if (i === 0 && j === 4)
-                p = `<img src="./pieces/BlackQueen.png" data-i="${i}" data-j="${j}" data-value="Queen" class="Black"/>`;
-            if (i === 7 && j === 4)
-                p = `<img src="./pieces/WhiteQueen.png" data-i="${i}" data-j="${j}" data-value="Queen" class="White"/>`;
-            if (i === 1)
-                p = `<img src="./pieces/BlackPawn.png" data-i="${i}" data-j="${j}" data-value="Pawn" class="Black"/>`;
-            if (i === 6)
-                p = `<img src="./pieces/WhitePawn.png" data-i="${i}" data-j="${j}" data-value="Pawn" class="White"/>`;
+            const pieceDef = initialBoard[i][j];
+            if (pieceDef) {
+                const color = pieceDef.startsWith('White') ? 'White' : 'Black';
+                const value = pieceDef.substring(5);
+                p = `<img src="./pieces/${pieceDef}.png" data-i="${i}" data-j="${j}" data-value="${value}" class="${color}"/>`;
+            }
             
             let coords = "";
             const textColor = (i + j) % 2 === 0 ? "#fff" : "#000";
@@ -46,6 +38,7 @@ window.onload = () => {
     board();
     let currentTurn = "White";
     let selectedPiece = null;
+    let lastMove = null;
 
     const turnIndicator = document.createElement("h2");
     turnIndicator.innerText = "White's Turn";
@@ -157,7 +150,15 @@ window.onload = () => {
         const startSq = getSquare(startI, startJ);
         const targetSq = getSquare(targetI, targetJ);
         const piece = getPiece(startI, startJ);
-        const targetPiece = getPiece(targetI, targetJ);
+        let targetPiece = getPiece(targetI, targetJ);
+        
+        let epSq = null;
+        let epPiece = null;
+        if (piece.dataset.value === 'Pawn' && Math.abs(startJ - targetJ) === 1 && !targetPiece) {
+            epSq = getSquare(startI, targetJ);
+            epPiece = epSq.querySelector('img');
+            if (epPiece) epSq.removeChild(epPiece);
+        }
         
         if (targetPiece) targetSq.removeChild(targetPiece);
         targetSq.appendChild(piece);
@@ -179,6 +180,7 @@ window.onload = () => {
         piece.dataset.i = startI;
         piece.dataset.j = startJ;
         if (targetPiece) targetSq.appendChild(targetPiece);
+        if (epPiece) epSq.appendChild(epPiece);
         
         return safe;
     };
@@ -238,6 +240,25 @@ window.onload = () => {
         if (type === 'King') {
             castRay(1, 0, 1); castRay(-1, 0, 1); castRay(0, 1, 1); castRay(0, -1, 1);
             castRay(1, 1, 1); castRay(1, -1, 1); castRay(-1, 1, 1); castRay(-1, -1, 1);
+
+            if (!piece.dataset.moved && !isUnderAttack(startI, startJ, currentTurn)) {
+                const leftRook = getPiece(startI, 0);
+                if (leftRook && leftRook.dataset.value === 'Rook' && !leftRook.dataset.moved) {
+                    if (!getPiece(startI, 1) && !getPiece(startI, 2)) {
+                        if (isMoveSafe(startI, startJ, startI, 2) && isMoveSafe(startI, startJ, startI, 1)) {
+                            getSquare(startI, 1).classList.add('dot');
+                        }
+                    }
+                }
+                const rightRook = getPiece(startI, 7);
+                if (rightRook && rightRook.dataset.value === 'Rook' && !rightRook.dataset.moved) {
+                    if (!getPiece(startI, 4) && !getPiece(startI, 5) && !getPiece(startI, 6)) {
+                        if (isMoveSafe(startI, startJ, startI, 4) && isMoveSafe(startI, startJ, startI, 5)) {
+                            getSquare(startI, 5).classList.add('dot');
+                        }
+                    }
+                }
+            }
         }
         if (type === 'Horse') {
             const moves = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]];
@@ -261,6 +282,12 @@ window.onload = () => {
                     const targetPiece = getPiece(startI + dir, startJ + dj);
                     if (targetPiece && !targetPiece.classList.contains(currentTurn)) {
                         addDotIfSafe(startI + dir, startJ + dj);
+                    }
+                    
+                    if (lastMove && lastMove.piece === 'Pawn' && Math.abs(lastMove.startI - lastMove.targetI) === 2) {
+                        if (lastMove.targetI === startI && lastMove.targetJ === startJ + dj) {
+                            addDotIfSafe(startI + dir, startJ + dj);
+                        }
                     }
                 }
             });
@@ -334,18 +361,136 @@ window.onload = () => {
         }, 2000);
     };
 
+    const showGameOver = (message) => {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        overlay.style.zIndex = '999';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+
+        const modal = document.createElement('div');
+        modal.style.backgroundColor = '#fff';
+        modal.style.padding = '40px';
+        modal.style.borderRadius = '8px';
+        modal.style.textAlign = 'center';
+        modal.style.fontSize = '32px';
+        modal.style.fontWeight = 'bold';
+        
+        modal.innerHTML = `<div>${message}</div><button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; font-size:18px; cursor:pointer;">Play Again</button>`;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+    };
+
+    const hasAnyValidMoves = () => {
+        const pieces = document.querySelectorAll(`.child img.${currentTurn}`);
+        for (let piece of pieces) {
+            const startI = parseInt(piece.dataset.i);
+            const startJ = parseInt(piece.dataset.j);
+            const type = piece.dataset.value;
+
+            const tryMove = (targetI, targetJ) => {
+                if (targetI < 0 || targetI > 7 || targetJ < 0 || targetJ > 7) return false;
+                const targetPiece = getPiece(targetI, targetJ);
+                if (targetPiece && targetPiece.classList.contains(currentTurn)) return false;
+                return isMoveSafe(startI, startJ, targetI, targetJ);
+            };
+
+            const tryRay = (di, dj, maxSteps = 7) => {
+                for (let step = 1; step <= maxSteps; step++) {
+                    const targetI = startI + di * step;
+                    const targetJ = startJ + dj * step;
+                    if (targetI < 0 || targetI > 7 || targetJ < 0 || targetJ > 7) break;
+                    const targetPiece = getPiece(targetI, targetJ);
+                    
+                    if (!targetPiece) {
+                        if (isMoveSafe(startI, startJ, targetI, targetJ)) return true;
+                    } else {
+                        if (!targetPiece.classList.contains(currentTurn)) {
+                            if (isMoveSafe(startI, startJ, targetI, targetJ)) return true;
+                        }
+                        break;
+                    }
+                }
+                return false;
+            };
+
+            if (type === 'Rook' || type === 'Queen') {
+                if (tryRay(1, 0) || tryRay(-1, 0) || tryRay(0, 1) || tryRay(0, -1)) return true;
+            }
+            if (type === 'Bishop' || type === 'Queen') {
+                if (tryRay(1, 1) || tryRay(1, -1) || tryRay(-1, 1) || tryRay(-1, -1)) return true;
+            }
+            if (type === 'King') {
+                if (tryRay(1, 0, 1) || tryRay(-1, 0, 1) || tryRay(0, 1, 1) || tryRay(0, -1, 1) ||
+                    tryRay(1, 1, 1) || tryRay(1, -1, 1) || tryRay(-1, 1, 1) || tryRay(-1, -1, 1)) return true;
+            }
+            if (type === 'Horse') {
+                const moves = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]];
+                for (let [di, dj] of moves) {
+                    if (tryMove(startI + di, startJ + dj)) return true;
+                }
+            }
+            if (type === 'Pawn') {
+                const dir = currentTurn === 'White' ? -1 : 1;
+                const startRow = currentTurn === 'White' ? 6 : 1;
+                
+                if (startI + dir >= 0 && startI + dir <= 7 && !getPiece(startI + dir, startJ)) {
+                    if (tryMove(startI + dir, startJ)) return true;
+                    if (startI === startRow && !getPiece(startI + 2 * dir, startJ)) {
+                        if (tryMove(startI + 2 * dir, startJ)) return true;
+                    }
+                }
+                for (let dj of [-1, 1]) {
+                    if (startI + dir >= 0 && startI + dir <= 7 && startJ + dj >= 0 && startJ + dj <= 7) {
+                        const targetPiece = getPiece(startI + dir, startJ + dj);
+                        if (targetPiece && !targetPiece.classList.contains(currentTurn)) {
+                            if (tryMove(startI + dir, startJ + dj)) return true;
+                        }
+                        if (lastMove && lastMove.piece === 'Pawn' && Math.abs(lastMove.startI - lastMove.targetI) === 2) {
+                            if (lastMove.targetI === startI && lastMove.targetJ === startJ + dj) {
+                                if (isMoveSafe(startI, startJ, startI + dir, startJ + dj)) return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    };
+
     const postMoveChecks = () => {
         const king = document.querySelector(`.child img.${currentTurn}[data-value="King"]`);
+        let inCheck = false;
         if (king) {
             const kingI = parseInt(king.dataset.i);
             const kingJ = parseInt(king.dataset.j);
             if (isUnderAttack(kingI, kingJ, currentTurn)) {
-                showCheckMessage();
+                inCheck = true;
             }
         }
+
+        if (!hasAnyValidMoves()) {
+            if (inCheck) showGameOver(`Checkmate! ${currentTurn === 'White' ? 'Black' : 'White'} Wins!`);
+            else showGameOver("Stalemate! It's a draw!");
+            return;
+        }
+
+        if (inCheck) showCheckMessage();
     };
 
     const movePiece = (square) => {
+        const startI = parseInt(selectedPiece.dataset.i);
+        const startJ = parseInt(selectedPiece.dataset.j);
+        const targetI = parseInt(square.dataset.i);
+        const targetJ = parseInt(square.dataset.j);
+
         const existingPiece = square.querySelector('img');
         if (existingPiece) {
             existingPiece.style.width = "40px";
@@ -355,31 +500,67 @@ window.onload = () => {
             } else if (existingPiece.classList.contains("Black")) {
                 rightPanel.appendChild(existingPiece);
             }
+        } else if (selectedPiece.dataset.value === 'Pawn' && Math.abs(startJ - targetJ) === 1) {
+            const capturedSq = getSquare(startI, targetJ);
+            const capturedPiece = capturedSq.querySelector('img');
+            if (capturedPiece) {
+                capturedPiece.style.width = "40px";
+                capturedPiece.style.height = "40px";
+                if (capturedPiece.classList.contains("White")) leftPanel.appendChild(capturedPiece);
+                else rightPanel.appendChild(capturedPiece);
+            }
         }
 
-        selectedPiece.dataset.i = square.dataset.i;
-        selectedPiece.dataset.j = square.dataset.j;
+        if (selectedPiece.dataset.value === 'King' && Math.abs(startJ - targetJ) === 2) {
+            if (targetJ === 1) {
+                const rook = getPiece(startI, 0);
+                if (rook) {
+                    getSquare(startI, 2).appendChild(rook);
+                    rook.dataset.j = 2;
+                    rook.dataset.moved = 'true';
+                }
+            } else if (targetJ === 5) {
+                const rook = getPiece(startI, 7);
+                if (rook) {
+                    getSquare(startI, 4).appendChild(rook);
+                    rook.dataset.j = 4;
+                    rook.dataset.moved = 'true';
+                }
+            }
+        }
+
+        selectedPiece.dataset.moved = 'true';
+        selectedPiece.dataset.i = targetI;
+        selectedPiece.dataset.j = targetJ;
         square.appendChild(selectedPiece);
+
+        const endTurn = () => {
+            lastMove = {
+                piece: selectedPiece.dataset.value,
+                color: currentTurn,
+                startI: startI,
+                startJ: startJ,
+                targetI: targetI,
+                targetJ: targetJ
+            };
+            clearDots();
+            selectedPiece = null;
+            currentTurn = currentTurn === 'White' ? 'Black' : 'White';
+            turnIndicator.innerText = `${currentTurn}'s Turn`;
+            postMoveChecks();
+        };
 
         if (selectedPiece.dataset.value === 'Pawn') {
             const row = parseInt(selectedPiece.dataset.i);
             if ((currentTurn === 'White' && row === 0) || (currentTurn === 'Black' && row === 7)) {
                 showPromotionModal(selectedPiece, currentTurn, () => {
-                    clearDots();
-                    selectedPiece = null;
-                    currentTurn = currentTurn === 'White' ? 'Black' : 'White';
-                    turnIndicator.innerText = `${currentTurn}'s Turn`;
-                    postMoveChecks();
+                    endTurn();
                 });
                 return;
             }
         }
 
-        clearDots();
-        selectedPiece = null;
-        currentTurn = currentTurn === 'White' ? 'Black' : 'White';
-        turnIndicator.innerText = `${currentTurn}'s Turn`;
-        postMoveChecks();
+        endTurn();
     };
 
     document.querySelector(".container").addEventListener("click", (e) => {
