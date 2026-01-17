@@ -317,6 +317,9 @@ window.onload = () => {
             img.style.cursor = 'pointer';
             img.style.width = '60px';
             img.style.height = '60px';
+            img.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+            img.style.borderRadius = '8px';
+            img.style.padding = '4px';
             img.onclick = () => {
                 piece.dataset.value = choice;
                 piece.src = `./pieces/${turn}${choice}.png`;
