@@ -40,33 +40,26 @@ window.onload = () => {
     let selectedPiece = null;
     let lastMove = null;
 
-    const turnIndicator = document.createElement("h2");
+    const headerWrapper = document.createElement("div");
+    headerWrapper.style.marginBottom = "20px";
+
+    const turnIndicator = document.createElement("div");
     turnIndicator.innerText = "White's Turn";
-    turnIndicator.style.textAlign = "center";
-    turnIndicator.style.fontFamily = "sans-serif";
-    document.body.insertBefore(turnIndicator, document.body.firstChild);
+    turnIndicator.className = "turn-indicator";
+    headerWrapper.appendChild(turnIndicator);
 
     const mainWrapper = document.createElement("div");
-    mainWrapper.style.display = "flex";
-    mainWrapper.style.justifyContent = "center";
-    mainWrapper.style.alignItems = "flex-start";
-    mainWrapper.style.gap = "30px";
-    mainWrapper.style.padding = "20px";
+    mainWrapper.className = "main-wrapper";
     
     const c1 = container[0];
+    c1.parentNode.insertBefore(headerWrapper, c1);
     c1.parentNode.insertBefore(mainWrapper, c1);
 
     const leftPanel = document.createElement("div");
-    leftPanel.style.width = "120px";
-    leftPanel.style.display = "flex";
-    leftPanel.style.flexWrap = "wrap";
-    leftPanel.style.gap = "5px";
+    leftPanel.className = "capture-panel";
 
     const rightPanel = document.createElement("div");
-    rightPanel.style.width = "120px";
-    rightPanel.style.display = "flex";
-    rightPanel.style.flexWrap = "wrap";
-    rightPanel.style.gap = "5px";
+    rightPanel.className = "capture-panel";
 
     mainWrapper.appendChild(leftPanel);
     mainWrapper.appendChild(c1);
@@ -309,8 +302,9 @@ window.onload = () => {
         modal.style.top = '50%';
         modal.style.left = '50%';
         modal.style.transform = 'translate(-50%, -50%)';
-        modal.style.backgroundColor = '#fff';
-        modal.style.padding = '20px';
+        modal.style.backgroundColor = '#262522';
+        modal.style.padding = '30px';
+        modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
         modal.style.borderRadius = '8px';
         modal.style.display = 'flex';
         modal.style.gap = '15px';
@@ -344,12 +338,13 @@ window.onload = () => {
         msg.style.top = '20px';
         msg.style.left = '50%';
         msg.style.transform = 'translateX(-50%)';
-        msg.style.backgroundColor = '#ff4444';
+        msg.style.backgroundColor = '#e0474c';
         msg.style.color = '#fff';
         msg.style.padding = '10px 20px';
         msg.style.fontSize = '24px';
         msg.style.fontWeight = 'bold';
-        msg.style.borderRadius = '5px';
+        msg.style.borderRadius = '8px';
+        msg.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
         msg.style.zIndex = '1000';
         msg.style.pointerEvents = 'none';
         msg.style.transition = 'opacity 0.5s';
@@ -375,14 +370,16 @@ window.onload = () => {
         overlay.style.alignItems = 'center';
 
         const modal = document.createElement('div');
-        modal.style.backgroundColor = '#fff';
+        modal.style.backgroundColor = '#262522';
+        modal.style.color = '#fff';
         modal.style.padding = '40px';
         modal.style.borderRadius = '8px';
         modal.style.textAlign = 'center';
         modal.style.fontSize = '32px';
         modal.style.fontWeight = 'bold';
+        modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
         
-        modal.innerHTML = `<div>${message}</div><button onclick="location.reload()" style="margin-top:20px; padding:10px 20px; font-size:18px; cursor:pointer;">Play Again</button>`;
+        modal.innerHTML = `<div>${message}</div><button onclick="location.reload()" style="margin-top:30px; padding:12px 24px; font-size:18px; font-weight:bold; cursor:pointer; background-color:#739552; color:#fff; border:none; border-radius:8px;">Play Again</button>`;
         
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
