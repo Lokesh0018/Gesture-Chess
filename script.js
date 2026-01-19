@@ -21,7 +21,7 @@ const board = () => {
             if (pieceDef) {
                 const color = pieceDef.startsWith('White') ? 'White' : 'Black';
                 const value = pieceDef.substring(5);
-                p = `<img src="./pieces/${pieceDef}.png" data-i="${i}" data-j="${j}" data-value="${value}" class="${color}"/>`;
+                p = `<img src="./pieces/${pieceDef}.png" draggable="true" data-i="${i}" data-j="${j}" data-value="${value}" class="${color}"/>`;
             }
             
             let coords = "";
@@ -578,6 +578,35 @@ window.onload = () => {
             showMoves(target);
         } else {
            
+            clearDots();
+            selectedPiece = null;
+        }
+    });
+
+    document.querySelector(".container").addEventListener("dragstart", (e) => {
+        const target = e.target;
+        if (target.matches("img") && target.classList.contains(currentTurn)) {
+            showMoves(target);
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", "chess-piece");
+        } else {
+            e.preventDefault(); // Prevents dragging opponent pieces
+        }
+    });
+
+    document.querySelector(".container").addEventListener("dragover", (e) => {
+        e.preventDefault(); // Necessary to allow dropping
+        e.dataTransfer.dropEffect = "move";
+    });
+
+    document.querySelector(".container").addEventListener("drop", (e) => {
+        e.preventDefault();
+        const target = e.target;
+        const square = target.classList.contains('child') ? target : target.parentElement;
+
+        if (square && square.classList.contains('dot')) {
+            movePiece(square);
+        } else {
             clearDots();
             selectedPiece = null;
         }

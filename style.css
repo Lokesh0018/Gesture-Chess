@@ -97,13 +97,17 @@ body {
 img {
     width: 85%;
     height: 85%;
-    cursor: pointer;
+    cursor: grab;
     z-index: 10;
     transition: transform 0.15s ease;
 }
 
 img:hover {
     transform: scale(1.15);
+}
+
+img:active {
+    cursor: grabbing;
 }
 
 .dot {
