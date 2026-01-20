@@ -42,11 +42,21 @@ window.onload = () => {
 
     const headerWrapper = document.createElement("div");
     headerWrapper.style.marginBottom = "20px";
+    headerWrapper.style.display = "flex";
+    headerWrapper.style.gap = "20px";
+    headerWrapper.style.alignItems = "center";
+    headerWrapper.style.justifyContent = "center";
 
     const turnIndicator = document.createElement("div");
     turnIndicator.innerText = "White's Turn";
     turnIndicator.className = "turn-indicator";
     headerWrapper.appendChild(turnIndicator);
+
+    const restartBtn = document.createElement("button");
+    restartBtn.innerText = "Restart Game";
+    restartBtn.style.cssText = "padding:12px 24px; font-size:18px; font-weight:bold; cursor:pointer; background-color:#739552; color:#fff; border:none; border-radius:8px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);";
+    restartBtn.onclick = () => location.reload();
+    headerWrapper.appendChild(restartBtn);
 
     const mainWrapper = document.createElement("div");
     mainWrapper.className = "main-wrapper";
@@ -587,10 +597,17 @@ window.onload = () => {
         const target = e.target;
         if (target.matches("img") && target.classList.contains(currentTurn)) {
             showMoves(target);
+            target.classList.add("dragging");
             e.dataTransfer.effectAllowed = "move";
             e.dataTransfer.setData("text/plain", "chess-piece");
         } else {
             e.preventDefault(); // Prevents dragging opponent pieces
+        }
+    });
+
+    document.querySelector(".container").addEventListener("dragend", (e) => {
+        if (e.target.matches("img")) {
+            e.target.classList.remove("dragging");
         }
     });
 
