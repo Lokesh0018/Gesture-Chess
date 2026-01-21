@@ -69,18 +69,18 @@ export const movePiece = (square) => {
     }
 
     if (state.selectedPiece.dataset.value === 'King' && Math.abs(startJ - targetJ) === 2) {
-        if (targetJ === 1) {
+        if (targetJ === 2) {
             const rook = getPiece(startI, 0);
             if (rook) {
-                getSquare(startI, 2).appendChild(rook);
-                rook.dataset.j = 2;
+                getSquare(startI, 3).appendChild(rook);
+                rook.dataset.j = 3;
                 rook.dataset.moved = 'true';
             }
-        } else if (targetJ === 5) {
+        } else if (targetJ === 6) {
             const rook = getPiece(startI, 7);
             if (rook) {
-                getSquare(startI, 4).appendChild(rook);
-                rook.dataset.j = 4;
+                getSquare(startI, 5).appendChild(rook);
+                rook.dataset.j = 5;
                 rook.dataset.moved = 'true';
             }
         }

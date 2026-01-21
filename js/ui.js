@@ -61,17 +61,17 @@ export const showMoves = (piece) => {
         if (!piece.dataset.moved) {
             const leftRook = getPiece(startI, 0);
             if (leftRook && leftRook.dataset.value === 'Rook' && !leftRook.dataset.moved) {
-                if (!getPiece(startI, 1) && !getPiece(startI, 2)) {
-                    if (isMoveSafe(startI, startJ, startI, 2) && isMoveSafe(startI, startJ, startI, 1)) {
-                        getSquare(startI, 1).classList.add('dot');
+                if (!getPiece(startI, 1) && !getPiece(startI, 2) && !getPiece(startI, 3)) {
+                    if (isMoveSafe(startI, startJ, startI, 3) && isMoveSafe(startI, startJ, startI, 2)) {
+                        getSquare(startI, 2).classList.add('dot');
                     }
                 }
             }
             const rightRook = getPiece(startI, 7);
             if (rightRook && rightRook.dataset.value === 'Rook' && !rightRook.dataset.moved) {
-                if (!getPiece(startI, 4) && !getPiece(startI, 5) && !getPiece(startI, 6)) {
-                    if (isMoveSafe(startI, startJ, startI, 4) && isMoveSafe(startI, startJ, startI, 5)) {
-                        getSquare(startI, 5).classList.add('dot');
+                if (!getPiece(startI, 5) && !getPiece(startI, 6)) {
+                    if (isMoveSafe(startI, startJ, startI, 5) && isMoveSafe(startI, startJ, startI, 6)) {
+                        getSquare(startI, 6).classList.add('dot');
                     }
                 }
             }

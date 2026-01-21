@@ -17,14 +17,14 @@ export const createBoard = () => {
     const c1 = container[0];
     let child = "";
     const initialBoard = [
-        ['BlackRook', 'BlackHorse', 'BlackBishop', 'BlackKing', 'BlackQueen', 'BlackBishop', 'BlackHorse', 'BlackRook'],
+        ['BlackRook', 'BlackHorse', 'BlackBishop', 'BlackQueen', 'BlackKing', 'BlackBishop', 'BlackHorse', 'BlackRook'],
         Array(8).fill('BlackPawn'),
         Array(8).fill(null),
         Array(8).fill(null),
         Array(8).fill(null),
         Array(8).fill(null),
         Array(8).fill('WhitePawn'),
-        ['WhiteRook', 'WhiteHorse', 'WhiteBishop', 'WhiteKing', 'WhiteQueen', 'WhiteBishop', 'WhiteHorse', 'WhiteRook']
+        ['WhiteRook', 'WhiteHorse', 'WhiteBishop', 'WhiteQueen', 'WhiteKing', 'WhiteBishop', 'WhiteHorse', 'WhiteRook']
     ];
     for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {

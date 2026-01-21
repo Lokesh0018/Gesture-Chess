@@ -24,14 +24,14 @@
     const c1 = container[0];
     let child = "";
     const initialBoard = [
-      ["BlackRook", "BlackHorse", "BlackBishop", "BlackKing", "BlackQueen", "BlackBishop", "BlackHorse", "BlackRook"],
+      ["BlackRook", "BlackHorse", "BlackBishop", "BlackQueen", "BlackKing", "BlackBishop", "BlackHorse", "BlackRook"],
       Array(8).fill("BlackPawn"),
       Array(8).fill(null),
       Array(8).fill(null),
       Array(8).fill(null),
       Array(8).fill(null),
       Array(8).fill("WhitePawn"),
-      ["WhiteRook", "WhiteHorse", "WhiteBishop", "WhiteKing", "WhiteQueen", "WhiteBishop", "WhiteHorse", "WhiteRook"]
+      ["WhiteRook", "WhiteHorse", "WhiteBishop", "WhiteQueen", "WhiteKing", "WhiteBishop", "WhiteHorse", "WhiteRook"]
     ];
     for (let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
@@ -272,17 +272,17 @@
       if (!piece.dataset.moved) {
         const leftRook = getPiece(startI, 0);
         if (leftRook && leftRook.dataset.value === "Rook" && !leftRook.dataset.moved) {
-          if (!getPiece(startI, 1) && !getPiece(startI, 2)) {
-            if (isMoveSafe(startI, startJ, startI, 2) && isMoveSafe(startI, startJ, startI, 1)) {
-              getSquare(startI, 1).classList.add("dot");
+          if (!getPiece(startI, 1) && !getPiece(startI, 2) && !getPiece(startI, 3)) {
+            if (isMoveSafe(startI, startJ, startI, 3) && isMoveSafe(startI, startJ, startI, 2)) {
+              getSquare(startI, 2).classList.add("dot");
             }
           }
         }
         const rightRook = getPiece(startI, 7);
         if (rightRook && rightRook.dataset.value === "Rook" && !rightRook.dataset.moved) {
-          if (!getPiece(startI, 4) && !getPiece(startI, 5) && !getPiece(startI, 6)) {
-            if (isMoveSafe(startI, startJ, startI, 4) && isMoveSafe(startI, startJ, startI, 5)) {
-              getSquare(startI, 5).classList.add("dot");
+          if (!getPiece(startI, 5) && !getPiece(startI, 6)) {
+            if (isMoveSafe(startI, startJ, startI, 5) && isMoveSafe(startI, startJ, startI, 6)) {
+              getSquare(startI, 6).classList.add("dot");
             }
           }
         }
@@ -465,18 +465,18 @@
       }
     }
     if (state.selectedPiece.dataset.value === "King" && Math.abs(startJ - targetJ) === 2) {
-      if (targetJ === 1) {
+      if (targetJ === 2) {
         const rook = getPiece(startI, 0);
         if (rook) {
-          getSquare(startI, 2).appendChild(rook);
-          rook.dataset.j = 2;
+          getSquare(startI, 3).appendChild(rook);
+          rook.dataset.j = 3;
           rook.dataset.moved = "true";
         }
-      } else if (targetJ === 5) {
+      } else if (targetJ === 6) {
         const rook = getPiece(startI, 7);
         if (rook) {
-          getSquare(startI, 4).appendChild(rook);
-          rook.dataset.j = 4;
+          getSquare(startI, 5).appendChild(rook);
+          rook.dataset.j = 5;
           rook.dataset.moved = "true";
         }
       }
