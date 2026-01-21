@@ -140,3 +140,7 @@ img:active {
     background-color: transparent;
     border: 6px solid rgba(0, 0, 0, 0.2);
 }
+
+.last-move {
+    background-color: rgba(246, 246, 105, 0.5) !important;
+}
