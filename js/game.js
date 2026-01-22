@@ -104,7 +104,74 @@ const getAlgebraic = (piece, startI, startJ, targetI, targetJ, captured) => {
     return notation;
 }
 
-export const movePiece = (targetI, targetJ) => {
+const playShootingAnimation = (startI, startJ, targetI, targetJ) => {
+    return new Promise(resolve => {
+        const attackerSq = getSquare(startI, startJ);
+        const targetSq = getSquare(targetI, targetJ);
+        if (!attackerSq || !targetSq) {
+            resolve();
+            return;
+        }
+
+        const gun = document.createElement('div');
+        gun.innerText = '🔫';
+        gun.style.position = 'absolute';
+        gun.style.fontSize = '35px';
+        gun.style.zIndex = '100';
+        gun.style.transition = 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        
+        const attRect = attackerSq.getBoundingClientRect();
+        const tgtRect = targetSq.getBoundingClientRect();
+        
+        const dx = tgtRect.left - attRect.left;
+        const dy = tgtRect.top - attRect.top;
+        let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        angle = angle + 180;
+
+        gun.style.transform = `translate(-50%, -50%) rotate(${angle}deg) scale(0)`;
+        gun.style.left = '50%';
+        gun.style.top = '50%';
+        
+        attackerSq.appendChild(gun);
+
+        requestAnimationFrame(() => {
+            gun.style.transform = `translate(-50%, -50%) rotate(${angle}deg) scale(1)`;
+        });
+
+        setTimeout(() => {
+            const bang = document.createElement('div');
+            bang.innerText = '💥';
+            bang.style.position = 'absolute';
+            bang.style.fontSize = '40px';
+            bang.style.zIndex = '100';
+            bang.style.left = '50%';
+            bang.style.top = '50%';
+            bang.style.transform = 'translate(-50%, -50%) scale(0)';
+            bang.style.transition = 'transform 0.1s';
+            targetSq.appendChild(bang);
+            
+            requestAnimationFrame(() => {
+                bang.style.transform = 'translate(-50%, -50%) scale(1.5)';
+            });
+
+            const tgtImg = targetSq.querySelector('img');
+            if (tgtImg) {
+                tgtImg.style.transition = 'opacity 0.2s, transform 0.2s';
+                tgtImg.style.opacity = '0';
+                tgtImg.style.transform = 'scale(0.5)';
+            }
+
+            setTimeout(() => {
+                if(gun.parentNode) gun.parentNode.removeChild(gun);
+                if(bang.parentNode) bang.parentNode.removeChild(bang);
+                resolve();
+            }, 300);
+        }, 200);
+    });
+};
+
+export const movePiece = async (targetI, targetJ) => {
+    if (window.isAnimating) return;
     const {i: startI, j: startJ} = state.selectedSquare;
     const piece = state.board[startI][startJ];
     const targetPiece = state.board[targetI][targetJ];
@@ -125,11 +192,17 @@ export const movePiece = (targetI, targetJ) => {
 
     if (targetPiece) {
         captured = true;
+        window.isAnimating = true;
+        await playShootingAnimation(startI, startJ, targetI, targetJ);
+        window.isAnimating = false;
         addCapturedToPanel(targetPiece);
     } else if (piece.type === PIECES.PAWN && Math.abs(startJ - targetJ) === 1) {
         const capturedPawn = state.board[startI][targetJ];
         if (capturedPawn) {
             captured = true;
+            window.isAnimating = true;
+            await playShootingAnimation(startI, startJ, startI, targetJ);
+            window.isAnimating = false;
             addCapturedToPanel(capturedPawn);
             state.board[startI][targetJ] = null;
         }
