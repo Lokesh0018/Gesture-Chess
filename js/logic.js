@@ -1,175 +1,153 @@
-import { state } from './state.js';
-import { getSquare, getPiece } from './dom.js';
+import { state, COLORS, PIECES } from './state.js';
 
-export const isUnderAttack = (r, c, color) => {
-    const enemy = color === 'White' ? 'Black' : 'White';
+export const isUnderAttack = (r, c, color, board = state.board) => {
+    const enemy = color === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
     
     const checkRay = (dr, dc, pieces, maxSteps = 7) => {
         for(let step = 1; step <= maxSteps; step++) {
             const nr = r + dr * step;
             const nc = c + dc * step;
             if(nr < 0 || nr > 7 || nc < 0 || nc > 7) break;
-            const p = getPiece(nr, nc);
+            const p = board[nr][nc];
             if(p) {
-                if(p.classList.contains(enemy) && pieces.includes(p.dataset.value)) return true;
+                if(p.color === enemy && pieces.includes(p.type)) return true;
                 break;
             }
         }
         return false;
     };
 
-    if(checkRay(1, 0, ['Rook', 'Queen'])) return true;
-    if(checkRay(-1, 0, ['Rook', 'Queen'])) return true;
-    if(checkRay(0, 1, ['Rook', 'Queen'])) return true;
-    if(checkRay(0, -1, ['Rook', 'Queen'])) return true;
+    if(checkRay(1, 0, [PIECES.ROOK, PIECES.QUEEN])) return true;
+    if(checkRay(-1, 0, [PIECES.ROOK, PIECES.QUEEN])) return true;
+    if(checkRay(0, 1, [PIECES.ROOK, PIECES.QUEEN])) return true;
+    if(checkRay(0, -1, [PIECES.ROOK, PIECES.QUEEN])) return true;
 
-    if(checkRay(1, 1, ['Bishop', 'Queen'])) return true;
-    if(checkRay(1, -1, ['Bishop', 'Queen'])) return true;
-    if(checkRay(-1, 1, ['Bishop', 'Queen'])) return true;
-    if(checkRay(-1, -1, ['Bishop', 'Queen'])) return true;
+    if(checkRay(1, 1, [PIECES.BISHOP, PIECES.QUEEN])) return true;
+    if(checkRay(1, -1, [PIECES.BISHOP, PIECES.QUEEN])) return true;
+    if(checkRay(-1, 1, [PIECES.BISHOP, PIECES.QUEEN])) return true;
+    if(checkRay(-1, -1, [PIECES.BISHOP, PIECES.QUEEN])) return true;
 
     const knightMoves = [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
     for(let [dr, dc] of knightMoves) {
         const nr = r + dr, nc = c + dc;
         if(nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
-            const p = getPiece(nr, nc);
-            if(p && p.classList.contains(enemy) && p.dataset.value === 'Horse') return true;
+            const p = board[nr][nc];
+            if(p && p.color === enemy && p.type === PIECES.HORSE) return true;
         }
     }
 
-    if (color === 'White') {
-        for(let dc of [-1, 1]) {
-            const nr = r - 1, nc = c + dc;
-            if(nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
-                const p = getPiece(nr, nc);
-                if(p && p.classList.contains('Black') && p.dataset.value === 'Pawn') return true;
-            }
-        }
-    } else {
-        for(let dc of [-1, 1]) {
-            const nr = r + 1, nc = c + dc;
-            if(nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
-                const p = getPiece(nr, nc);
-                if(p && p.classList.contains('White') && p.dataset.value === 'Pawn') return true;
-            }
+    const pawnDir = color === COLORS.WHITE ? -1 : 1;
+    for(let dc of [-1, 1]) {
+        const nr = r + pawnDir, nc = c + dc;
+        if(nr >= 0 && nr <= 7 && nc >= 0 && nc <= 7) {
+            const p = board[nr][nc];
+            if(p && p.color === enemy && p.type === PIECES.PAWN) return true;
         }
     }
 
-    if(checkRay(1,0,['King'],1) || checkRay(-1,0,['King'],1) || 
-       checkRay(0,1,['King'],1) || checkRay(0,-1,['King'],1) ||
-       checkRay(1,1,['King'],1) || checkRay(1,-1,['King'],1) || 
-       checkRay(-1,1,['King'],1) || checkRay(-1,-1,['King'],1)) return true;
+    if(checkRay(1,0,[PIECES.KING],1) || checkRay(-1,0,[PIECES.KING],1) || 
+       checkRay(0,1,[PIECES.KING],1) || checkRay(0,-1,[PIECES.KING],1) ||
+       checkRay(1,1,[PIECES.KING],1) || checkRay(1,-1,[PIECES.KING],1) || 
+       checkRay(-1,1,[PIECES.KING],1) || checkRay(-1,-1,[PIECES.KING],1)) return true;
 
     return false;
 };
 
-export const isMoveSafe = (startI, startJ, targetI, targetJ) => {
-    const startSq = getSquare(startI, startJ);
-    const targetSq = getSquare(targetI, targetJ);
-    const piece = getPiece(startI, startJ);
-    let targetPiece = getPiece(targetI, targetJ);
+export const isMoveSafe = (startI, startJ, targetI, targetJ, color = state.currentTurn) => {
+    const tempBoard = state.board.map(row => row.map(p => p ? {...p} : null));
+    const piece = tempBoard[startI][startJ];
     
-    let epSq = null;
-    let epPiece = null;
-    if (piece.dataset.value === 'Pawn' && Math.abs(startJ - targetJ) === 1 && !targetPiece) {
-        epSq = getSquare(startI, targetJ);
-        epPiece = epSq.querySelector('img');
-        if (epPiece) epSq.removeChild(epPiece);
+    if (!piece) return false;
+    
+    if (piece.type === PIECES.PAWN && Math.abs(startJ - targetJ) === 1 && !tempBoard[targetI][targetJ]) {
+        tempBoard[startI][targetJ] = null;
     }
     
-    if (targetPiece) targetSq.removeChild(targetPiece);
-    targetSq.appendChild(piece);
-    piece.dataset.i = targetI;
-    piece.dataset.j = targetJ;
+    tempBoard[targetI][targetJ] = piece;
+    tempBoard[startI][startJ] = null;
     
     let kingSq = null;
-    const king = document.querySelector(`.child img.${state.currentTurn}[data-value="King"]`);
-    if (king) {
-        kingSq = {i: parseInt(king.dataset.i), j: parseInt(king.dataset.j)};
+    for(let i=0; i<8; i++) {
+        for(let j=0; j<8; j++) {
+            const p = tempBoard[i][j];
+            if (p && p.color === color && p.type === PIECES.KING) {
+                kingSq = {i, j};
+                break;
+            }
+        }
     }
     
-    let safe = true;
     if (kingSq) {
-        safe = !isUnderAttack(kingSq.i, kingSq.j, state.currentTurn);
+        return !isUnderAttack(kingSq.i, kingSq.j, color, tempBoard);
     }
-    
-    startSq.appendChild(piece);
-    piece.dataset.i = startI;
-    piece.dataset.j = startJ;
-    if (targetPiece) targetSq.appendChild(targetPiece);
-    if (epPiece) epSq.appendChild(epPiece);
-    
-    return safe;
+    return true; 
 };
 
-export const hasAnyValidMoves = () => {
-    const pieces = document.querySelectorAll(`.child img.${state.currentTurn}`);
-    for (let piece of pieces) {
-        const startI = parseInt(piece.dataset.i);
-        const startJ = parseInt(piece.dataset.j);
-        const type = piece.dataset.value;
-
-        const tryMove = (targetI, targetJ) => {
-            if (targetI < 0 || targetI > 7 || targetJ < 0 || targetJ > 7) return false;
-            const targetPiece = getPiece(targetI, targetJ);
-            if (targetPiece && targetPiece.classList.contains(state.currentTurn)) return false;
-            return isMoveSafe(startI, startJ, targetI, targetJ);
-        };
-
-        const tryRay = (di, dj, maxSteps = 7) => {
-            for (let step = 1; step <= maxSteps; step++) {
-                const targetI = startI + di * step;
-                const targetJ = startJ + dj * step;
-                if (targetI < 0 || targetI > 7 || targetJ < 0 || targetJ > 7) break;
-                const targetPiece = getPiece(targetI, targetJ);
+export const hasAnyValidMoves = (color = state.currentTurn) => {
+    for (let i=0; i<8; i++) {
+        for (let j=0; j<8; j++) {
+            const piece = state.board[i][j];
+            if (piece && piece.color === color) {
+                const type = piece.type;
+                const tryMove = (ti, tj) => {
+                    if (ti < 0 || ti > 7 || tj < 0 || tj > 7) return false;
+                    const tp = state.board[ti][tj];
+                    if (tp && tp.color === color) return false;
+                    return isMoveSafe(i, j, ti, tj, color);
+                };
                 
-                if (!targetPiece) {
-                    if (isMoveSafe(startI, startJ, targetI, targetJ)) return true;
-                } else {
-                    if (!targetPiece.classList.contains(state.currentTurn)) {
-                        if (isMoveSafe(startI, startJ, targetI, targetJ)) return true;
+                const tryRay = (di, dj, maxSteps=7) => {
+                    for (let step=1; step<=maxSteps; step++) {
+                        const ti = i + di*step;
+                        const tj = j + dj*step;
+                        if (ti < 0 || ti > 7 || tj < 0 || tj > 7) break;
+                        const tp = state.board[ti][tj];
+                        if (!tp) {
+                            if (isMoveSafe(i, j, ti, tj, color)) return true;
+                        } else {
+                            if (tp.color !== color && isMoveSafe(i, j, ti, tj, color)) return true;
+                            break;
+                        }
                     }
-                    break;
-                }
-            }
-            return false;
-        };
+                    return false;
+                };
 
-        if (type === 'Rook' || type === 'Queen') {
-            if (tryRay(1, 0) || tryRay(-1, 0) || tryRay(0, 1) || tryRay(0, -1)) return true;
-        }
-        if (type === 'Bishop' || type === 'Queen') {
-            if (tryRay(1, 1) || tryRay(1, -1) || tryRay(-1, 1) || tryRay(-1, -1)) return true;
-        }
-        if (type === 'King') {
-            if (tryRay(1, 0, 1) || tryRay(-1, 0, 1) || tryRay(0, 1, 1) || tryRay(0, -1, 1) ||
-                tryRay(1, 1, 1) || tryRay(1, -1, 1) || tryRay(-1, 1, 1) || tryRay(-1, -1, 1)) return true;
-        }
-        if (type === 'Horse') {
-            const moves = [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]];
-            for (let [di, dj] of moves) {
-                if (tryMove(startI + di, startJ + dj)) return true;
-            }
-        }
-        if (type === 'Pawn') {
-            const dir = state.currentTurn === 'White' ? -1 : 1;
-            const startRow = state.currentTurn === 'White' ? 6 : 1;
-            
-            if (startI + dir >= 0 && startI + dir <= 7 && !getPiece(startI + dir, startJ)) {
-                if (tryMove(startI + dir, startJ)) return true;
-                if (startI === startRow && !getPiece(startI + 2 * dir, startJ)) {
-                    if (tryMove(startI + 2 * dir, startJ)) return true;
+                if (type === PIECES.ROOK || type === PIECES.QUEEN) {
+                    if (tryRay(1,0) || tryRay(-1,0) || tryRay(0,1) || tryRay(0,-1)) return true;
                 }
-            }
-            for (let dj of [-1, 1]) {
-                if (startI + dir >= 0 && startI + dir <= 7 && startJ + dj >= 0 && startJ + dj <= 7) {
-                    const targetPiece = getPiece(startI + dir, startJ + dj);
-                    if (targetPiece && !targetPiece.classList.contains(state.currentTurn)) {
-                        if (tryMove(startI + dir, startJ + dj)) return true;
+                if (type === PIECES.BISHOP || type === PIECES.QUEEN) {
+                    if (tryRay(1,1) || tryRay(1,-1) || tryRay(-1,1) || tryRay(-1,-1)) return true;
+                }
+                if (type === PIECES.KING) {
+                    if (tryRay(1,0,1) || tryRay(-1,0,1) || tryRay(0,1,1) || tryRay(0,-1,1) ||
+                        tryRay(1,1,1) || tryRay(1,-1,1) || tryRay(-1,1,1) || tryRay(-1,-1,1)) return true;
+                }
+                if (type === PIECES.HORSE) {
+                    const moves = [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+                    for (let [di, dj] of moves) {
+                        if (tryMove(i+di, j+dj)) return true;
                     }
-                    if (state.lastMove && state.lastMove.piece === 'Pawn' && Math.abs(state.lastMove.startI - state.lastMove.targetI) === 2) {
-                        if (state.lastMove.targetI === startI && state.lastMove.targetJ === startJ + dj) {
-                            if (isMoveSafe(startI, startJ, startI + dir, startJ + dj)) return true;
+                }
+                if (type === PIECES.PAWN) {
+                    const dir = color === COLORS.WHITE ? -1 : 1;
+                    const startRow = color === COLORS.WHITE ? 6 : 1;
+                    if (i+dir>=0 && i+dir<=7 && !state.board[i+dir][j]) {
+                        if (tryMove(i+dir, j)) return true;
+                        if (i === startRow && !state.board[i+2*dir][j]) {
+                            if (tryMove(i+2*dir, j)) return true;
+                        }
+                    }
+                    for (let dj of [-1, 1]) {
+                        if (i+dir>=0 && i+dir<=7 && j+dj>=0 && j+dj<=7) {
+                            const tp = state.board[i+dir][j+dj];
+                            if (tp && tp.color !== color) {
+                                if (tryMove(i+dir, j+dj)) return true;
+                            }
+                            if (state.lastMove && state.lastMove.piece === PIECES.PAWN && Math.abs(state.lastMove.startI - state.lastMove.targetI) === 2) {
+                                if (state.lastMove.targetI === i && state.lastMove.targetJ === j+dj) {
+                                    if (isMoveSafe(i, j, i+dir, j+dj, color)) return true;
+                                }
+                            }
                         }
                     }
                 }
@@ -177,4 +155,31 @@ export const hasAnyValidMoves = () => {
         }
     }
     return false;
+};
+
+export const checkDrawConditions = () => {
+    if (state.halfMoveClock >= 100) return "Draw by 50-move rule";
+    
+    const posKeys = Object.values(state.positionHistory);
+    if (posKeys.some(count => count >= 3)) return "Draw by threefold repetition";
+    
+    let whitePieces = [];
+    let blackPieces = [];
+    for(let i=0; i<8; i++){
+        for(let j=0; j<8; j++){
+            const p = state.board[i][j];
+            if(p) {
+                if(p.type === PIECES.PAWN || p.type === PIECES.ROOK || p.type === PIECES.QUEEN) return null;
+                if(p.color === COLORS.WHITE) whitePieces.push(p.type);
+                else blackPieces.push(p.type);
+            }
+        }
+    }
+    if (whitePieces.length === 1 && blackPieces.length === 1) {
+        if (whitePieces[0] === PIECES.KING && blackPieces[0] === PIECES.KING) {
+            return "Draw by insufficient material (King vs King)";
+        }
+    }
+    
+    return null;
 };

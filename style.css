@@ -1,67 +1,147 @@
 body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #312e2b;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+/* Main Area */
+.main-game-area {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #302e2b;
-    color: #ffffff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 20px;
 }
 
-.main-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: stretch;
-    gap: 20px;
+/* Player Info Banner */
+.player-info {
     width: 100%;
-    max-width: 1000px;
+    max-width: 75vh;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
 }
-
-.turn-indicator {
-    background-color: #262522;
-    padding: 12px 32px;
-    border-radius: 8px;
-    font-size: 24px;
+.player-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    background-size: cover;
+    background-position: center;
+}
+.player-name {
     font-weight: bold;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
-    text-align: center;
-    color: #ffffff;
+    font-size: 18px;
+    color: #fff;
+}
+.player-clock {
+    background-color: #262522;
+    padding: 8px 16px;
+    font-size: 20px;
+    font-weight: bold;
+    font-family: monospace;
+    border-radius: 4px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    background-color: #fff;
+    color: #000;
+}
+.clock-dark {
+    background-color: #262522;
+    color: #a7a6a2;
 }
 
+/* Side Capture Panels */
 .capture-panel {
-    width: 140px;
-    min-height: 540px;
+    width: 100px;
     background-color: #262522;
     border-radius: 8px;
     padding: 10px;
     display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 8px;
+    flex-direction: column;
+    align-items: center;
     box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+}
+.side-captures {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0px;
+}
+.side-captures img {
+    width: 35px !important;
+    height: 35px !important;
+    margin: 2px;
+    opacity: 0.9;
 }
 
-.capture-panel img {
-    width: 40px !important;
-    height: 40px !important;
-    cursor: default;
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-    padding: 2px;
+/* Right Sidebar */
+.right-sidebar {
+    width: 250px;
+    background-color: #262522;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+    z-index: 10;
+    margin: 20px 0;
+    border-radius: 8px;
+    overflow: hidden;
 }
-
-.capture-panel img:hover {
-    transform: none; /* No hover effect for captured pieces */
+.moves-container {
+    flex: 1;
+    overflow-y: auto;
+    background-color: #262522;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
 }
+.controls-bar {
+    background-color: #262522;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-top: 1px solid #403d39;
+}
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    color: #a7a6a2;
+    font-size: 14px;
+    font-weight: bold;
+    justify-content: center;
+}
+.action-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: bold;
+}
+.action-btn:hover { color: #fff; }
 
+/* The Board */
 .container {
     display: grid;
     grid-template-rows: repeat(8, 1fr);
     grid-template-columns: repeat(8, 1fr);
-    width: 560px;
-    height: 560px;
+    width: 100%;
+    max-width: 75vh;
+    aspect-ratio: 1 / 1;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     border-radius: 4px;
     overflow: hidden;
@@ -143,4 +223,36 @@ img:active {
 
 .last-move {
     background-color: rgba(246, 246, 105, 0.5) !important;
+}
+
+.in-check {
+    box-shadow: inset 0 0 25px rgba(255, 0, 0, 0.9) !important;
+}
+
+.move-row {
+    display: flex;
+    align-items: stretch;
+    background: #2b2927;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+}
+.move-row:nth-child(even) {
+    background: #262522;
+}
+.move-number {
+    color: #a7a6a2;
+    padding: 6px 10px 6px 20px;
+    background: #262522;
+    width: 30px;
+    text-align: right;
+}
+.move-white, .move-black {
+    flex: 1;
+    padding: 6px 15px;
+    color: #fff;
+    cursor: pointer;
+}
+.move-white:hover, .move-black:hover {
+    background-color: #3d3b39;
 }

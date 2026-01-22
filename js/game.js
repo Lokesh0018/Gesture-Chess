@@ -1,27 +1,78 @@
-import { state } from './state.js';
-import { clearDots, getSquare, getPiece } from './dom.js';
-import { isUnderAttack, hasAnyValidMoves } from './logic.js';
-import { showPromotionModal, showCheckMessage, showGameOver } from './ui.js';
+import { state, COLORS, PIECES, recordPosition } from './state.js';
+import { clearDots, renderBoard, getSquare } from './dom.js';
+import { isUnderAttack, hasAnyValidMoves, checkDrawConditions } from './logic.js';
+import { showPromotionModal, showCheckMessage, showGameOver, showNotification } from './ui.js';
 
-// Phase 2: Sound effects
 const moveSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3');
 const captureSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3');
+
+export const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+};
+
+export const startTimer = () => {
+    if (state.timerInterval) return;
+    state.timerInterval = setInterval(() => {
+        if (state.currentTurn === COLORS.WHITE) {
+            state.whiteTime--;
+            if (state.clockWhiteDOM) state.clockWhiteDOM.innerText = formatTime(state.whiteTime);
+            if (state.whiteTime <= 0) {
+                stopTimer();
+                showGameOver("Black Wins on Time");
+            }
+        } else {
+            state.blackTime--;
+            if (state.clockBlackDOM) state.clockBlackDOM.innerText = formatTime(state.blackTime);
+            if (state.blackTime <= 0) {
+                stopTimer();
+                showGameOver("White Wins on Time");
+            }
+        }
+    }, 1000);
+};
+
+export const stopTimer = () => {
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
+    }
+};
 const checkSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3');
 
 export const postMoveChecks = () => {
-    const king = document.querySelector(`.child img.${state.currentTurn}[data-value="King"]`);
-    let inCheck = false;
-    if (king) {
-        const kingI = parseInt(king.dataset.i);
-        const kingJ = parseInt(king.dataset.j);
-        if (isUnderAttack(kingI, kingJ, state.currentTurn)) {
-            inCheck = true;
+    let kingSq = null;
+    for(let i=0; i<8; i++){
+        for(let j=0; j<8; j++){
+            const p = state.board[i][j];
+            if(p && p.color === state.currentTurn && p.type === PIECES.KING) {
+                kingSq = {i, j};
+                break;
+            }
         }
+    }
+    
+    let inCheck = false;
+    if (kingSq) {
+        inCheck = isUnderAttack(kingSq.i, kingSq.j, state.currentTurn);
+    }
+    
+    document.querySelectorAll('.in-check').forEach(el => el.classList.remove('in-check'));
+    if (inCheck && kingSq) {
+        const sq = getSquare(kingSq.i, kingSq.j);
+        if(sq) sq.classList.add('in-check');
     }
 
     if (!hasAnyValidMoves()) {
-        if (inCheck) showGameOver(`Checkmate! ${state.currentTurn === 'White' ? 'Black' : 'White'} Wins!`);
+        if (inCheck) showGameOver(`Checkmate! ${state.currentTurn === COLORS.WHITE ? 'Black' : 'White'} Wins!`);
         else showGameOver("Stalemate! It's a draw!");
+        return;
+    }
+    
+    const drawMsg = checkDrawConditions();
+    if (drawMsg) {
+        showGameOver(drawMsg);
         return;
     }
 
@@ -31,97 +82,167 @@ export const postMoveChecks = () => {
     }
 };
 
-export const movePiece = (square) => {
-    const startI = parseInt(state.selectedPiece.dataset.i);
-    const startJ = parseInt(state.selectedPiece.dataset.j);
-    const targetI = parseInt(square.dataset.i);
-    const targetJ = parseInt(square.dataset.j);
+const getAlgebraic = (piece, startI, startJ, targetI, targetJ, captured) => {
+    const files = "abcdefgh";
+    const ranks = "87654321";
+    let notation = "";
+    
+    if (piece.type === PIECES.KING && Math.abs(startJ - targetJ) === 2) {
+        return targetJ === 6 ? "O-O" : "O-O-O";
+    }
+    
+    if (piece.type !== PIECES.PAWN) {
+        const pChar = piece.type === PIECES.HORSE ? 'N' : piece.type[0];
+        notation += pChar;
+    } else if (captured) {
+        notation += files[startJ];
+    }
+    
+    if (captured) notation += "x";
+    notation += files[targetJ] + ranks[targetI];
+    
+    return notation;
+}
+
+export const movePiece = (targetI, targetJ) => {
+    const {i: startI, j: startJ} = state.selectedSquare;
+    const piece = state.board[startI][startJ];
+    const targetPiece = state.board[targetI][targetJ];
 
     let captured = false;
 
-    // Phase 2: Last move highlights
-    document.querySelectorAll('.last-move').forEach(el => el.classList.remove('last-move'));
-    getSquare(startI, startJ).classList.add('last-move');
-    square.classList.add('last-move');
-
-    const existingPiece = square.querySelector('img');
-    if (existingPiece) {
-        existingPiece.style.width = "40px";
-        existingPiece.style.height = "40px";
-        existingPiece.classList.remove('last-move'); 
-        if (existingPiece.classList.contains("White")) {
-            state.leftPanel.appendChild(existingPiece);
-        } else if (existingPiece.classList.contains("Black")) {
-            state.rightPanel.appendChild(existingPiece);
-        }
-        captured = true;
-    } else if (state.selectedPiece.dataset.value === 'Pawn' && Math.abs(startJ - targetJ) === 1) {
-        const capturedSq = getSquare(startI, targetJ);
-        const capturedPiece = capturedSq.querySelector('img');
-        if (capturedPiece) {
-            capturedPiece.style.width = "40px";
-            capturedPiece.style.height = "40px";
-            capturedPiece.classList.remove('last-move');
-            if (capturedPiece.classList.contains("White")) state.leftPanel.appendChild(capturedPiece);
-            else state.rightPanel.appendChild(capturedPiece);
-            captured = true;
-        }
-    }
-
-    if (state.selectedPiece.dataset.value === 'King' && Math.abs(startJ - targetJ) === 2) {
-        if (targetJ === 2) {
-            const rook = getPiece(startI, 0);
-            if (rook) {
-                getSquare(startI, 3).appendChild(rook);
-                rook.dataset.j = 3;
-                rook.dataset.moved = 'true';
-            }
-        } else if (targetJ === 6) {
-            const rook = getPiece(startI, 7);
-            if (rook) {
-                getSquare(startI, 5).appendChild(rook);
-                rook.dataset.j = 5;
-                rook.dataset.moved = 'true';
-            }
-        }
-    }
-
-    state.selectedPiece.dataset.moved = 'true';
-    state.selectedPiece.dataset.i = targetI;
-    state.selectedPiece.dataset.j = targetJ;
-    square.appendChild(state.selectedPiece);
-
-    if (captured) {
-        captureSound.play().catch(e => console.warn("Audio play prevented", e));
+    if (piece.type === PIECES.PAWN || targetPiece) {
+        state.halfMoveClock = 0;
     } else {
-        moveSound.play().catch(e => console.warn("Audio play prevented", e));
+        state.halfMoveClock++;
     }
 
-    const endTurn = () => {
+    document.querySelectorAll('.last-move').forEach(el => el.classList.remove('last-move'));
+    const sSq = getSquare(startI, startJ);
+    const tSq = getSquare(targetI, targetJ);
+    if(sSq) sSq.classList.add('last-move');
+    if(tSq) tSq.classList.add('last-move');
+
+    if (targetPiece) {
+        captured = true;
+        addCapturedToPanel(targetPiece);
+    } else if (piece.type === PIECES.PAWN && Math.abs(startJ - targetJ) === 1) {
+        const capturedPawn = state.board[startI][targetJ];
+        if (capturedPawn) {
+            captured = true;
+            addCapturedToPanel(capturedPawn);
+            state.board[startI][targetJ] = null;
+        }
+    }
+
+    if (piece.type === PIECES.KING && Math.abs(startJ - targetJ) === 2) {
+        if (targetJ === 2) {
+            state.board[startI][3] = state.board[startI][0];
+            state.board[startI][3].moved = true;
+            state.board[startI][0] = null;
+        } else if (targetJ === 6) {
+            state.board[startI][5] = state.board[startI][7];
+            state.board[startI][5].moved = true;
+            state.board[startI][7] = null;
+        }
+    }
+
+    state.board[targetI][targetJ] = piece;
+    state.board[startI][startJ] = null;
+    piece.moved = true;
+
+    if (captured) captureSound.play().catch(e => console.warn(e));
+    else moveSound.play().catch(e => console.warn(e));
+
+    const endTurn = (promotionChar = "") => {
         state.lastMove = {
-            piece: state.selectedPiece.dataset.value,
+            piece: piece.type,
             color: state.currentTurn,
-            startI: startI,
-            startJ: startJ,
-            targetI: targetI,
-            targetJ: targetJ
+            startI, startJ, targetI, targetJ
         };
+        
         clearDots();
-        state.selectedPiece = null;
-        state.currentTurn = state.currentTurn === 'White' ? 'Black' : 'White';
+        state.selectedSquare = null;
+        
+        let notation = getAlgebraic(piece, startI, startJ, targetI, targetJ, captured);
+        if (promotionChar) notation += "=" + promotionChar;
+        
+        state.currentTurn = state.currentTurn === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
+        
+        let kingSq = null;
+        for(let r=0; r<8; r++) {
+            for(let c=0; c<8; c++) {
+                const p = state.board[r][c];
+                if(p && p.color === state.currentTurn && p.type === PIECES.KING) { kingSq = {r,c}; break;}
+            }
+        }
+        if (kingSq && isUnderAttack(kingSq.r, kingSq.c, state.currentTurn)) {
+            // Need to know if checkmate for '#' but we check mate in postMoveChecks. Just add '+'
+            notation += "+";
+        }
+        
+        updateMoveHistory(notation);
+        
         state.turnIndicator.innerText = `${state.currentTurn}'s Turn`;
+        const repCount = recordPosition();
+        if (repCount === 2) {
+            showNotification("Position repeated 2 times! One more for a draw.");
+        }
+        renderBoard();
         postMoveChecks();
+        startTimer(); // Ensure timer runs after the first move
     };
 
-    if (state.selectedPiece.dataset.value === 'Pawn') {
-        const row = parseInt(state.selectedPiece.dataset.i);
-        if ((state.currentTurn === 'White' && row === 0) || (state.currentTurn === 'Black' && row === 7)) {
-            showPromotionModal(state.selectedPiece, state.currentTurn, () => {
-                endTurn();
+    if (piece.type === PIECES.PAWN) {
+        if ((state.currentTurn === COLORS.WHITE && targetI === 0) || (state.currentTurn === COLORS.BLACK && targetI === 7)) {
+            showPromotionModal(state.currentTurn, (chosenType) => {
+                piece.type = chosenType;
+                let char = chosenType === PIECES.HORSE ? 'N' : chosenType[0];
+                endTurn(char);
             });
             return;
         }
     }
 
     endTurn();
+};
+
+const addCapturedToPanel = (piece) => {
+    const img = document.createElement('img');
+    img.src = `./pieces/${piece.color}${piece.type}.png`;
+    img.style.width = '40px';
+    img.style.height = '40px';
+    img.style.cursor = 'default';
+    img.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+    img.style.borderRadius = '4px';
+    img.style.padding = '2px';
+    
+    if (piece.color === COLORS.WHITE) {
+        state.leftPanel.appendChild(img);
+    } else {
+        state.rightPanel.appendChild(img);
+    }
+};
+
+const updateMoveHistory = (notation) => {
+    if (state.currentTurn === COLORS.BLACK) {
+        const m = { white: notation, black: "" };
+        state.moveList.push(m);
+        renderMoveHistory();
+    } else {
+        state.moveList[state.moveList.length-1].black = notation;
+        renderMoveHistory();
+    }
+};
+
+const renderMoveHistory = () => {
+    const panel = state.moveHistoryPanel;
+    panel.innerHTML = "";
+    state.moveList.forEach((m, idx) => {
+        const row = document.createElement("div");
+        row.className = "move-row";
+        row.innerHTML = `<span class="move-number">${idx+1}.</span><span class="move-white">${m.white}</span><span class="move-black">${m.black}</span>`;
+        panel.appendChild(row);
+    });
+    panel.scrollTop = panel.scrollHeight;
 };
