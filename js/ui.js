@@ -23,7 +23,7 @@ export const markMove = (targetI, targetJ, startI, startJ) => {
     if (isValidCaptureOrEmpty) {
         if (isMoveSafe(startI, startJ, targetI, targetJ)) {
             const sq = getSquare(targetI, targetJ);
-            if (sq) sq.classList.add('dot');
+            if (sq) sq.classList.add('dot', 'pulsing-dot');
         }
     }
     return continueRay;
@@ -47,7 +47,7 @@ export const showMoves = (i, j) => {
     const addDotIfSafe = (targetI, targetJ) => {
         if (isMoveSafe(i, j, targetI, targetJ)) {
             const sq = getSquare(targetI, targetJ);
-            if (sq) sq.classList.add('dot');
+            if (sq) sq.classList.add('dot', 'pulsing-dot');
         }
     };
 

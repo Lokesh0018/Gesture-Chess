@@ -3,7 +3,7 @@ import { state } from './state.js';
 export const getSquare = (i, j) => document.querySelector(`.child[data-i="${i}"][data-j="${j}"]`);
 
 export const clearDots = () => {
-    document.querySelectorAll('.dot').forEach(el => el.classList.remove('dot'));
+    document.querySelectorAll('.dot').forEach(el => el.classList.remove('dot', 'pulsing-dot'));
     document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
 };
 

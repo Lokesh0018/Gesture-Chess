@@ -72,7 +72,7 @@
   // js/dom.js
   var getSquare = (i, j) => document.querySelector(`.child[data-i="${i}"][data-j="${j}"]`);
   var clearDots = () => {
-    document.querySelectorAll(".dot").forEach((el) => el.classList.remove("dot"));
+    document.querySelectorAll(".dot").forEach((el) => el.classList.remove("dot", "pulsing-dot"));
     document.querySelectorAll(".selected").forEach((el) => el.classList.remove("selected"));
   };
   var createBoard = () => {
@@ -291,7 +291,7 @@
     if (isValidCaptureOrEmpty) {
       if (isMoveSafe(startI, startJ, targetI, targetJ)) {
         const sq = getSquare(targetI, targetJ);
-        if (sq) sq.classList.add("dot");
+        if (sq) sq.classList.add("dot", "pulsing-dot");
       }
     }
     return continueRay;
@@ -311,7 +311,7 @@
     const addDotIfSafe = (targetI, targetJ) => {
       if (isMoveSafe(i, j, targetI, targetJ)) {
         const sq2 = getSquare(targetI, targetJ);
-        if (sq2) sq2.classList.add("dot");
+        if (sq2) sq2.classList.add("dot", "pulsing-dot");
       }
     };
     const type = piece.type;
@@ -496,6 +496,197 @@
     document.body.appendChild(overlay);
   };
 
+  // js/animations.js
+  var playMoveAnimation = (startI, startJ, targetI, targetJ, pieceType, isCapture) => {
+    return new Promise((resolve) => {
+      const attackerSq = getSquare(startI, startJ);
+      const targetSq = getSquare(targetI, targetJ);
+      if (!attackerSq || !targetSq) {
+        resolve();
+        return;
+      }
+      const pieceImg = attackerSq.querySelector("img:not(.particle):not(.shockwave)");
+      if (!pieceImg) {
+        resolve();
+        return;
+      }
+      const attRect = attackerSq.getBoundingClientRect();
+      const tgtRect = targetSq.getBoundingClientRect();
+      const dx = tgtRect.left - attRect.left;
+      const dy = tgtRect.top - attRect.top;
+      let duration = 300;
+      let easing = "cubic-bezier(0.25, 0.1, 0.25, 1)";
+      let needsArc = false;
+      let blurClass = "";
+      let needsAnticipation = true;
+      switch (pieceType.toLowerCase()) {
+        case "pawn":
+          duration = 200;
+          easing = "linear";
+          needsAnticipation = false;
+          break;
+        case "horse":
+          duration = 400;
+          needsArc = true;
+          easing = "cubic-bezier(0.25, 1, 0.5, 1)";
+          break;
+        case "bishop":
+          duration = 350;
+          blurClass = "motion-blur-light";
+          easing = "cubic-bezier(0.4, 0, 0.2, 1)";
+          break;
+        case "rook":
+          duration = 400;
+          easing = "cubic-bezier(0.5, 0, 0.1, 1)";
+          needsAnticipation = true;
+          break;
+        case "queen":
+          duration = 250;
+          blurClass = "motion-blur-heavy";
+          easing = "cubic-bezier(0.8, 0, 0.2, 1)";
+          needsAnticipation = true;
+          break;
+        case "king":
+          duration = 500;
+          easing = "cubic-bezier(0.2, 0.8, 0.2, 1)";
+          needsAnticipation = true;
+          break;
+      }
+      if (blurClass) pieceImg.classList.add(blurClass);
+      const sequence = [];
+      if (needsAnticipation) {
+        const normX = dx === 0 ? 0 : dx / Math.abs(dx);
+        const normY = dy === 0 ? 0 : dy / Math.abs(dy);
+        sequence.push({
+          transform: `translate(${-normX * 10}px, ${-normY * 10}px)`,
+          offset: 0.15
+        });
+      }
+      if (needsArc) {
+        sequence.push({
+          transform: `translate(${dx / 2}px, ${dy / 2 - 50}px) scale(1.2)`,
+          offset: 0.5
+        });
+      }
+      sequence.push({
+        transform: `translate(${dx}px, ${dy}px) scale(1)`,
+        offset: 1
+      });
+      const anim = pieceImg.animate([
+        { transform: "translate(0, 0) scale(1)", offset: 0 },
+        ...sequence
+      ], {
+        duration,
+        easing,
+        fill: "forwards"
+      });
+      anim.onfinish = () => {
+        if (blurClass) pieceImg.classList.remove(blurClass);
+        if (isCapture) {
+          playCombatAnimation(attackerSq, targetSq, pieceImg, resolve);
+        } else {
+          triggerShockwave(targetSq);
+          resolve();
+        }
+      };
+    });
+  };
+  var playCombatAnimation = (attackerSq, targetSq, pieceImg, resolve) => {
+    const color = state.currentTurn;
+    const weapons = [`${color}Gun.png`, "gun.png", "knife.png", "missile.png", "hand-grenade.png", "bomb.png", "star.png", "sight.png"];
+    const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
+    const isGun = randomWeapon.toLowerCase().includes("gun");
+    const targetLock = document.createElement("div");
+    targetLock.className = "target-lock";
+    targetSq.appendChild(targetLock);
+    const weaponNode = document.createElement("img");
+    weaponNode.src = `./pngs/${randomWeapon}`;
+    weaponNode.style.position = "absolute";
+    weaponNode.style.width = "30px";
+    weaponNode.style.height = "auto";
+    weaponNode.style.zIndex = "100";
+    weaponNode.style.left = "50%";
+    weaponNode.style.top = "50%";
+    const attRect = attackerSq.getBoundingClientRect();
+    const tgtRect = targetSq.getBoundingClientRect();
+    setTimeout(() => {
+      if (targetLock.parentNode) targetLock.parentNode.removeChild(targetLock);
+      createParticles(targetSq);
+      triggerShockwave(targetSq);
+      showExplosion(targetSq, () => {
+        resolve();
+      });
+    }, 400);
+  };
+  var showExplosion = (tSq, res) => {
+    const explosions = ["blasting.png", "explosion.png", "nuclear-explosion.png"];
+    const randomExplosion = explosions[Math.floor(Math.random() * explosions.length)];
+    const bang = document.createElement("img");
+    bang.src = `./pngs/${randomExplosion}`;
+    bang.style.position = "absolute";
+    bang.style.width = "60px";
+    bang.style.height = "auto";
+    bang.style.zIndex = "100";
+    bang.style.left = "50%";
+    bang.style.top = "50%";
+    bang.style.transform = "translate(-50%, -50%) scale(0)";
+    bang.style.transition = "transform 0.1s";
+    tSq.appendChild(bang);
+    requestAnimationFrame(() => {
+      bang.style.transform = "translate(-50%, -50%) scale(1.5)";
+    });
+    const tgtImgReal = Array.from(tSq.querySelectorAll("img:not(.particle):not(.shockwave)")).find((img) => img.dataset && img.dataset.value);
+    if (tgtImgReal) {
+      tgtImgReal.style.transition = "opacity 0.2s, transform 0.2s";
+      tgtImgReal.style.opacity = "0";
+      tgtImgReal.style.transform = "scale(0.5)";
+    }
+    setTimeout(() => {
+      if (bang.parentNode) bang.parentNode.removeChild(bang);
+      res();
+    }, 300);
+  };
+  var createParticles = (sq) => {
+    const rect = sq.getBoundingClientRect();
+    const tgtImg = Array.from(sq.querySelectorAll("img")).find((img) => img.dataset && img.dataset.value);
+    const color = tgtImg && tgtImg.classList.contains("white") ? "#ebecd0" : "#739552";
+    for (let i = 0; i < 15; i++) {
+      const p = document.createElement("div");
+      p.className = "particle";
+      p.style.backgroundColor = color;
+      p.style.left = "50%";
+      p.style.top = "50%";
+      sq.appendChild(p);
+      const angle = Math.random() * Math.PI * 2;
+      const velocity = 20 + Math.random() * 40;
+      const dx = Math.cos(angle) * velocity;
+      const dy = Math.sin(angle) * velocity;
+      p.animate([
+        { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`, opacity: 0 }
+      ], {
+        duration: 300 + Math.random() * 200,
+        easing: "cubic-bezier(0.1, 0.8, 0.3, 1)",
+        fill: "forwards"
+      });
+      setTimeout(() => {
+        if (p.parentNode) p.parentNode.removeChild(p);
+      }, 600);
+    }
+  };
+  var triggerShockwave = (sq) => {
+    const wave = document.createElement("div");
+    wave.className = "shockwave";
+    sq.appendChild(wave);
+    requestAnimationFrame(() => {
+      wave.style.transform = "translate(-50%, -50%) scale(10)";
+      wave.style.opacity = "0";
+    });
+    setTimeout(() => {
+      if (wave.parentNode) wave.parentNode.removeChild(wave);
+    }, 400);
+  };
+
   // js/game.js
   var moveSound = new Audio("https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3");
   var captureSound = new Audio("https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3");
@@ -583,117 +774,22 @@
     notation += files[targetJ] + ranks[targetI];
     return notation;
   };
-  var playShootingAnimation = (startI, startJ, targetI, targetJ) => {
-    return new Promise((resolve) => {
-      const attackerSq = getSquare(startI, startJ);
-      const targetSq = getSquare(targetI, targetJ);
-      if (!attackerSq || !targetSq) {
-        resolve();
-        return;
-      }
-      const color = state.currentTurn;
-      const weapons = [`${color}Gun.png`, "gun.png", "knife.png", "missile.png", "hand-grenade.png", "bomb.png", "star.png", "sight.png"];
-      const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
-      const isGun = randomWeapon.toLowerCase().includes("gun");
-      const weaponNode = document.createElement("img");
-      weaponNode.src = `./pngs/${randomWeapon}`;
-      weaponNode.style.position = "absolute";
-      weaponNode.style.width = "30px";
-      weaponNode.style.height = "auto";
-      weaponNode.style.zIndex = "100";
-      weaponNode.style.left = "50%";
-      weaponNode.style.top = "50%";
-      const attRect = attackerSq.getBoundingClientRect();
-      const tgtRect = targetSq.getBoundingClientRect();
-      const dx = tgtRect.left - attRect.left;
-      const dy = tgtRect.top - attRect.top;
-      const angleRad = Math.atan2(dy, dx);
-      const angleDeg = angleRad * 180 / Math.PI;
-      const offsetX = Math.cos(angleRad) * 25;
-      const offsetY = Math.sin(angleRad) * 25;
-      const flipY = Math.abs(angleDeg) > 90 ? -1 : 1;
-      if (isGun) {
-        weaponNode.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg) scaleX(0) scaleY(0)`;
-        weaponNode.style.transition = "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-        attackerSq.appendChild(weaponNode);
-        requestAnimationFrame(() => {
-          weaponNode.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg) scaleX(1) scaleY(${flipY})`;
-        });
-        setTimeout(() => {
-          const bullet = document.createElement("div");
-          bullet.style.position = "absolute";
-          bullet.style.width = "12px";
-          bullet.style.height = "4px";
-          bullet.style.backgroundColor = "#ffcc00";
-          bullet.style.borderRadius = "2px";
-          bullet.style.boxShadow = "0 0 5px #ff6600";
-          bullet.style.zIndex = "99";
-          bullet.style.left = "50%";
-          bullet.style.top = "50%";
-          bullet.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg)`;
-          bullet.style.transition = "transform 0.15s linear";
-          attackerSq.appendChild(bullet);
-          requestAnimationFrame(() => {
-            bullet.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${angleDeg}deg)`;
-          });
-          setTimeout(() => {
-            if (bullet.parentNode) bullet.parentNode.removeChild(bullet);
-            showExplosion(targetSq, resolve, weaponNode);
-          }, 150);
-        }, 200);
-      } else {
-        weaponNode.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg) scaleX(0) scaleY(0)`;
-        weaponNode.style.transition = "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
-        attackerSq.appendChild(weaponNode);
-        requestAnimationFrame(() => {
-          weaponNode.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg) scaleX(1) scaleY(${flipY})`;
-          setTimeout(() => {
-            weaponNode.style.transition = "transform 0.25s ease-in";
-            weaponNode.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${angleDeg}deg) scaleX(1) scaleY(${flipY})`;
-            setTimeout(() => {
-              showExplosion(targetSq, resolve, weaponNode);
-            }, 250);
-          }, 150);
-        });
-      }
-      function showExplosion(tSq, res, wNode) {
-        const explosions = ["blasting.png", "explosion.png", "nuclear-explosion.png"];
-        const randomExplosion = explosions[Math.floor(Math.random() * explosions.length)];
-        const bang = document.createElement("img");
-        bang.src = `./pngs/${randomExplosion}`;
-        bang.style.position = "absolute";
-        bang.style.width = "60px";
-        bang.style.height = "auto";
-        bang.style.zIndex = "100";
-        bang.style.left = "50%";
-        bang.style.top = "50%";
-        bang.style.transform = "translate(-50%, -50%) scale(0)";
-        bang.style.transition = "transform 0.1s";
-        tSq.appendChild(bang);
-        requestAnimationFrame(() => {
-          bang.style.transform = "translate(-50%, -50%) scale(1.5)";
-        });
-        const tgtImgReal = Array.from(tSq.querySelectorAll("img")).find((img) => img.dataset && img.dataset.value);
-        if (tgtImgReal) {
-          tgtImgReal.style.transition = "opacity 0.2s, transform 0.2s";
-          tgtImgReal.style.opacity = "0";
-          tgtImgReal.style.transform = "scale(0.5)";
-        }
-        setTimeout(() => {
-          if (wNode.parentNode) wNode.parentNode.removeChild(wNode);
-          if (bang.parentNode) bang.parentNode.removeChild(bang);
-          res();
-        }, 300);
-      }
-    });
-  };
   var movePiece = async (targetI, targetJ) => {
     if (window.isAnimating) return;
     const { i: startI, j: startJ } = state.selectedSquare;
     const piece = state.board[startI][startJ];
     const targetPiece = state.board[targetI][targetJ];
     let captured = false;
-    if (piece.type === PIECES.PAWN || targetPiece) {
+    let isEnPassant = false;
+    if (targetPiece) {
+      captured = true;
+    } else if (piece.type === PIECES.PAWN && Math.abs(startJ - targetJ) === 1) {
+      if (state.board[startI][targetJ]) {
+        captured = true;
+        isEnPassant = true;
+      }
+    }
+    if (piece.type === PIECES.PAWN || captured) {
       state.halfMoveClock = 0;
     } else {
       state.halfMoveClock++;
@@ -703,19 +799,14 @@
     const tSq = getSquare(targetI, targetJ);
     if (sSq) sSq.classList.add("last-move");
     if (tSq) tSq.classList.add("last-move");
+    window.isAnimating = true;
+    await playMoveAnimation(startI, startJ, targetI, targetJ, piece.type, captured);
+    window.isAnimating = false;
     if (targetPiece) {
-      captured = true;
-      window.isAnimating = true;
-      await playShootingAnimation(startI, startJ, targetI, targetJ);
-      window.isAnimating = false;
       addCapturedToPanel(targetPiece);
-    } else if (piece.type === PIECES.PAWN && Math.abs(startJ - targetJ) === 1) {
+    } else if (isEnPassant) {
       const capturedPawn = state.board[startI][targetJ];
       if (capturedPawn) {
-        captured = true;
-        window.isAnimating = true;
-        await playShootingAnimation(startI, startJ, startI, targetJ);
-        window.isAnimating = false;
         addCapturedToPanel(capturedPawn);
         state.board[startI][targetJ] = null;
       }

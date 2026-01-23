@@ -274,3 +274,69 @@ img:active {
 .move-white:hover, .move-black:hover {
     background-color: #3d3b39;
 }
+
+/* Advanced Animations */
+@keyframes pulseDot {
+    0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; box-shadow: 0 0 5px rgba(255, 255, 0, 0.2); }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; box-shadow: 0 0 15px rgba(255, 255, 0, 0.8); }
+    100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; box-shadow: 0 0 5px rgba(255, 255, 0, 0.2); }
+}
+
+.pulsing-dot::after {
+    animation: pulseDot 1.5s infinite ease-in-out !important;
+    background-color: rgba(255, 255, 0, 0.6) !important;
+}
+
+.dot:has(img).pulsing-dot::after {
+    background-color: transparent !important;
+    border-color: rgba(255, 0, 0, 0.8) !important;
+    animation: pulseDot 1s infinite ease-in-out !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.8), inset 0 0 10px rgba(255, 0, 0, 0.5) !important;
+}
+
+.particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.shockwave {
+    position: absolute;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 90;
+    opacity: 0.8;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%) scale(1);
+    transition: transform 0.4s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.4s ease-out;
+}
+
+.motion-blur-light { filter: blur(2px); }
+.motion-blur-heavy { filter: blur(4px); }
+
+.target-lock {
+    position: absolute;
+    border: 3px dashed red;
+    border-radius: 50%;
+    width: 90%;
+    height: 90%;
+    top: 5%;
+    left: 5%;
+    box-sizing: border-box;
+    animation: spinLock 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    pointer-events: none;
+    z-index: 101;
+}
+
+@keyframes spinLock {
+    0% { transform: rotate(-90deg) scale(2); opacity: 0; }
+    50% { transform: rotate(45deg) scale(0.9); opacity: 1; }
+    100% { transform: rotate(90deg) scale(1); opacity: 1; }
+}
