@@ -37,7 +37,7 @@ export const renderBoard = () => {
             const piece = state.board[i][j];
             if (piece) {
                 const img = document.createElement('img');
-                img.src = `./pieces/${piece.color}${piece.type}.png`;
+                img.src = `./pngs/${piece.color}${piece.type}.png`;
                 img.draggable = true;
                 img.dataset.i = i;
                 img.dataset.j = j;

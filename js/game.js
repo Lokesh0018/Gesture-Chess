@@ -113,60 +113,119 @@ const playShootingAnimation = (startI, startJ, targetI, targetJ) => {
             return;
         }
 
-        const gun = document.createElement('div');
-        gun.innerText = '🔫';
-        gun.style.position = 'absolute';
-        gun.style.fontSize = '35px';
-        gun.style.zIndex = '100';
-        gun.style.transition = 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        const color = state.currentTurn;
+        const weapons = [`${color}Gun.png`, 'gun.png', 'knife.png', 'missile.png', 'hand-grenade.png', 'bomb.png', 'star.png', 'sight.png'];
+        const randomWeapon = weapons[Math.floor(Math.random() * weapons.length)];
+        const isGun = randomWeapon.toLowerCase().includes('gun');
+        
+        const weaponNode = document.createElement('img');
+        weaponNode.src = `./pngs/${randomWeapon}`;
+        weaponNode.style.position = 'absolute';
+        weaponNode.style.width = '30px'; 
+        weaponNode.style.height = 'auto'; // Prevent stretching from global img { height: 85% }
+        weaponNode.style.zIndex = '100';
+        weaponNode.style.left = '50%';
+        weaponNode.style.top = '50%';
         
         const attRect = attackerSq.getBoundingClientRect();
         const tgtRect = targetSq.getBoundingClientRect();
         
         const dx = tgtRect.left - attRect.left;
         const dy = tgtRect.top - attRect.top;
-        let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-        angle = angle + 180;
+        const angleRad = Math.atan2(dy, dx);
+        const angleDeg = angleRad * 180 / Math.PI;
 
-        gun.style.transform = `translate(-50%, -50%) rotate(${angle}deg) scale(0)`;
-        gun.style.left = '50%';
-        gun.style.top = '50%';
-        
-        attackerSq.appendChild(gun);
+        const offsetX = Math.cos(angleRad) * 25;
+        const offsetY = Math.sin(angleRad) * 25;
+        const flipY = (Math.abs(angleDeg) > 90) ? -1 : 1;
 
-        requestAnimationFrame(() => {
-            gun.style.transform = `translate(-50%, -50%) rotate(${angle}deg) scale(1)`;
-        });
+        if (isGun) {
+            weaponNode.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg) scaleX(0) scaleY(0)`;
+            weaponNode.style.transition = 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            attackerSq.appendChild(weaponNode);
 
-        setTimeout(() => {
-            const bang = document.createElement('div');
-            bang.innerText = '💥';
+            requestAnimationFrame(() => {
+                weaponNode.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg) scaleX(1) scaleY(${flipY})`;
+            });
+
+            setTimeout(() => {
+                const bullet = document.createElement('div');
+                bullet.style.position = 'absolute';
+                bullet.style.width = '12px';
+                bullet.style.height = '4px';
+                bullet.style.backgroundColor = '#ffcc00';
+                bullet.style.borderRadius = '2px';
+                bullet.style.boxShadow = '0 0 5px #ff6600';
+                bullet.style.zIndex = '99';
+                bullet.style.left = '50%';
+                bullet.style.top = '50%';
+                bullet.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg)`;
+                bullet.style.transition = 'transform 0.15s linear';
+                
+                attackerSq.appendChild(bullet);
+
+                requestAnimationFrame(() => {
+                    bullet.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${angleDeg}deg)`;
+                });
+
+                setTimeout(() => {
+                    if (bullet.parentNode) bullet.parentNode.removeChild(bullet);
+                    showExplosion(targetSq, resolve, weaponNode);
+                }, 150);
+
+            }, 200);
+        } else {
+            weaponNode.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg) scaleX(0) scaleY(0)`;
+            weaponNode.style.transition = 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            attackerSq.appendChild(weaponNode);
+
+            requestAnimationFrame(() => {
+                weaponNode.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) rotate(${angleDeg}deg) scaleX(1) scaleY(${flipY})`;
+                
+                setTimeout(() => {
+                    weaponNode.style.transition = 'transform 0.25s ease-in';
+                    weaponNode.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${angleDeg}deg) scaleX(1) scaleY(${flipY})`;
+                    
+                    setTimeout(() => {
+                        showExplosion(targetSq, resolve, weaponNode);
+                    }, 250);
+                }, 150);
+            });
+        }
+
+        function showExplosion(tSq, res, wNode) {
+            const explosions = ['blasting.png', 'explosion.png', 'nuclear-explosion.png'];
+            const randomExplosion = explosions[Math.floor(Math.random() * explosions.length)];
+            
+            const bang = document.createElement('img');
+            bang.src = `./pngs/${randomExplosion}`;
             bang.style.position = 'absolute';
-            bang.style.fontSize = '40px';
+            bang.style.width = '60px';
+            bang.style.height = 'auto'; // Prevent stretching
             bang.style.zIndex = '100';
             bang.style.left = '50%';
             bang.style.top = '50%';
             bang.style.transform = 'translate(-50%, -50%) scale(0)';
             bang.style.transition = 'transform 0.1s';
-            targetSq.appendChild(bang);
+            tSq.appendChild(bang);
             
             requestAnimationFrame(() => {
                 bang.style.transform = 'translate(-50%, -50%) scale(1.5)';
             });
 
-            const tgtImg = targetSq.querySelector('img');
-            if (tgtImg) {
-                tgtImg.style.transition = 'opacity 0.2s, transform 0.2s';
-                tgtImg.style.opacity = '0';
-                tgtImg.style.transform = 'scale(0.5)';
+            const tgtImgReal = Array.from(tSq.querySelectorAll('img')).find(img => img.dataset && img.dataset.value);
+            if (tgtImgReal) {
+                tgtImgReal.style.transition = 'opacity 0.2s, transform 0.2s';
+                tgtImgReal.style.opacity = '0';
+                tgtImgReal.style.transform = 'scale(0.5)';
             }
 
             setTimeout(() => {
-                if(gun.parentNode) gun.parentNode.removeChild(gun);
+                if(wNode.parentNode) wNode.parentNode.removeChild(wNode);
                 if(bang.parentNode) bang.parentNode.removeChild(bang);
-                resolve();
+                res();
             }, 300);
-        }, 200);
+        }
     });
 };
 
@@ -282,7 +341,7 @@ export const movePiece = async (targetI, targetJ) => {
 
 const addCapturedToPanel = (piece) => {
     const img = document.createElement('img');
-    img.src = `./pieces/${piece.color}${piece.type}.png`;
+    img.src = `./pngs/${piece.color}${piece.type}.png`;
     img.style.width = '40px';
     img.style.height = '40px';
     img.style.cursor = 'default';

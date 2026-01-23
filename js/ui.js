@@ -138,7 +138,7 @@ export const showPromotionModal = (color, callback) => {
     const choices = [PIECES.QUEEN, PIECES.ROOK, PIECES.HORSE, PIECES.BISHOP];
     choices.forEach(choice => {
         const img = document.createElement('img');
-        img.src = `./pieces/${color}${choice}.png`;
+        img.src = `./pngs/${color}${choice}.png`;
         img.style.cursor = 'pointer';
         img.style.width = '60px';
         img.style.height = '60px';
