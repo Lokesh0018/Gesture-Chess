@@ -140,6 +140,7 @@ body {
     grid-template-rows: repeat(8, 1fr);
     grid-template-columns: repeat(8, 1fr);
     width: 100%;
+    min-width: 50vh;
     max-width: 75vh;
     aspect-ratio: 1 / 1;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
@@ -273,6 +274,19 @@ img:active {
 }
 .move-white:hover, .move-black:hover {
     background-color: #3d3b39;
+}
+
+@keyframes cameraShake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(-3px, 3px) rotate(-1deg); }
+    40% { transform: translate(3px, -3px) rotate(1deg); }
+    60% { transform: translate(-3px, -3px) rotate(0deg); }
+    80% { transform: translate(3px, 3px) rotate(-1deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.camera-shake {
+    animation: cameraShake 0.3s cubic-bezier(.36,.07,.19,.97) both;
 }
 
 /* Advanced Animations */

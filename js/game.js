@@ -2,7 +2,7 @@ import { state, COLORS, PIECES, recordPosition } from './state.js';
 import { clearDots, renderBoard, getSquare } from './dom.js';
 import { isUnderAttack, hasAnyValidMoves, checkDrawConditions } from './logic.js';
 import { showPromotionModal, showCheckMessage, showGameOver, showNotification } from './ui.js';
-import { playMoveAnimation } from './animations.js';
+import { playMoveAnimation, playCastlingRookAnimation, playPromotionAscension } from './animations.js';
 
 const moveSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3');
 const captureSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3');
@@ -137,7 +137,15 @@ export const movePiece = async (targetI, targetJ) => {
     if(tSq) tSq.classList.add('last-move');
 
     window.isAnimating = true;
-    await playMoveAnimation(startI, startJ, targetI, targetJ, piece.type, captured);
+    const animations = [playMoveAnimation(startI, startJ, targetI, targetJ, piece.type, captured)];
+    
+    if (piece.type === PIECES.KING && Math.abs(startJ - targetJ) === 2) {
+        const rookJ = targetJ === 2 ? 0 : 7;
+        const rookDestJ = targetJ === 2 ? 3 : 5;
+        animations.push(playCastlingRookAnimation(startI, rookJ, startI, rookDestJ));
+    }
+
+    await Promise.all(animations);
     window.isAnimating = false;
 
     if (targetPiece) {
@@ -210,9 +218,12 @@ export const movePiece = async (targetI, targetJ) => {
 
     if (piece.type === PIECES.PAWN) {
         if ((state.currentTurn === COLORS.WHITE && targetI === 0) || (state.currentTurn === COLORS.BLACK && targetI === 7)) {
-            showPromotionModal(state.currentTurn, (chosenType) => {
+            showPromotionModal(state.currentTurn, async (chosenType) => {
                 piece.type = chosenType;
                 let char = chosenType === PIECES.HORSE ? 'N' : chosenType[0];
+                window.isAnimating = true;
+                await playPromotionAscension(targetI, targetJ, state.currentTurn, chosenType);
+                window.isAnimating = false;
                 endTurn(char);
             });
             return;
@@ -224,7 +235,7 @@ export const movePiece = async (targetI, targetJ) => {
 
 const addCapturedToPanel = (piece) => {
     const img = document.createElement('img');
-    img.src = `./pngs/${piece.color}${piece.type}.png`;
+    img.src = `./asserts/${piece.color}${piece.type}.png`;
     img.style.width = '40px';
     img.style.height = '40px';
     img.style.cursor = 'default';

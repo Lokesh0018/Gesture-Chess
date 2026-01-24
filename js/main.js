@@ -181,9 +181,37 @@ window.onload = () => {
         }
     });
 
+    let lastSparkTime = 0;
     container.addEventListener("dragover", (e) => {
         e.preventDefault(); 
         e.dataTransfer.dropEffect = "move";
+        
+        const now = Date.now();
+        if (now - lastSparkTime > 50) {
+            lastSparkTime = now;
+            const spark = document.createElement('div');
+            spark.style.position = 'fixed';
+            spark.style.left = e.clientX + 'px';
+            spark.style.top = e.clientY + 'px';
+            spark.style.width = '6px';
+            spark.style.height = '6px';
+            spark.style.backgroundColor = '#ffcc00';
+            spark.style.borderRadius = '50%';
+            spark.style.boxShadow = '0 0 8px #ff6600, 0 0 15px #ff0000';
+            spark.style.pointerEvents = 'none';
+            spark.style.zIndex = '9999';
+            document.body.appendChild(spark);
+
+            const dx = (Math.random() - 0.5) * 60;
+            const dy = Math.random() * 60 + 20;
+
+            spark.animate([
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`, opacity: 0 }
+            ], { duration: 600, easing: 'ease-out', fill: 'forwards' });
+
+            setTimeout(() => { if (spark.parentNode) spark.parentNode.removeChild(spark); }, 600);
+        }
     });
 
     container.addEventListener("drop", (e) => {

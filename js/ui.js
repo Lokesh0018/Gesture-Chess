@@ -138,7 +138,7 @@ export const showPromotionModal = (color, callback) => {
     const choices = [PIECES.QUEEN, PIECES.ROOK, PIECES.HORSE, PIECES.BISHOP];
     choices.forEach(choice => {
         const img = document.createElement('img');
-        img.src = `./pngs/${color}${choice}.png`;
+        img.src = `./asserts/${color}${choice}.png`;
         img.style.cursor = 'pointer';
         img.style.width = '60px';
         img.style.height = '60px';
@@ -214,24 +214,58 @@ export const showGameOver = (message) => {
     overlay.style.left = '0';
     overlay.style.width = '100vw';
     overlay.style.height = '100vh';
-    overlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.85)';
     overlay.style.zIndex = '999';
     overlay.style.display = 'flex';
     overlay.style.justifyContent = 'center';
     overlay.style.alignItems = 'center';
-
-    const modal = document.createElement('div');
-    modal.style.backgroundColor = '#262522';
-    modal.style.color = '#fff';
-    modal.style.padding = '40px';
-    modal.style.borderRadius = '8px';
-    modal.style.textAlign = 'center';
-    modal.style.fontSize = '32px';
-    modal.style.fontWeight = 'bold';
-    modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-    
-    modal.innerHTML = `<div>${message}</div><button onclick="location.reload()" style="margin-top:30px; padding:12px 24px; font-size:18px; font-weight:bold; cursor:pointer; background-color:#739552; color:#fff; border:none; border-radius:8px;">Play Again</button>`;
-    
-    overlay.appendChild(modal);
+    overlay.style.flexDirection = 'column';
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 1s ease-in';
     document.body.appendChild(overlay);
+
+    const loserColor = message.includes("Wins") ? (message.includes("White Wins") ? COLORS.BLACK : COLORS.WHITE) : state.currentTurn;
+    const losingKingImg = Array.from(document.querySelectorAll(`img.${loserColor}`)).find(img => img.dataset.value === PIECES.KING);
+
+    if (losingKingImg) {
+        losingKingImg.style.transition = 'transform 1.5s cubic-bezier(0.5, 0, 1, 1)';
+        losingKingImg.style.transformOrigin = 'bottom right';
+        requestAnimationFrame(() => {
+            losingKingImg.style.transform = 'rotate(90deg) translate(0, 20%)';
+        });
+    }
+
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        
+        const isWin = message.includes("Wins") || message.includes("Checkmate");
+        const bannerSrc = isWin ? './asserts/game-over.gif' : './asserts/banner.gif';
+        
+        const banner = document.createElement('img');
+        banner.src = bannerSrc;
+        banner.style.width = '600px';
+        banner.style.maxWidth = '90vw';
+        banner.style.height = 'auto';
+        banner.style.transform = 'scale(0)';
+        overlay.appendChild(banner);
+
+        banner.animate([
+            { transform: 'scale(0) rotate(-10deg)', opacity: 0 },
+            { transform: 'scale(1.1) rotate(5deg)', opacity: 1 },
+            { transform: 'scale(1) rotate(0deg)', opacity: 1 }
+        ], { duration: 800, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)', fill: 'forwards' });
+
+        const modal = document.createElement('div');
+        modal.style.marginTop = '30px';
+        modal.style.textAlign = 'center';
+        modal.innerHTML = `<div style="color:#fff; font-size:32px; font-weight:bold; margin-bottom:20px; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${message}</div>
+                           <button onclick="location.reload()" style="padding:12px 24px; font-size:18px; font-weight:bold; cursor:pointer; background-color:#739552; color:#fff; border:none; border-radius:8px; box-shadow: 0 4px 10px rgba(0,0,0,0.8); transition: transform 0.2s;">Play Again</button>`;
+        overlay.appendChild(modal);
+        
+        modal.animate([
+            { transform: 'translateY(50px)', opacity: 0 },
+            { transform: 'translateY(0)', opacity: 1 }
+        ], { duration: 600, delay: 600, fill: 'forwards' });
+
+    }, 1200);
 };
