@@ -248,8 +248,8 @@ export const showGameOver = (message) => {
         bannerText.style.fontFamily = "Arial, sans-serif";
         bannerText.style.fontSize = 'min(10vw, 80px)';
         bannerText.style.fontWeight = '900';
-        bannerText.style.color = '#fff';
-        bannerText.style.textShadow = '0 0 20px rgba(255,255,255,0.5), 0 0 40px #00aaff, 0 0 80px #0055ff';
+        bannerText.style.color = '#ebecd0';
+        bannerText.style.textShadow = '0 0 20px rgba(115, 149, 82, 0.5), 0 0 40px #739552, 0 0 80px #739552';
         bannerText.style.letterSpacing = '8px';
         bannerText.style.textTransform = 'uppercase';
         bannerText.style.transform = 'scale(0)';
@@ -264,7 +264,7 @@ export const showGameOver = (message) => {
         subMsg.innerText = message;
         subMsg.style.fontFamily = "Arial, sans-serif";
         subMsg.style.fontSize = '24px';
-        subMsg.style.color = '#ddd';
+        subMsg.style.color = '#ebecd0';
         subMsg.style.marginTop = '20px';
         subMsg.style.textShadow = '0 2px 4px rgba(0,0,0,0.8)';
         subMsg.style.opacity = '0';
@@ -282,8 +282,8 @@ export const showGameOver = (message) => {
         btn.style.fontSize = '20px';
         btn.style.fontWeight = 'bold';
         btn.style.color = '#fff';
-        btn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-        btn.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+        btn.style.backgroundColor = '#739552';
+        btn.style.border = '1px solid #ebecd0';
         btn.style.borderRadius = '30px';
         btn.style.cursor = 'pointer';
         btn.style.backdropFilter = 'blur(10px)';
@@ -292,12 +292,12 @@ export const showGameOver = (message) => {
         btn.style.opacity = '0';
         
         btn.onmouseover = () => {
-            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            btn.style.backgroundColor = '#81b64c';
             btn.style.transform = 'translateY(-2px)';
-            btn.style.boxShadow = '0 6px 20px rgba(0,170,255,0.4)';
+            btn.style.boxShadow = '0 6px 20px rgba(115, 149, 82, 0.6)';
         };
         btn.onmouseout = () => {
-            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            btn.style.backgroundColor = '#739552';
             btn.style.transform = 'translateY(0)';
             btn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
         };
