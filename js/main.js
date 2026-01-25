@@ -33,7 +33,7 @@ window.onload = () => {
             <div class="player-avatar" style="background-color: #7b4f3b; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
             <div class="player-name">Player 2</div>
         </div>
-        <div class="player-clock clock-dark" id="black-clock">10:00</div>
+        <div class="player-clock clock-dark" id="black-clock">00:00</div>
     `;
 
     // Player 1 Header (Bottom)
@@ -44,7 +44,7 @@ window.onload = () => {
             <div class="player-avatar" style="background-color: #aaa; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
             <div class="player-name">Player 1</div>
         </div>
-        <div class="player-clock" id="white-clock">10:00</div>
+        <div class="player-clock" id="white-clock">00:00</div>
     `;
 
     // Board Row (Left Capture, Board, Right Capture)

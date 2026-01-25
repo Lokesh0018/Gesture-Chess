@@ -27,8 +27,8 @@ export const state = {
     positionHistory: {}, // Store counts of FEN-like strings
     moveList: [], // Array of {white: 'e4', black: 'e5'}
     
-    whiteTime: 600,
-    blackTime: 600,
+    whiteTime: 0,
+    blackTime: 0,
     timerInterval: null,
     clockWhiteDOM: null,
     clockBlackDOM: null

@@ -238,34 +238,77 @@ export const showGameOver = (message) => {
     setTimeout(() => {
         overlay.style.opacity = '1';
         
-        const isWin = message.includes("Wins") || message.includes("Checkmate");
-        const bannerSrc = isWin ? './asserts/game-over.gif' : './asserts/banner.gif';
-        
-        const banner = document.createElement('img');
-        banner.src = bannerSrc;
-        banner.style.width = '600px';
-        banner.style.maxWidth = '90vw';
-        banner.style.height = 'auto';
-        banner.style.transform = 'scale(0)';
-        overlay.appendChild(banner);
+        let mainTextStr = "GAME OVER";
+        if (message.includes("Checkmate")) mainTextStr = "CHECKMATE";
+        else if (message.includes("Time")) mainTextStr = "TIME'S UP";
+        else if (message.includes("Draw") || message.includes("Stalemate")) mainTextStr = "DRAW";
 
-        banner.animate([
-            { transform: 'scale(0) rotate(-10deg)', opacity: 0 },
-            { transform: 'scale(1.1) rotate(5deg)', opacity: 1 },
-            { transform: 'scale(1) rotate(0deg)', opacity: 1 }
-        ], { duration: 800, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)', fill: 'forwards' });
+        const bannerText = document.createElement('div');
+        bannerText.innerText = mainTextStr;
+        bannerText.style.fontFamily = "Arial, sans-serif";
+        bannerText.style.fontSize = 'min(10vw, 80px)';
+        bannerText.style.fontWeight = '900';
+        bannerText.style.color = '#fff';
+        bannerText.style.textShadow = '0 0 20px rgba(255,255,255,0.5), 0 0 40px #00aaff, 0 0 80px #0055ff';
+        bannerText.style.letterSpacing = '8px';
+        bannerText.style.textTransform = 'uppercase';
+        bannerText.style.transform = 'scale(0)';
+        overlay.appendChild(bannerText);
 
-        const modal = document.createElement('div');
-        modal.style.marginTop = '30px';
-        modal.style.textAlign = 'center';
-        modal.innerHTML = `<div style="color:#fff; font-size:32px; font-weight:bold; margin-bottom:20px; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">${message}</div>
-                           <button onclick="location.reload()" style="padding:12px 24px; font-size:18px; font-weight:bold; cursor:pointer; background-color:#739552; color:#fff; border:none; border-radius:8px; box-shadow: 0 4px 10px rgba(0,0,0,0.8); transition: transform 0.2s;">Play Again</button>`;
-        overlay.appendChild(modal);
+        bannerText.animate([
+            { transform: 'scale(3)', opacity: 0, filter: 'blur(20px)' },
+            { transform: 'scale(1)', opacity: 1, filter: 'blur(0px)' }
+        ], { duration: 1000, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' });
+
+        const subMsg = document.createElement('div');
+        subMsg.innerText = message;
+        subMsg.style.fontFamily = "Arial, sans-serif";
+        subMsg.style.fontSize = '24px';
+        subMsg.style.color = '#ddd';
+        subMsg.style.marginTop = '20px';
+        subMsg.style.textShadow = '0 2px 4px rgba(0,0,0,0.8)';
+        subMsg.style.opacity = '0';
+        overlay.appendChild(subMsg);
+
+        subMsg.animate([
+            { opacity: 0, transform: 'translateY(20px)' },
+            { opacity: 1, transform: 'translateY(0)' }
+        ], { duration: 800, delay: 600, easing: 'ease-out', fill: 'forwards' });
+
+        const btn = document.createElement('button');
+        btn.innerText = 'Play Again';
+        btn.style.marginTop = '40px';
+        btn.style.padding = '15px 40px';
+        btn.style.fontSize = '20px';
+        btn.style.fontWeight = 'bold';
+        btn.style.color = '#fff';
+        btn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        btn.style.border = '1px solid rgba(255, 255, 255, 0.3)';
+        btn.style.borderRadius = '30px';
+        btn.style.cursor = 'pointer';
+        btn.style.backdropFilter = 'blur(10px)';
+        btn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+        btn.style.transition = 'all 0.3s ease';
+        btn.style.opacity = '0';
         
-        modal.animate([
-            { transform: 'translateY(50px)', opacity: 0 },
-            { transform: 'translateY(0)', opacity: 1 }
-        ], { duration: 600, delay: 600, fill: 'forwards' });
+        btn.onmouseover = () => {
+            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            btn.style.transform = 'translateY(-2px)';
+            btn.style.boxShadow = '0 6px 20px rgba(0,170,255,0.4)';
+        };
+        btn.onmouseout = () => {
+            btn.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            btn.style.transform = 'translateY(0)';
+            btn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+        };
+
+        btn.onclick = () => window.location.reload();
+        overlay.appendChild(btn);
+
+        btn.animate([
+            { opacity: 0, transform: 'translateY(20px)' },
+            { opacity: 1, transform: 'translateY(0)' }
+        ], { duration: 800, delay: 1000, easing: 'ease-out', fill: 'forwards' });
 
     }, 1200);
 };

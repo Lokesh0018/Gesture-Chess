@@ -289,6 +289,36 @@ img:active {
     animation: cameraShake 0.3s cubic-bezier(.36,.07,.19,.97) both;
 }
 
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    15% { transform: scale(1.15); }
+    30% { transform: scale(1); }
+    45% { transform: scale(1.15); }
+    60% { transform: scale(1); }
+    100% { transform: scale(1); }
+}
+
+.in-check {
+    box-shadow: inset 0 0 30px rgba(255, 0, 0, 0.8), 0 0 20px rgba(255, 0, 0, 0.8) !important;
+    background-color: rgba(255, 0, 0, 0.3) !important;
+}
+
+.in-check img {
+    animation: heartbeat 1.5s infinite;
+    filter: drop-shadow(0 0 10px red);
+}
+
+@keyframes dropIn {
+    0% { transform: translateY(-500px); opacity: 0; }
+    60% { transform: translateY(20px); opacity: 1; }
+    80% { transform: translateY(-10px); }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+.drop-in {
+    animation: dropIn 0.8s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
 /* Advanced Animations */
 @keyframes pulseDot {
     0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; box-shadow: 0 0 5px rgba(255, 255, 0, 0.2); }

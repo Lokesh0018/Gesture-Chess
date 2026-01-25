@@ -17,19 +17,11 @@ export const startTimer = () => {
     if (state.timerInterval) return;
     state.timerInterval = setInterval(() => {
         if (state.currentTurn === COLORS.WHITE) {
-            state.whiteTime--;
+            state.whiteTime++;
             if (state.clockWhiteDOM) state.clockWhiteDOM.innerText = formatTime(state.whiteTime);
-            if (state.whiteTime <= 0) {
-                stopTimer();
-                showGameOver("Black Wins on Time");
-            }
         } else {
-            state.blackTime--;
+            state.blackTime++;
             if (state.clockBlackDOM) state.clockBlackDOM.innerText = formatTime(state.blackTime);
-            if (state.blackTime <= 0) {
-                stopTimer();
-                showGameOver("White Wins on Time");
-            }
         }
     }, 1000);
 };
@@ -73,7 +65,14 @@ export const postMoveChecks = () => {
     
     const drawMsg = checkDrawConditions();
     if (drawMsg) {
-        showGameOver(drawMsg);
+        stopTimer();
+        if (state.whiteTime > state.blackTime) {
+            showGameOver(`Black Wins! (Time Tiebreaker on ${drawMsg})`);
+        } else if (state.blackTime > state.whiteTime) {
+            showGameOver(`White Wins! (Time Tiebreaker on ${drawMsg})`);
+        } else {
+            showGameOver(`Stalemate! (Time Tied on ${drawMsg})`);
+        }
         return;
     }
 
@@ -137,7 +136,8 @@ export const movePiece = async (targetI, targetJ) => {
     if(tSq) tSq.classList.add('last-move');
 
     window.isAnimating = true;
-    const animations = [playMoveAnimation(startI, startJ, targetI, targetJ, piece.type, captured)];
+    const actualVictimSq = isEnPassant ? getSquare(startI, targetJ) : getSquare(targetI, targetJ);
+    const animations = [playMoveAnimation(startI, startJ, targetI, targetJ, piece.type, captured, isEnPassant, actualVictimSq)];
     
     if (piece.type === PIECES.KING && Math.abs(startJ - targetJ) === 2) {
         const rookJ = targetJ === 2 ? 0 : 7;

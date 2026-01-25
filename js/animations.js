@@ -4,7 +4,7 @@ import { state } from './state.js';
 /**
  * Main animation orchestrator.
  */
-export const playMoveAnimation = (startI, startJ, targetI, targetJ, pieceType, isCapture) => {
+export const playMoveAnimation = (startI, startJ, targetI, targetJ, pieceType, isCapture, isEnPassant, actualVictimSq) => {
     return new Promise(resolve => {
         const attackerSq = getSquare(startI, startJ);
         const targetSq = getSquare(targetI, targetJ);
@@ -107,7 +107,7 @@ export const playMoveAnimation = (startI, startJ, targetI, targetJ, pieceType, i
             if (blurClass) pieceImg.classList.remove(blurClass);
             if (isCapture) {
                 // If it's a capture, trigger combat
-                playCombatAnimation(attackerSq, targetSq, pieceImg, resolve, pieceType);
+                playCombatAnimation(attackerSq, actualVictimSq || targetSq, pieceImg, resolve, pieceType, isEnPassant);
             } else {
                 triggerShockwave(targetSq);
                 resolve();
@@ -116,7 +116,7 @@ export const playMoveAnimation = (startI, startJ, targetI, targetJ, pieceType, i
     });
 };
 
-const playCombatAnimation = (attackerSq, targetSq, pieceImg, resolve, attackerType) => {
+const playCombatAnimation = (attackerSq, targetSq, pieceImg, resolve, attackerType, isEnPassant) => {
     const pType = (attackerType || '').toLowerCase();
 
     const container = document.querySelector('.container');
@@ -124,6 +124,35 @@ const playCombatAnimation = (attackerSq, targetSq, pieceImg, resolve, attackerTy
         container.classList.remove('camera-shake');
         void container.offsetWidth; // trigger reflow
         container.classList.add('camera-shake');
+    }
+
+    if (isEnPassant) {
+        const slash = document.createElement('div');
+        slash.style.position = 'absolute';
+        slash.style.width = '140px';
+        slash.style.height = '6px';
+        slash.style.background = 'linear-gradient(90deg, transparent, #fff, #00ffff, transparent)';
+        slash.style.boxShadow = '0 0 15px #00ffff, 0 0 30px #00ffff';
+        slash.style.left = '50%';
+        slash.style.top = '50%';
+        slash.style.zIndex = '105';
+        slash.style.transformOrigin = 'center';
+        slash.style.transform = 'translate(-50%, -50%) scaleX(0) rotate(45deg)';
+        targetSq.appendChild(slash);
+
+        slash.animate([
+            { transform: 'translate(-50%, -50%) scaleX(0) rotate(45deg)', opacity: 1 },
+            { transform: 'translate(-50%, -50%) scaleX(1.5) rotate(45deg)', opacity: 1 },
+            { transform: 'translate(-50%, -50%) scaleX(0) rotate(45deg)', opacity: 0 }
+        ], { duration: 300, fill: 'forwards' });
+
+        setTimeout(() => {
+            if(slash.parentNode) slash.parentNode.removeChild(slash);
+            createParticles(targetSq);
+            triggerShockwave(targetSq);
+            showExplosion(targetSq, resolve);
+        }, 300);
+        return;
     }
 
     if (pType === 'bishop') {
@@ -254,6 +283,48 @@ const playCombatAnimation = (attackerSq, targetSq, pieceImg, resolve, attackerTy
             triggerShockwave(targetSq);
             showExplosion(targetSq, resolve);
         }, 300);
+        return;
+    }
+
+    if (pType === 'rook') {
+        const attRect = attackerSq.getBoundingClientRect();
+        const tgtRect = targetSq.getBoundingClientRect();
+        const mainDx = tgtRect.left - attRect.left;
+        const mainDy = tgtRect.top - attRect.top;
+        const dist = Math.sqrt(mainDx*mainDx + mainDy*mainDy);
+        const normX = dist === 0 ? 0 : mainDx / dist;
+        const normY = dist === 0 ? 0 : mainDy / dist;
+
+        for(let i=0; i<30; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.backgroundColor = '#aaa';
+            p.style.width = (Math.random()*6 + 4) + 'px';
+            p.style.height = p.style.width;
+            p.style.borderRadius = '2px';
+            p.style.left = '50%';
+            p.style.top = '50%';
+            p.style.zIndex = '102';
+            targetSq.appendChild(p);
+
+            const velocity = 50 + Math.random() * 80;
+            const spread = (Math.random() - 0.5) * 1.5;
+            
+            const dx = (normX * Math.cos(spread) - normY * Math.sin(spread)) * velocity;
+            const dy = (normX * Math.sin(spread) + normY * Math.cos(spread)) * velocity;
+
+            p.animate([
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`, opacity: 0 }
+            ], { duration: 400 + Math.random() * 200, easing: 'cubic-bezier(0.1, 0.8, 0.3, 1)', fill: 'forwards' });
+
+            setTimeout(() => { if (p.parentNode) p.parentNode.removeChild(p); }, 600);
+        }
+
+        setTimeout(() => {
+            triggerShockwave(targetSq);
+            showExplosion(targetSq, resolve);
+        }, 200);
         return;
     }
 

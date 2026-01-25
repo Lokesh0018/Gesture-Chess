@@ -1,5 +1,7 @@
 import { state } from './state.js';
 
+export let isFirstRender = true;
+
 export const getSquare = (i, j) => document.querySelector(`.child[data-i="${i}"][data-j="${j}"]`);
 
 export const clearDots = () => {
@@ -43,8 +45,15 @@ export const renderBoard = () => {
                 img.dataset.j = j;
                 img.dataset.value = piece.type;
                 img.className = piece.color;
+                
+                if (isFirstRender) {
+                    img.classList.add('drop-in');
+                    img.style.animationDelay = `${(7 - i) * 0.05 + Math.random() * 0.1}s`;
+                }
+                
                 sq.appendChild(img);
             }
         }
     }
+    isFirstRender = false;
 };
