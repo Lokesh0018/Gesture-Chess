@@ -1,7 +1,7 @@
 import { state, initializeBoard } from './state.js';
 import { createBoard, renderBoard, clearDots } from './dom.js';
 import { showMoves, showGameOver } from './ui.js';
-import { movePiece } from './game.js';
+import { movePiece, undoAction, redoAction } from './game.js';
 
 window.onload = () => {
     initializeBoard();
@@ -100,15 +100,11 @@ window.onload = () => {
     restartBtn.onmouseover = () => restartBtn.style.backgroundColor = "#3d3b39";
     restartBtn.onmouseout = () => restartBtn.style.backgroundColor = "#2b2927";
 
-    const movesContainer = document.createElement("div");
-    movesContainer.className = "moves-container";
-    state.moveHistoryPanel = movesContainer;
-
     const controlsBar = document.createElement("div");
     controlsBar.className = "controls-bar";
 
-    const actionButtons = document.createElement("div");
-    actionButtons.className = "action-buttons";
+    const drawResignRow = document.createElement("div");
+    drawResignRow.className = "action-buttons";
 
     const drawBtn = document.createElement("button");
     drawBtn.className = "action-btn";
@@ -120,13 +116,35 @@ window.onload = () => {
     resignBtn.innerHTML = "🏳 Resign";
     resignBtn.onclick = () => showGameOver("White Resigned");
 
-    actionButtons.appendChild(drawBtn);
-    actionButtons.appendChild(resignBtn);
-    controlsBar.appendChild(actionButtons);
+    drawResignRow.appendChild(drawBtn);
+    drawResignRow.appendChild(resignBtn);
+
+    const undoRedoRow = document.createElement("div");
+    undoRedoRow.className = "action-buttons";
+
+    const undoBtn = document.createElement("button");
+    undoBtn.className = "action-btn";
+    undoBtn.innerHTML = "⤺ Undo";
+    undoBtn.onclick = undoAction;
+
+    const redoBtn = document.createElement("button");
+    redoBtn.className = "action-btn";
+    redoBtn.innerHTML = "⤻ Redo";
+    redoBtn.onclick = redoAction;
+
+    undoRedoRow.appendChild(undoBtn);
+    undoRedoRow.appendChild(redoBtn);
+
+    controlsBar.appendChild(drawResignRow);
+    controlsBar.appendChild(undoRedoRow);
+
+    const movesContainer = document.createElement("div");
+    movesContainer.className = "moves-container";
+    state.moveHistoryPanel = movesContainer;
 
     rightSidebar.appendChild(restartBtn);
-    rightSidebar.appendChild(movesContainer);
     rightSidebar.appendChild(controlsBar);
+    rightSidebar.appendChild(movesContainer);
 
     layoutWrapper.appendChild(mainGameArea);
     layoutWrapper.appendChild(rightSidebar);

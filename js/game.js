@@ -1,4 +1,4 @@
-import { state, COLORS, PIECES, recordPosition } from './state.js';
+import { state, COLORS, PIECES, recordPosition, saveState, restoreState, redoState } from './state.js';
 import { clearDots, renderBoard, getSquare } from './dom.js';
 import { isUnderAttack, hasAnyValidMoves, checkDrawConditions } from './logic.js';
 import { showPromotionModal, showCheckMessage, showGameOver, showNotification } from './ui.js';
@@ -105,8 +105,51 @@ const getAlgebraic = (piece, startI, startJ, targetI, targetJ, captured) => {
 }
 
 
+const restoreHighlights = () => {
+    document.querySelectorAll('.in-check').forEach(el => el.classList.remove('in-check'));
+    document.querySelectorAll('.last-move').forEach(el => el.classList.remove('last-move'));
+    
+    if (state.lastMove) {
+        const sSq = getSquare(state.lastMove.startI, state.lastMove.startJ);
+        const tSq = getSquare(state.lastMove.targetI, state.lastMove.targetJ);
+        if (sSq) sSq.classList.add('last-move');
+        if (tSq) tSq.classList.add('last-move');
+    }
+
+    let kingSq = null;
+    for(let r=0; r<8; r++) {
+        for(let c=0; c<8; c++) {
+            const p = state.board[r][c];
+            if(p && p.color === state.currentTurn && p.type === PIECES.KING) { kingSq = {r,c}; break;}
+        }
+    }
+    if (kingSq && isUnderAttack(kingSq.r, kingSq.c, state.currentTurn)) {
+        const kDom = getSquare(kingSq.r, kingSq.c);
+        if(kDom) kDom.classList.add('in-check');
+    }
+};
+
+export const undoAction = () => {
+    if (window.isAnimating) return;
+    if (restoreState()) {
+        restoreHighlights();
+        renderBoard();
+        renderMoveHistory();
+    }
+};
+
+export const redoAction = () => {
+    if (window.isAnimating) return;
+    if (redoState()) {
+        restoreHighlights();
+        renderBoard();
+        renderMoveHistory();
+    }
+};
+
 export const movePiece = async (targetI, targetJ) => {
     if (window.isAnimating) return;
+    saveState();
     const {i: startI, j: startJ} = state.selectedSquare;
     const piece = state.board[startI][startJ];
     const targetPiece = state.board[targetI][targetJ];

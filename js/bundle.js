@@ -27,6 +27,10 @@
     // Store counts of FEN-like strings
     moveList: [],
     // Array of {white: 'e4', black: 'e5'}
+    stateHistory: [],
+    // Store deep copies for Undo
+    redoHistory: [],
+    // Store copies for Redo
     whiteTime: 0,
     blackTime: 0,
     timerInterval: null,
@@ -49,13 +53,73 @@
     for (let i = 2; i <= 5; i++) state.board[i] = Array(8).fill(null);
     state.board[6] = Array(8).fill(null).map(() => ({ color: COLORS.WHITE, type: PIECES.PAWN, moved: false }));
     state.board[7] = initRow(COLORS.WHITE);
+    if (state.leftPanel) state.leftPanel.innerHTML = "";
+    if (state.rightPanel) state.rightPanel.innerHTML = "";
+    if (state.moveHistoryPanel) state.moveHistoryPanel.innerHTML = "";
+    state.positionHistory = {};
+    state.moveList = [];
+    state.stateHistory = [];
+    state.redoHistory = [];
+    state.whiteTime = 0;
+    state.blackTime = 0;
     state.currentTurn = COLORS.WHITE;
     state.selectedSquare = null;
     state.lastMove = null;
     state.halfMoveClock = 0;
-    state.positionHistory = {};
-    state.moveList = [];
     recordPosition();
+  };
+  var _captureStateSnapshot = () => ({
+    board: JSON.parse(JSON.stringify(state.board)),
+    currentTurn: state.currentTurn,
+    halfMoveClock: state.halfMoveClock,
+    positionHistory: JSON.parse(JSON.stringify(state.positionHistory)),
+    moveList: JSON.parse(JSON.stringify(state.moveList)),
+    whiteTime: state.whiteTime,
+    blackTime: state.blackTime,
+    lastMove: state.lastMove ? JSON.parse(JSON.stringify(state.lastMove)) : null,
+    leftPanelHTML: state.leftPanel ? state.leftPanel.innerHTML : "",
+    rightPanelHTML: state.rightPanel ? state.rightPanel.innerHTML : ""
+  });
+  var _applyStateSnapshot = (snap) => {
+    state.board = snap.board;
+    state.currentTurn = snap.currentTurn;
+    state.halfMoveClock = snap.halfMoveClock;
+    state.positionHistory = snap.positionHistory;
+    state.moveList = snap.moveList;
+    state.whiteTime = snap.whiteTime;
+    state.blackTime = snap.blackTime;
+    state.selectedSquare = null;
+    state.lastMove = snap.lastMove;
+    if (state.leftPanel) state.leftPanel.innerHTML = snap.leftPanelHTML;
+    if (state.rightPanel) state.rightPanel.innerHTML = snap.rightPanelHTML;
+    if (state.clockWhiteDOM) {
+      const m1 = Math.floor(state.whiteTime / 60);
+      const s1 = state.whiteTime % 60;
+      state.clockWhiteDOM.innerText = `${m1}:${s1.toString().padStart(2, "0")}`;
+    }
+    if (state.clockBlackDOM) {
+      const m2 = Math.floor(state.blackTime / 60);
+      const s2 = state.blackTime % 60;
+      state.clockBlackDOM.innerText = `${m2}:${s2.toString().padStart(2, "0")}`;
+    }
+  };
+  var saveState = () => {
+    state.stateHistory.push(_captureStateSnapshot());
+    state.redoHistory = [];
+  };
+  var restoreState = () => {
+    if (state.stateHistory.length === 0) return false;
+    state.redoHistory.push(_captureStateSnapshot());
+    const prev = state.stateHistory.pop();
+    _applyStateSnapshot(prev);
+    return true;
+  };
+  var redoState = () => {
+    if (state.redoHistory.length === 0) return false;
+    state.stateHistory.push(_captureStateSnapshot());
+    const next = state.redoHistory.pop();
+    _applyStateSnapshot(next);
+    return true;
   };
   var getBoardString = () => {
     return state.board.map(
@@ -1126,8 +1190,49 @@
     notation += files[targetJ] + ranks[targetI];
     return notation;
   };
+  var restoreHighlights = () => {
+    document.querySelectorAll(".in-check").forEach((el) => el.classList.remove("in-check"));
+    document.querySelectorAll(".last-move").forEach((el) => el.classList.remove("last-move"));
+    if (state.lastMove) {
+      const sSq = getSquare(state.lastMove.startI, state.lastMove.startJ);
+      const tSq = getSquare(state.lastMove.targetI, state.lastMove.targetJ);
+      if (sSq) sSq.classList.add("last-move");
+      if (tSq) tSq.classList.add("last-move");
+    }
+    let kingSq = null;
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = state.board[r][c];
+        if (p && p.color === state.currentTurn && p.type === PIECES.KING) {
+          kingSq = { r, c };
+          break;
+        }
+      }
+    }
+    if (kingSq && isUnderAttack(kingSq.r, kingSq.c, state.currentTurn)) {
+      const kDom = getSquare(kingSq.r, kingSq.c);
+      if (kDom) kDom.classList.add("in-check");
+    }
+  };
+  var undoAction = () => {
+    if (window.isAnimating) return;
+    if (restoreState()) {
+      restoreHighlights();
+      renderBoard();
+      renderMoveHistory();
+    }
+  };
+  var redoAction = () => {
+    if (window.isAnimating) return;
+    if (redoState()) {
+      restoreHighlights();
+      renderBoard();
+      renderMoveHistory();
+    }
+  };
   var movePiece = async (targetI, targetJ) => {
     if (window.isAnimating) return;
+    saveState();
     const { i: startI, j: startJ } = state.selectedSquare;
     const piece = state.board[startI][startJ];
     const targetPiece = state.board[targetI][targetJ];
@@ -1346,13 +1451,10 @@
     restartBtn.onclick = () => location.reload();
     restartBtn.onmouseover = () => restartBtn.style.backgroundColor = "#3d3b39";
     restartBtn.onmouseout = () => restartBtn.style.backgroundColor = "#2b2927";
-    const movesContainer = document.createElement("div");
-    movesContainer.className = "moves-container";
-    state.moveHistoryPanel = movesContainer;
     const controlsBar = document.createElement("div");
     controlsBar.className = "controls-bar";
-    const actionButtons = document.createElement("div");
-    actionButtons.className = "action-buttons";
+    const drawResignRow = document.createElement("div");
+    drawResignRow.className = "action-buttons";
     const drawBtn = document.createElement("button");
     drawBtn.className = "action-btn";
     drawBtn.innerHTML = "\xBD Draw";
@@ -1361,12 +1463,28 @@
     resignBtn.className = "action-btn";
     resignBtn.innerHTML = "\u{1F3F3} Resign";
     resignBtn.onclick = () => showGameOver("White Resigned");
-    actionButtons.appendChild(drawBtn);
-    actionButtons.appendChild(resignBtn);
-    controlsBar.appendChild(actionButtons);
+    drawResignRow.appendChild(drawBtn);
+    drawResignRow.appendChild(resignBtn);
+    const undoRedoRow = document.createElement("div");
+    undoRedoRow.className = "action-buttons";
+    const undoBtn = document.createElement("button");
+    undoBtn.className = "action-btn";
+    undoBtn.innerHTML = "\u293A Undo";
+    undoBtn.onclick = undoAction;
+    const redoBtn = document.createElement("button");
+    redoBtn.className = "action-btn";
+    redoBtn.innerHTML = "\u293B Redo";
+    redoBtn.onclick = redoAction;
+    undoRedoRow.appendChild(undoBtn);
+    undoRedoRow.appendChild(redoBtn);
+    controlsBar.appendChild(drawResignRow);
+    controlsBar.appendChild(undoRedoRow);
+    const movesContainer = document.createElement("div");
+    movesContainer.className = "moves-container";
+    state.moveHistoryPanel = movesContainer;
     rightSidebar.appendChild(restartBtn);
-    rightSidebar.appendChild(movesContainer);
     rightSidebar.appendChild(controlsBar);
+    rightSidebar.appendChild(movesContainer);
     layoutWrapper.appendChild(mainGameArea);
     layoutWrapper.appendChild(rightSidebar);
     document.body.appendChild(layoutWrapper);
