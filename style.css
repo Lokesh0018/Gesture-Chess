@@ -145,7 +145,21 @@ body {
     aspect-ratio: 1 / 1;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     border-radius: 4px;
-    overflow: hidden;
+    position: relative;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    background: radial-gradient(circle 200px at var(--mouse-x, -500px) var(--mouse-y, -500px), rgba(255, 255, 255, 0.15) 0%, transparent 100%);
+    z-index: 99;
+    transition: opacity 0.2s;
+}
+
+.container:hover::after {
+    opacity: 1;
 }
 
 .child {
@@ -199,6 +213,21 @@ img:active {
 .dot {
     border: none;
     box-shadow: none;
+}
+
+.hover-dot::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 35%;
+    height: 35%;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    z-index: 10;
+    pointer-events: none;
 }
 
 .dot::after {

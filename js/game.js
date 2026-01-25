@@ -1,7 +1,7 @@
 import { state, COLORS, PIECES, recordPosition, saveState, restoreState, redoState } from './state.js';
 import { clearDots, renderBoard, getSquare } from './dom.js';
 import { isUnderAttack, hasAnyValidMoves, checkDrawConditions } from './logic.js';
-import { showPromotionModal, showCheckMessage, showGameOver, showNotification } from './ui.js';
+import { showPromotionModal, showCheckMessage, showGameOver, showNotification, showMoves } from './ui.js';
 import { playMoveAnimation, playCastlingRookAnimation, playPromotionAscension } from './animations.js';
 
 const moveSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3');
@@ -104,6 +104,20 @@ const getAlgebraic = (piece, startI, startJ, targetI, targetJ, captured) => {
     return notation;
 }
 
+export const handleHover = (i, j) => {
+    if (window.isAnimating || state.selectedSquare) return;
+    const piece = state.board[i][j];
+    if (piece && piece.color === state.currentTurn) {
+        showMoves(i, j, true);
+    }
+};
+
+export const handleHoverOut = () => {
+    if (!state.selectedSquare) {
+        document.querySelectorAll('.hover-dot').forEach(el => el.classList.remove('hover-dot'));
+    }
+};
+
 
 const restoreHighlights = () => {
     document.querySelectorAll('.in-check').forEach(el => el.classList.remove('in-check'));
@@ -141,6 +155,25 @@ export const undoAction = () => {
 export const redoAction = () => {
     if (window.isAnimating) return;
     if (redoState()) {
+        restoreHighlights();
+        renderBoard();
+        renderMoveHistory();
+    }
+};
+
+export const timeTravelTo = (targetIndex) => {
+    if (window.isAnimating) return;
+    if (targetIndex < state.stateHistory.length) {
+        while (state.stateHistory.length > targetIndex) {
+            if (!restoreState()) break;
+        }
+        restoreHighlights();
+        renderBoard();
+        renderMoveHistory();
+    } else if (targetIndex > state.stateHistory.length) {
+        while (state.stateHistory.length < targetIndex) {
+            if (!redoState()) break;
+        }
         restoreHighlights();
         renderBoard();
         renderMoveHistory();
@@ -192,11 +225,11 @@ export const movePiece = async (targetI, targetJ) => {
     window.isAnimating = false;
 
     if (targetPiece) {
-        addCapturedToPanel(targetPiece);
+        addCapturedToPanel(targetPiece, targetI, targetJ);
     } else if (isEnPassant) {
         const capturedPawn = state.board[startI][targetJ];
         if (capturedPawn) {
-            addCapturedToPanel(capturedPawn);
+            addCapturedToPanel(capturedPawn, startI, targetJ);
             state.board[startI][targetJ] = null;
         }
     }
@@ -276,7 +309,7 @@ export const movePiece = async (targetI, targetJ) => {
     endTurn();
 };
 
-const addCapturedToPanel = (piece) => {
+const addCapturedToPanel = (piece, victimI, victimJ) => {
     const img = document.createElement('img');
     img.src = `./asserts/${piece.color}${piece.type}.png`;
     img.style.width = '40px';
@@ -286,10 +319,18 @@ const addCapturedToPanel = (piece) => {
     img.style.borderRadius = '4px';
     img.style.padding = '2px';
     
-    if (piece.color === COLORS.WHITE) {
-        state.leftPanel.appendChild(img);
-    } else {
-        state.rightPanel.appendChild(img);
+    const panel = piece.color === COLORS.WHITE ? state.leftPanel : state.rightPanel;
+    panel.appendChild(img);
+
+    const startSq = getSquare(victimI, victimJ);
+    if (startSq) {
+        const startRect = startSq.getBoundingClientRect();
+        const endRect = img.getBoundingClientRect();
+        
+        img.animate([
+            { transform: `translate(${startRect.left - endRect.left}px, ${startRect.top - endRect.top}px) scale(1.5)`, opacity: 0.5 },
+            { transform: 'translate(0, 0) scale(1)', opacity: 1 }
+        ], { duration: 500, easing: 'ease-out' });
     }
 };
 
@@ -310,7 +351,29 @@ const renderMoveHistory = () => {
     state.moveList.forEach((m, idx) => {
         const row = document.createElement("div");
         row.className = "move-row";
-        row.innerHTML = `<span class="move-number">${idx+1}.</span><span class="move-white">${m.white}</span><span class="move-black">${m.black}</span>`;
+        
+        const numSpan = document.createElement("span");
+        numSpan.className = "move-number";
+        numSpan.innerText = `${idx+1}.`;
+        
+        const whiteSpan = document.createElement("span");
+        whiteSpan.className = "move-white";
+        whiteSpan.innerText = m.white;
+        whiteSpan.style.cursor = 'pointer';
+        whiteSpan.onclick = () => timeTravelTo(idx * 2 + 1);
+        
+        const blackSpan = document.createElement("span");
+        blackSpan.className = "move-black";
+        blackSpan.innerText = m.black;
+        if (m.black) {
+            blackSpan.style.cursor = 'pointer';
+            blackSpan.onclick = () => timeTravelTo(idx * 2 + 2);
+        }
+        
+        row.appendChild(numSpan);
+        row.appendChild(whiteSpan);
+        row.appendChild(blackSpan);
+        
         panel.appendChild(row);
     });
     panel.scrollTop = panel.scrollHeight;

@@ -1,7 +1,7 @@
 import { state, initializeBoard } from './state.js';
 import { createBoard, renderBoard, clearDots } from './dom.js';
 import { showMoves, showGameOver } from './ui.js';
-import { movePiece, undoAction, redoAction } from './game.js';
+import { movePiece, undoAction, redoAction, handleHover, handleHoverOut } from './game.js';
 
 window.onload = () => {
     initializeBoard();
@@ -154,6 +154,28 @@ window.onload = () => {
     const dummyTurn = document.createElement("div");
     state.turnIndicator = dummyTurn;
 
+    container.addEventListener("mousemove", (e) => {
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        container.style.setProperty('--mouse-x', `${x}px`);
+        container.style.setProperty('--mouse-y', `${y}px`);
+    });
+
+    container.addEventListener("mouseover", (e) => {
+        const square = e.target.closest('.child');
+        if (!square) return;
+        const i = parseInt(square.dataset.i);
+        const j = parseInt(square.dataset.j);
+        handleHover(i, j);
+    });
+
+    container.addEventListener("mouseout", (e) => {
+        const square = e.target.closest('.child');
+        if (!square) return;
+        handleHoverOut();
+    });
+
     container.addEventListener("click", (e) => {
         const target = e.target;
         const square = target.classList.contains('child') ? target : target.parentElement;
@@ -176,76 +198,123 @@ window.onload = () => {
         }
     });
 
-    container.addEventListener("dragstart", (e) => {
-        const target = e.target;
-        if (target.matches("img")) {
-            const i = parseInt(target.dataset.i);
-            const j = parseInt(target.dataset.j);
+    let draggedImg = null;
+    let dragStartSquare = null;
+    let pointerId = null;
+    let startX = 0, startY = 0;
+    let isDragging = false;
+
+    container.addEventListener("pointerdown", (e) => {
+        if (window.isAnimating) return;
+        if (e.target.matches("img") && !e.target.classList.contains('particle')) {
+            const sq = e.target.parentElement;
+            const i = parseInt(sq.dataset.i);
+            const j = parseInt(sq.dataset.j);
             const piece = state.board[i][j];
             if (piece && piece.color === state.currentTurn) {
-                showMoves(i, j);
-                target.classList.add("dragging");
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", "chess-piece");
-            } else {
                 e.preventDefault();
+                pointerId = e.pointerId;
+                draggedImg = e.target;
+                draggedImg.classList.remove('drop-in'); // Prevent animation from replaying
+                dragStartSquare = sq;
+                startX = e.clientX;
+                startY = e.clientY;
+                isDragging = false;
+                
+                const sqRect = sq.getBoundingClientRect();
+                const imgW = sqRect.width * 0.85;
+                const imgH = sqRect.height * 0.85;
+                const imgLeft = sqRect.left + (sqRect.width - imgW) / 2;
+                const imgTop = sqRect.top + (sqRect.height - imgH) / 2;
+                
+                draggedImg.dataset.width = imgW;
+                draggedImg.dataset.height = imgH;
+                draggedImg.dataset.offsetX = startX - imgLeft;
+                draggedImg.dataset.offsetY = startY - imgTop;
+                
+                draggedImg.setPointerCapture(pointerId);
+                showMoves(i, j);
             }
         }
     });
 
-    container.addEventListener("dragend", (e) => {
-        if (e.target.matches("img")) {
-            e.target.classList.remove("dragging");
+    window.addEventListener("pointermove", (e) => {
+        if (draggedImg && e.pointerId === pointerId) {
+            if (!isDragging) {
+                const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+                if (dist > 5) {
+                    isDragging = true;
+                    
+                    document.body.appendChild(draggedImg);
+                    draggedImg.classList.add("dragging");
+                    draggedImg.style.transition = 'none';
+                    draggedImg.style.position = 'fixed';
+                    draggedImg.style.zIndex = '1000';
+                    draggedImg.style.margin = '0';
+                    draggedImg.style.width = `${draggedImg.dataset.width}px`;
+                    draggedImg.style.height = `${draggedImg.dataset.height}px`;
+                    draggedImg.style.transform = 'none';
+                }
+            }
+
+            if (isDragging) {
+                const ox = parseFloat(draggedImg.dataset.offsetX) || 0;
+                const oy = parseFloat(draggedImg.dataset.offsetY) || 0;
+                draggedImg.style.left = `${e.clientX - ox}px`;
+                draggedImg.style.top = `${e.clientY - oy}px`;
+            }
         }
     });
 
-    let lastSparkTime = 0;
-    container.addEventListener("dragover", (e) => {
-        e.preventDefault(); 
-        e.dataTransfer.dropEffect = "move";
-        
-        const now = Date.now();
-        if (now - lastSparkTime > 50) {
-            lastSparkTime = now;
-            const spark = document.createElement('div');
-            spark.style.position = 'fixed';
-            spark.style.left = e.clientX + 'px';
-            spark.style.top = e.clientY + 'px';
-            spark.style.width = '6px';
-            spark.style.height = '6px';
-            spark.style.backgroundColor = '#ffcc00';
-            spark.style.borderRadius = '50%';
-            spark.style.boxShadow = '0 0 8px #ff6600, 0 0 15px #ff0000';
-            spark.style.pointerEvents = 'none';
-            spark.style.zIndex = '9999';
-            document.body.appendChild(spark);
+    window.addEventListener("pointerup", (e) => {
+        if (draggedImg && e.pointerId === pointerId) {
+            draggedImg.releasePointerCapture(pointerId);
+            
+            let dropSquare = null;
+            
+            if (isDragging) {
+                draggedImg.classList.remove("dragging");
+                draggedImg.style.transition = '';
+                draggedImg.style.position = '';
+                draggedImg.style.zIndex = '';
+                draggedImg.style.width = '';
+                draggedImg.style.height = '';
+                draggedImg.style.left = '';
+                draggedImg.style.top = '';
+                draggedImg.style.margin = '';
+                draggedImg.style.transform = '';
+                
+                draggedImg.style.display = 'none';
+                const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+                draggedImg.style.display = '';
+                
+                dropSquare = elemBelow ? elemBelow.closest('.child') : null;
+                dragStartSquare.appendChild(draggedImg);
+            }
 
-            const dx = (Math.random() - 0.5) * 60;
-            const dy = Math.random() * 60 + 20;
-
-            spark.animate([
-                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-                { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`, opacity: 0 }
-            ], { duration: 600, easing: 'ease-out', fill: 'forwards' });
-
-            setTimeout(() => { if (spark.parentNode) spark.parentNode.removeChild(spark); }, 600);
-        }
-    });
-
-    container.addEventListener("drop", (e) => {
-        e.preventDefault();
-        const target = e.target;
-        const square = target.classList.contains('child') ? target : target.parentElement;
-        if (!square || !square.classList.contains('child')) return;
-
-        const i = parseInt(square.dataset.i);
-        const j = parseInt(square.dataset.j);
-
-        if (square.classList.contains('dot')) {
-            movePiece(i, j);
-        } else {
-            clearDots();
-            state.selectedSquare = null;
+            if (isDragging && dropSquare) {
+                const targetI = parseInt(dropSquare.dataset.i);
+                const targetJ = parseInt(dropSquare.dataset.j);
+                const startI = parseInt(dragStartSquare.dataset.i);
+                const startJ = parseInt(dragStartSquare.dataset.j);
+                
+                if (startI === targetI && startJ === targetJ) {
+                    // It's a click, leave the piece selected
+                } else if (dropSquare.classList.contains('dot')) {
+                    movePiece(targetI, targetJ);
+                } else {
+                    clearDots();
+                    state.selectedSquare = null;
+                }
+            } else if (isDragging && !dropSquare) {
+                clearDots();
+                state.selectedSquare = null;
+            }
+            
+            draggedImg = null;
+            dragStartSquare = null;
+            pointerId = null;
+            isDragging = false;
         }
     });
 };

@@ -40,7 +40,7 @@ export const renderBoard = () => {
             if (piece) {
                 const img = document.createElement('img');
                 img.src = `./asserts/${piece.color}${piece.type}.png`;
-                img.draggable = true;
+                img.style.touchAction = 'none';
                 img.dataset.i = i;
                 img.dataset.j = j;
                 img.dataset.value = piece.type;

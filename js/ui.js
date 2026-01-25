@@ -2,7 +2,7 @@ import { state, COLORS, PIECES } from './state.js';
 import { clearDots, getSquare } from './dom.js';
 import { isMoveSafe, isUnderAttack } from './logic.js';
 
-export const markMove = (targetI, targetJ, startI, startJ) => {
+export const markMove = (targetI, targetJ, startI, startJ, isHover = false) => {
     if (targetI < 0 || targetI > 7 || targetJ < 0 || targetJ > 7) return false;
     
     const targetPiece = state.board[targetI][targetJ];
@@ -23,31 +23,39 @@ export const markMove = (targetI, targetJ, startI, startJ) => {
     if (isValidCaptureOrEmpty) {
         if (isMoveSafe(startI, startJ, targetI, targetJ)) {
             const sq = getSquare(targetI, targetJ);
-            if (sq) sq.classList.add('dot', 'pulsing-dot');
+            if (sq) {
+                if (isHover) sq.classList.add('hover-dot');
+                else sq.classList.add('dot', 'pulsing-dot');
+            }
         }
     }
     return continueRay;
 };
 
-export const showMoves = (i, j) => {
-    clearDots();
-    state.selectedSquare = {i, j};
+export const showMoves = (i, j, isHover = false) => {
+    if (!isHover) {
+        clearDots();
+        state.selectedSquare = {i, j};
+    }
     const piece = state.board[i][j];
     if (!piece) return;
     
     const sq = getSquare(i, j);
-    if(sq) sq.classList.add('selected');
+    if(sq && !isHover) sq.classList.add('selected');
 
     const castRay = (di, dj, maxSteps = 7) => {
         for (let step = 1; step <= maxSteps; step++) {
-            if (!markMove(i + di * step, j + dj * step, i, j)) break;
+            if (!markMove(i + di * step, j + dj * step, i, j, isHover)) break;
         }
     };
 
     const addDotIfSafe = (targetI, targetJ) => {
         if (isMoveSafe(i, j, targetI, targetJ)) {
             const sq = getSquare(targetI, targetJ);
-            if (sq) sq.classList.add('dot', 'pulsing-dot');
+            if (sq) {
+                if (isHover) sq.classList.add('hover-dot');
+                else sq.classList.add('dot', 'pulsing-dot');
+            }
         }
     };
 
@@ -230,9 +238,12 @@ export const showGameOver = (message) => {
     if (losingKingImg) {
         losingKingImg.style.transition = 'transform 1.5s cubic-bezier(0.5, 0, 1, 1)';
         losingKingImg.style.transformOrigin = 'bottom right';
-        requestAnimationFrame(() => {
-            losingKingImg.style.transform = 'rotate(90deg) translate(0, 20%)';
-        });
+        losingKingImg.style.zIndex = '100'; // Bring to front
+        
+        // Force reflow so the transition is registered before the transform
+        void losingKingImg.offsetWidth;
+        
+        losingKingImg.style.transform = 'rotate(90deg) translate(0, 20%)';
     }
 
     setTimeout(() => {

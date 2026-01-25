@@ -166,7 +166,7 @@
         if (piece) {
           const img = document.createElement("img");
           img.src = `./asserts/${piece.color}${piece.type}.png`;
-          img.draggable = true;
+          img.style.touchAction = "none";
           img.dataset.i = i;
           img.dataset.j = j;
           img.dataset.value = piece.type;
@@ -344,7 +344,7 @@
   };
 
   // js/ui.js
-  var markMove = (targetI, targetJ, startI, startJ) => {
+  var markMove = (targetI, targetJ, startI, startJ, isHover = false) => {
     if (targetI < 0 || targetI > 7 || targetJ < 0 || targetJ > 7) return false;
     const targetPiece = state.board[targetI][targetJ];
     let isValidCaptureOrEmpty = false;
@@ -361,27 +361,35 @@
     if (isValidCaptureOrEmpty) {
       if (isMoveSafe(startI, startJ, targetI, targetJ)) {
         const sq = getSquare(targetI, targetJ);
-        if (sq) sq.classList.add("dot", "pulsing-dot");
+        if (sq) {
+          if (isHover) sq.classList.add("hover-dot");
+          else sq.classList.add("dot", "pulsing-dot");
+        }
       }
     }
     return continueRay;
   };
-  var showMoves = (i, j) => {
-    clearDots();
-    state.selectedSquare = { i, j };
+  var showMoves = (i, j, isHover = false) => {
+    if (!isHover) {
+      clearDots();
+      state.selectedSquare = { i, j };
+    }
     const piece = state.board[i][j];
     if (!piece) return;
     const sq = getSquare(i, j);
-    if (sq) sq.classList.add("selected");
+    if (sq && !isHover) sq.classList.add("selected");
     const castRay = (di, dj, maxSteps = 7) => {
       for (let step = 1; step <= maxSteps; step++) {
-        if (!markMove(i + di * step, j + dj * step, i, j)) break;
+        if (!markMove(i + di * step, j + dj * step, i, j, isHover)) break;
       }
     };
     const addDotIfSafe = (targetI, targetJ) => {
       if (isMoveSafe(i, j, targetI, targetJ)) {
         const sq2 = getSquare(targetI, targetJ);
-        if (sq2) sq2.classList.add("dot", "pulsing-dot");
+        if (sq2) {
+          if (isHover) sq2.classList.add("hover-dot");
+          else sq2.classList.add("dot", "pulsing-dot");
+        }
       }
     };
     const type = piece.type;
@@ -561,9 +569,9 @@
     if (losingKingImg) {
       losingKingImg.style.transition = "transform 1.5s cubic-bezier(0.5, 0, 1, 1)";
       losingKingImg.style.transformOrigin = "bottom right";
-      requestAnimationFrame(() => {
-        losingKingImg.style.transform = "rotate(90deg) translate(0, 20%)";
-      });
+      losingKingImg.style.zIndex = "100";
+      void losingKingImg.offsetWidth;
+      losingKingImg.style.transform = "rotate(90deg) translate(0, 20%)";
     }
     setTimeout(() => {
       overlay.style.opacity = "1";
@@ -1190,6 +1198,18 @@
     notation += files[targetJ] + ranks[targetI];
     return notation;
   };
+  var handleHover = (i, j) => {
+    if (window.isAnimating || state.selectedSquare) return;
+    const piece = state.board[i][j];
+    if (piece && piece.color === state.currentTurn) {
+      showMoves(i, j, true);
+    }
+  };
+  var handleHoverOut = () => {
+    if (!state.selectedSquare) {
+      document.querySelectorAll(".hover-dot").forEach((el) => el.classList.remove("hover-dot"));
+    }
+  };
   var restoreHighlights = () => {
     document.querySelectorAll(".in-check").forEach((el) => el.classList.remove("in-check"));
     document.querySelectorAll(".last-move").forEach((el) => el.classList.remove("last-move"));
@@ -1225,6 +1245,24 @@
   var redoAction = () => {
     if (window.isAnimating) return;
     if (redoState()) {
+      restoreHighlights();
+      renderBoard();
+      renderMoveHistory();
+    }
+  };
+  var timeTravelTo = (targetIndex) => {
+    if (window.isAnimating) return;
+    if (targetIndex < state.stateHistory.length) {
+      while (state.stateHistory.length > targetIndex) {
+        if (!restoreState()) break;
+      }
+      restoreHighlights();
+      renderBoard();
+      renderMoveHistory();
+    } else if (targetIndex > state.stateHistory.length) {
+      while (state.stateHistory.length < targetIndex) {
+        if (!redoState()) break;
+      }
       restoreHighlights();
       renderBoard();
       renderMoveHistory();
@@ -1267,11 +1305,11 @@
     await Promise.all(animations);
     window.isAnimating = false;
     if (targetPiece) {
-      addCapturedToPanel(targetPiece);
+      addCapturedToPanel(targetPiece, targetI, targetJ);
     } else if (isEnPassant) {
       const capturedPawn = state.board[startI][targetJ];
       if (capturedPawn) {
-        addCapturedToPanel(capturedPawn);
+        addCapturedToPanel(capturedPawn, startI, targetJ);
         state.board[startI][targetJ] = null;
       }
     }
@@ -1343,7 +1381,7 @@
     }
     endTurn();
   };
-  var addCapturedToPanel = (piece) => {
+  var addCapturedToPanel = (piece, victimI, victimJ) => {
     const img = document.createElement("img");
     img.src = `./asserts/${piece.color}${piece.type}.png`;
     img.style.width = "40px";
@@ -1352,10 +1390,16 @@
     img.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
     img.style.borderRadius = "4px";
     img.style.padding = "2px";
-    if (piece.color === COLORS.WHITE) {
-      state.leftPanel.appendChild(img);
-    } else {
-      state.rightPanel.appendChild(img);
+    const panel = piece.color === COLORS.WHITE ? state.leftPanel : state.rightPanel;
+    panel.appendChild(img);
+    const startSq = getSquare(victimI, victimJ);
+    if (startSq) {
+      const startRect = startSq.getBoundingClientRect();
+      const endRect = img.getBoundingClientRect();
+      img.animate([
+        { transform: `translate(${startRect.left - endRect.left}px, ${startRect.top - endRect.top}px) scale(1.5)`, opacity: 0.5 },
+        { transform: "translate(0, 0) scale(1)", opacity: 1 }
+      ], { duration: 500, easing: "ease-out" });
     }
   };
   var updateMoveHistory = (notation) => {
@@ -1374,7 +1418,24 @@
     state.moveList.forEach((m, idx) => {
       const row = document.createElement("div");
       row.className = "move-row";
-      row.innerHTML = `<span class="move-number">${idx + 1}.</span><span class="move-white">${m.white}</span><span class="move-black">${m.black}</span>`;
+      const numSpan = document.createElement("span");
+      numSpan.className = "move-number";
+      numSpan.innerText = `${idx + 1}.`;
+      const whiteSpan = document.createElement("span");
+      whiteSpan.className = "move-white";
+      whiteSpan.innerText = m.white;
+      whiteSpan.style.cursor = "pointer";
+      whiteSpan.onclick = () => timeTravelTo(idx * 2 + 1);
+      const blackSpan = document.createElement("span");
+      blackSpan.className = "move-black";
+      blackSpan.innerText = m.black;
+      if (m.black) {
+        blackSpan.style.cursor = "pointer";
+        blackSpan.onclick = () => timeTravelTo(idx * 2 + 2);
+      }
+      row.appendChild(numSpan);
+      row.appendChild(whiteSpan);
+      row.appendChild(blackSpan);
       panel.appendChild(row);
     });
     panel.scrollTop = panel.scrollHeight;
@@ -1490,6 +1551,25 @@
     document.body.appendChild(layoutWrapper);
     const dummyTurn = document.createElement("div");
     state.turnIndicator = dummyTurn;
+    container.addEventListener("mousemove", (e) => {
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      container.style.setProperty("--mouse-x", `${x}px`);
+      container.style.setProperty("--mouse-y", `${y}px`);
+    });
+    container.addEventListener("mouseover", (e) => {
+      const square = e.target.closest(".child");
+      if (!square) return;
+      const i = parseInt(square.dataset.i);
+      const j = parseInt(square.dataset.j);
+      handleHover(i, j);
+    });
+    container.addEventListener("mouseout", (e) => {
+      const square = e.target.closest(".child");
+      if (!square) return;
+      handleHoverOut();
+    });
     container.addEventListener("click", (e) => {
       const target = e.target;
       const square = target.classList.contains("child") ? target : target.parentElement;
@@ -1508,69 +1588,107 @@
         state.selectedSquare = null;
       }
     });
-    container.addEventListener("dragstart", (e) => {
-      const target = e.target;
-      if (target.matches("img")) {
-        const i = parseInt(target.dataset.i);
-        const j = parseInt(target.dataset.j);
+    let draggedImg = null;
+    let dragStartSquare = null;
+    let pointerId = null;
+    let startX = 0, startY = 0;
+    let isDragging = false;
+    container.addEventListener("pointerdown", (e) => {
+      if (window.isAnimating) return;
+      if (e.target.matches("img") && !e.target.classList.contains("particle")) {
+        const sq = e.target.parentElement;
+        const i = parseInt(sq.dataset.i);
+        const j = parseInt(sq.dataset.j);
         const piece = state.board[i][j];
         if (piece && piece.color === state.currentTurn) {
-          showMoves(i, j);
-          target.classList.add("dragging");
-          e.dataTransfer.effectAllowed = "move";
-          e.dataTransfer.setData("text/plain", "chess-piece");
-        } else {
           e.preventDefault();
+          pointerId = e.pointerId;
+          draggedImg = e.target;
+          draggedImg.classList.remove("drop-in");
+          dragStartSquare = sq;
+          startX = e.clientX;
+          startY = e.clientY;
+          isDragging = false;
+          const sqRect = sq.getBoundingClientRect();
+          const imgW = sqRect.width * 0.85;
+          const imgH = sqRect.height * 0.85;
+          const imgLeft = sqRect.left + (sqRect.width - imgW) / 2;
+          const imgTop = sqRect.top + (sqRect.height - imgH) / 2;
+          draggedImg.dataset.width = imgW;
+          draggedImg.dataset.height = imgH;
+          draggedImg.dataset.offsetX = startX - imgLeft;
+          draggedImg.dataset.offsetY = startY - imgTop;
+          draggedImg.setPointerCapture(pointerId);
+          showMoves(i, j);
         }
       }
     });
-    container.addEventListener("dragend", (e) => {
-      if (e.target.matches("img")) {
-        e.target.classList.remove("dragging");
+    window.addEventListener("pointermove", (e) => {
+      if (draggedImg && e.pointerId === pointerId) {
+        if (!isDragging) {
+          const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+          if (dist > 5) {
+            isDragging = true;
+            document.body.appendChild(draggedImg);
+            draggedImg.classList.add("dragging");
+            draggedImg.style.transition = "none";
+            draggedImg.style.position = "fixed";
+            draggedImg.style.zIndex = "1000";
+            draggedImg.style.margin = "0";
+            draggedImg.style.width = `${draggedImg.dataset.width}px`;
+            draggedImg.style.height = `${draggedImg.dataset.height}px`;
+            draggedImg.style.transform = "none";
+          }
+        }
+        if (isDragging) {
+          const ox = parseFloat(draggedImg.dataset.offsetX) || 0;
+          const oy = parseFloat(draggedImg.dataset.offsetY) || 0;
+          draggedImg.style.left = `${e.clientX - ox}px`;
+          draggedImg.style.top = `${e.clientY - oy}px`;
+        }
       }
     });
-    let lastSparkTime = 0;
-    container.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      const now = Date.now();
-      if (now - lastSparkTime > 50) {
-        lastSparkTime = now;
-        const spark = document.createElement("div");
-        spark.style.position = "fixed";
-        spark.style.left = e.clientX + "px";
-        spark.style.top = e.clientY + "px";
-        spark.style.width = "6px";
-        spark.style.height = "6px";
-        spark.style.backgroundColor = "#ffcc00";
-        spark.style.borderRadius = "50%";
-        spark.style.boxShadow = "0 0 8px #ff6600, 0 0 15px #ff0000";
-        spark.style.pointerEvents = "none";
-        spark.style.zIndex = "9999";
-        document.body.appendChild(spark);
-        const dx = (Math.random() - 0.5) * 60;
-        const dy = Math.random() * 60 + 20;
-        spark.animate([
-          { transform: "translate(-50%, -50%) scale(1)", opacity: 1 },
-          { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`, opacity: 0 }
-        ], { duration: 600, easing: "ease-out", fill: "forwards" });
-        setTimeout(() => {
-          if (spark.parentNode) spark.parentNode.removeChild(spark);
-        }, 600);
-      }
-    });
-    container.addEventListener("drop", (e) => {
-      e.preventDefault();
-      const target = e.target;
-      const square = target.classList.contains("child") ? target : target.parentElement;
-      if (!square || !square.classList.contains("child")) return;
-      const i = parseInt(square.dataset.i);
-      const j = parseInt(square.dataset.j);
-      if (square.classList.contains("dot")) {
-        movePiece(i, j);
-      } else {
-        clearDots();
-        state.selectedSquare = null;
+    window.addEventListener("pointerup", (e) => {
+      if (draggedImg && e.pointerId === pointerId) {
+        draggedImg.releasePointerCapture(pointerId);
+        let dropSquare = null;
+        if (isDragging) {
+          draggedImg.classList.remove("dragging");
+          draggedImg.style.transition = "";
+          draggedImg.style.position = "";
+          draggedImg.style.zIndex = "";
+          draggedImg.style.width = "";
+          draggedImg.style.height = "";
+          draggedImg.style.left = "";
+          draggedImg.style.top = "";
+          draggedImg.style.margin = "";
+          draggedImg.style.transform = "";
+          draggedImg.style.display = "none";
+          const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+          draggedImg.style.display = "";
+          dropSquare = elemBelow ? elemBelow.closest(".child") : null;
+          dragStartSquare.appendChild(draggedImg);
+        }
+        if (isDragging && dropSquare) {
+          const targetI = parseInt(dropSquare.dataset.i);
+          const targetJ = parseInt(dropSquare.dataset.j);
+          const startI = parseInt(dragStartSquare.dataset.i);
+          const startJ = parseInt(dragStartSquare.dataset.j);
+          if (startI === targetI && startJ === targetJ) {
+          } else if (dropSquare.classList.contains("dot")) {
+            movePiece(targetI, targetJ);
+          } else {
+            clearDots();
+            state.selectedSquare = null;
+          }
+        } else if (isDragging && !dropSquare) {
+          clearDots();
+          state.selectedSquare = null;
+        }
+        draggedImg = null;
+        dragStartSquare = null;
+        pointerId = null;
+        isDragging = false;
       }
     });
   };
