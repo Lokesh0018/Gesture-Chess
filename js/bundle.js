@@ -567,11 +567,18 @@
     const loserColor = message.includes("Wins") ? message.includes("White Wins") ? COLORS.BLACK : COLORS.WHITE : state.currentTurn;
     const losingKingImg = Array.from(document.querySelectorAll(`img.${loserColor}`)).find((img) => img.dataset.value === PIECES.KING);
     if (losingKingImg) {
-      losingKingImg.style.transition = "transform 1.5s cubic-bezier(0.5, 0, 1, 1)";
-      losingKingImg.style.transformOrigin = "bottom right";
-      losingKingImg.style.zIndex = "100";
-      void losingKingImg.offsetWidth;
-      losingKingImg.style.transform = "rotate(90deg) translate(0, 20%)";
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          losingKingImg.classList.remove("drop-in");
+          losingKingImg.style.animation = "none";
+          losingKingImg.style.transition = "transform 1.5s cubic-bezier(0.5, 0, 1, 1)";
+          losingKingImg.style.transformOrigin = "bottom right";
+          losingKingImg.style.position = "relative";
+          losingKingImg.style.zIndex = "1000";
+          void losingKingImg.offsetWidth;
+          losingKingImg.style.transform = "rotate(90deg) translate(0, 20%)";
+        });
+      }, 100);
     }
     setTimeout(() => {
       overlay.style.opacity = "1";

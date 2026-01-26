@@ -236,14 +236,23 @@ export const showGameOver = (message) => {
     const losingKingImg = Array.from(document.querySelectorAll(`img.${loserColor}`)).find(img => img.dataset.value === PIECES.KING);
 
     if (losingKingImg) {
-        losingKingImg.style.transition = 'transform 1.5s cubic-bezier(0.5, 0, 1, 1)';
-        losingKingImg.style.transformOrigin = 'bottom right';
-        losingKingImg.style.zIndex = '100'; // Bring to front
-        
-        // Force reflow so the transition is registered before the transform
-        void losingKingImg.offsetWidth;
-        
-        losingKingImg.style.transform = 'rotate(90deg) translate(0, 20%)';
+        setTimeout(() => {
+            requestAnimationFrame(() => {
+                // Remove the initial drop-in animation class if it exists
+                losingKingImg.classList.remove('drop-in');
+                losingKingImg.style.animation = 'none';
+                
+                losingKingImg.style.transition = 'transform 1.5s cubic-bezier(0.5, 0, 1, 1)';
+                losingKingImg.style.transformOrigin = 'bottom right';
+                losingKingImg.style.position = 'relative'; // Required for zIndex to pop above overlay
+                losingKingImg.style.zIndex = '1000'; // Bring to front ABOVE the 999 overlay
+                
+                // Force reflow
+                void losingKingImg.offsetWidth;
+                
+                losingKingImg.style.transform = 'rotate(90deg) translate(0, 20%)';
+            });
+        }, 100); // Slightly longer delay to ensure DOM paint is fully complete
     }
 
     setTimeout(() => {
