@@ -78,14 +78,21 @@ window.onload = () => {
 
     const evalBarWrapper = document.createElement("div");
     evalBarWrapper.className = "eval-bar-wrapper";
-    evalBarWrapper.innerHTML = `<div id="eval-fill"></div>`;
+    evalBarWrapper.innerHTML = `<div id="eval-fill" style="transition: height 0.4s ease-in-out;"></div>`;
 
     boardRow.appendChild(evalBarWrapper);
     boardRow.appendChild(leftCapturePanel);
     boardRow.appendChild(container);
     boardRow.appendChild(rightCapturePanel);
 
+    // Create a real, visible turn indicator
+    const turnIndicatorWrapper = document.createElement("div");
+    turnIndicatorWrapper.style.cssText = "text-align: center; font-size: 20px; font-weight: bold; color: #ebecd0; margin: 10px 0; padding: 10px; background: #2b2927; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);";
+    turnIndicatorWrapper.innerText = "White's Turn";
+    state.turnIndicator = turnIndicatorWrapper;
+
     mainGameArea.appendChild(topPlayer);
+    mainGameArea.appendChild(turnIndicatorWrapper);
     mainGameArea.appendChild(boardRow);
     mainGameArea.appendChild(bottomPlayer);
 
@@ -159,9 +166,6 @@ window.onload = () => {
     document.body.appendChild(layoutWrapper);
 
     updateEvalBar();
-
-    const dummyTurn = document.createElement("div");
-    state.turnIndicator = dummyTurn;
 
     container.addEventListener("mousemove", (e) => {
         const rect = container.getBoundingClientRect();
@@ -311,7 +315,9 @@ window.onload = () => {
                     draggedImg.style.margin = '0';
                     draggedImg.style.width = `${draggedImg.dataset.width}px`;
                     draggedImg.style.height = `${draggedImg.dataset.height}px`;
-                    draggedImg.style.transform = 'none';
+                    draggedImg.style.transform = 'scale(1.15)';
+                    draggedImg.style.filter = 'drop-shadow(0 15px 20px rgba(0,0,0,0.6))';
+                    draggedImg.style.cursor = 'grabbing';
                 }
             }
 
@@ -369,6 +375,8 @@ window.onload = () => {
                 draggedImg.style.top = '';
                 draggedImg.style.margin = '';
                 draggedImg.style.transform = '';
+                draggedImg.style.filter = '';
+                draggedImg.style.cursor = '';
                 
                 draggedImg.style.display = 'none';
                 const elemBelow = document.elementFromPoint(e.clientX, e.clientY);

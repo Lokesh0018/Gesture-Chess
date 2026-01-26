@@ -54,22 +54,29 @@ export const isUnderAttack = (r, c, color, board = state.board) => {
 };
 
 export const isMoveSafe = (startI, startJ, targetI, targetJ, color = state.currentTurn) => {
-    const tempBoard = state.board.map(row => row.map(p => p ? {...p} : null));
-    const piece = tempBoard[startI][startJ];
+    const piece = state.board[startI][startJ];
     
     if (!piece) return false;
     
-    if (piece.type === PIECES.PAWN && Math.abs(startJ - targetJ) === 1 && !tempBoard[targetI][targetJ]) {
-        tempBoard[startI][targetJ] = null;
-    }
+    const targetPiece = state.board[targetI][targetJ];
+    let capturedEnPassant = null;
+    let enPassantI = -1;
+    let enPassantJ = -1;
+
+    state.board[targetI][targetJ] = piece;
+    state.board[startI][startJ] = null;
     
-    tempBoard[targetI][targetJ] = piece;
-    tempBoard[startI][startJ] = null;
+    if (piece.type === PIECES.PAWN && Math.abs(startJ - targetJ) === 1 && !targetPiece) {
+        enPassantI = startI;
+        enPassantJ = targetJ;
+        capturedEnPassant = state.board[enPassantI][enPassantJ];
+        state.board[enPassantI][enPassantJ] = null;
+    }
     
     let kingSq = null;
     for(let i=0; i<8; i++) {
         for(let j=0; j<8; j++) {
-            const p = tempBoard[i][j];
+            const p = state.board[i][j];
             if (p && p.color === color && p.type === PIECES.KING) {
                 kingSq = {i, j};
                 break;
@@ -77,10 +84,18 @@ export const isMoveSafe = (startI, startJ, targetI, targetJ, color = state.curre
         }
     }
     
+    let safe = true;
     if (kingSq) {
-        return !isUnderAttack(kingSq.i, kingSq.j, color, tempBoard);
+        safe = !isUnderAttack(kingSq.i, kingSq.j, color, state.board);
     }
-    return true; 
+
+    state.board[startI][startJ] = piece;
+    state.board[targetI][targetJ] = targetPiece;
+    if (capturedEnPassant !== null) {
+        state.board[enPassantI][enPassantJ] = capturedEnPassant;
+    }
+
+    return safe; 
 };
 
 export const hasAnyValidMoves = (color = state.currentTurn) => {

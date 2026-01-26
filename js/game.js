@@ -70,17 +70,20 @@ const playSpatialSound = (name, targetJ) => {
     source.start(0);
 };
 
-export const postMoveChecks = () => {
-    let kingSq = null;
-    for(let i=0; i<8; i++){
-        for(let j=0; j<8; j++){
+const findKing = (color) => {
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
             const p = state.board[i][j];
-            if(p && p.color === state.currentTurn && p.type === PIECES.KING) {
-                kingSq = {i, j};
-                break;
+            if (p && p.color === color && p.type === PIECES.KING) {
+                return { i, j };
             }
         }
     }
+    return null;
+};
+
+export const postMoveChecks = () => {
+    const kingSq = findKing(state.currentTurn);
     
     let inCheck = false;
     if (kingSq) {
@@ -171,15 +174,9 @@ const restoreHighlights = () => {
         if (tSq) tSq.classList.add('last-move');
     }
 
-    let kingSq = null;
-    for(let r=0; r<8; r++) {
-        for(let c=0; c<8; c++) {
-            const p = state.board[r][c];
-            if(p && p.color === state.currentTurn && p.type === PIECES.KING) { kingSq = {r,c}; break;}
-        }
-    }
-    if (kingSq && isUnderAttack(kingSq.r, kingSq.c, state.currentTurn)) {
-        const kDom = getSquare(kingSq.r, kingSq.c);
+    const kingSq = findKing(state.currentTurn);
+    if (kingSq && isUnderAttack(kingSq.i, kingSq.j, state.currentTurn)) {
+        const kDom = getSquare(kingSq.i, kingSq.j);
         if(kDom) kDom.classList.add('in-check');
     }
 };
@@ -313,14 +310,8 @@ export const movePiece = async (targetI, targetJ) => {
         
         state.currentTurn = state.currentTurn === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
         
-        let kingSq = null;
-        for(let r=0; r<8; r++) {
-            for(let c=0; c<8; c++) {
-                const p = state.board[r][c];
-                if(p && p.color === state.currentTurn && p.type === PIECES.KING) { kingSq = {r,c}; break;}
-            }
-        }
-        if (kingSq && isUnderAttack(kingSq.r, kingSq.c, state.currentTurn)) {
+        const kingSq = findKing(state.currentTurn);
+        if (kingSq && isUnderAttack(kingSq.i, kingSq.j, state.currentTurn)) {
             // Need to know if checkmate for '#' but we check mate in postMoveChecks. Just add '+'
             notation += "+";
         }
