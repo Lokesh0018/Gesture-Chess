@@ -29,6 +29,7 @@ export const state = {
     stateHistory: [], // Store deep copies for Undo
     redoHistory: [], // Store copies for Redo
     
+    premove: null,
     whiteTime: 0,
     blackTime: 0,
     timerInterval: null,

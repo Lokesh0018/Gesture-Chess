@@ -1,7 +1,7 @@
 import { state, initializeBoard } from './state.js';
 import { createBoard, renderBoard, clearDots } from './dom.js';
 import { showMoves, showGameOver } from './ui.js';
-import { movePiece, undoAction, redoAction, handleHover, handleHoverOut } from './game.js';
+import { movePiece, undoAction, redoAction, handleHover, handleHoverOut, updateEvalBar } from './game.js';
 
 window.onload = () => {
     initializeBoard();
@@ -29,9 +29,10 @@ window.onload = () => {
     const topPlayer = document.createElement("div");
     topPlayer.className = "player-info";
     topPlayer.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div class="player-avatar" style="background-color: #7b4f3b; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
             <div class="player-name">Player 2</div>
+            <div id="p2-trumpet" style="position: absolute; right: -60px; bottom: -10px; z-index: 100;"></div>
         </div>
         <div class="player-clock clock-dark" id="black-clock">00:00</div>
     `;
@@ -40,9 +41,10 @@ window.onload = () => {
     const bottomPlayer = document.createElement("div");
     bottomPlayer.className = "player-info";
     bottomPlayer.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div class="player-avatar" style="background-color: #aaa; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
             <div class="player-name">Player 1</div>
+            <div id="p1-trumpet" style="position: absolute; right: -60px; bottom: -10px; z-index: 100;"></div>
         </div>
         <div class="player-clock" id="white-clock">00:00</div>
     `;
@@ -74,6 +76,11 @@ window.onload = () => {
 
     rightCapturePanel.appendChild(whiteCaptures);
 
+    const evalBarWrapper = document.createElement("div");
+    evalBarWrapper.className = "eval-bar-wrapper";
+    evalBarWrapper.innerHTML = `<div id="eval-fill"></div>`;
+
+    boardRow.appendChild(evalBarWrapper);
     boardRow.appendChild(leftCapturePanel);
     boardRow.appendChild(container);
     boardRow.appendChild(rightCapturePanel);
@@ -151,6 +158,8 @@ window.onload = () => {
 
     document.body.appendChild(layoutWrapper);
 
+    updateEvalBar();
+
     const dummyTurn = document.createElement("div");
     state.turnIndicator = dummyTurn;
 
@@ -198,20 +207,62 @@ window.onload = () => {
         }
     });
 
+    container.addEventListener("contextmenu", (e) => e.preventDefault());
+
     let draggedImg = null;
     let dragStartSquare = null;
     let pointerId = null;
     let startX = 0, startY = 0;
     let isDragging = false;
+    
+    let rightDragStartSquare = null;
+    let activeArrow = null;
 
     container.addEventListener("pointerdown", (e) => {
         if (window.isAnimating) return;
+        
+        if (e.button === 2) {
+            e.preventDefault();
+            const sq = e.target.closest('.child');
+            if (sq) {
+                rightDragStartSquare = sq;
+                const rect = sq.getBoundingClientRect();
+                const boardRect = container.getBoundingClientRect();
+                const sX = rect.left + rect.width / 2 - boardRect.left;
+                const sY = rect.top + rect.height / 2 - boardRect.top;
+                
+                activeArrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                activeArrow.setAttribute('x1', sX);
+                activeArrow.setAttribute('y1', sY);
+                activeArrow.setAttribute('x2', sX);
+                activeArrow.setAttribute('y2', sY);
+                activeArrow.setAttribute('stroke', 'rgba(235, 97, 80, 0.8)');
+                activeArrow.setAttribute('stroke-width', '12');
+                activeArrow.setAttribute('stroke-linecap', 'round');
+                activeArrow.setAttribute('marker-end', 'url(#arrowhead)');
+                
+                const svg = document.getElementById('tactical-overlay');
+                if (svg) svg.appendChild(activeArrow);
+            }
+            return;
+        }
+
+        if (e.button === 0) {
+            const svg = document.getElementById('tactical-overlay');
+            if (svg) Array.from(svg.querySelectorAll('line')).forEach(line => line.remove());
+            document.querySelectorAll('.highlight-square').forEach(el => el.classList.remove('highlight-square'));
+            
+            // Left click also clears premoves
+            state.premove = null;
+            document.querySelectorAll('.premove-square').forEach(el => el.classList.remove('premove-square'));
+        }
+
         if (e.target.matches("img") && !e.target.classList.contains('particle')) {
             const sq = e.target.parentElement;
             const i = parseInt(sq.dataset.i);
             const j = parseInt(sq.dataset.j);
             const piece = state.board[i][j];
-            if (piece && piece.color === state.currentTurn) {
+            if (piece) {
                 e.preventDefault();
                 pointerId = e.pointerId;
                 draggedImg = e.target;
@@ -233,12 +284,19 @@ window.onload = () => {
                 draggedImg.dataset.offsetY = startY - imgTop;
                 
                 draggedImg.setPointerCapture(pointerId);
-                showMoves(i, j);
+                if (piece.color === state.currentTurn) showMoves(i, j);
             }
         }
     });
 
     window.addEventListener("pointermove", (e) => {
+        if (activeArrow) {
+            const boardRect = container.getBoundingClientRect();
+            activeArrow.setAttribute('x2', e.clientX - boardRect.left);
+            activeArrow.setAttribute('y2', e.clientY - boardRect.top);
+            return;
+        }
+
         if (draggedImg && e.pointerId === pointerId) {
             if (!isDragging) {
                 const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
@@ -267,6 +325,34 @@ window.onload = () => {
     });
 
     window.addEventListener("pointerup", (e) => {
+        if (activeArrow) {
+            const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+            const dropSquare = elemBelow ? elemBelow.closest('.child') : null;
+            
+            if (dropSquare && dropSquare !== rightDragStartSquare) {
+                const rect = dropSquare.getBoundingClientRect();
+                const boardRect = container.getBoundingClientRect();
+                const endX = rect.left + rect.width / 2 - boardRect.left;
+                const endY = rect.top + rect.height / 2 - boardRect.top;
+                
+                const startX = parseFloat(activeArrow.getAttribute('x1'));
+                const startY = parseFloat(activeArrow.getAttribute('y1'));
+                const angle = Math.atan2(endY - startY, endX - startX);
+                const offset = 22; 
+                
+                activeArrow.setAttribute('x2', endX - Math.cos(angle) * offset);
+                activeArrow.setAttribute('y2', endY - Math.sin(angle) * offset);
+            } else if (dropSquare === rightDragStartSquare) {
+                activeArrow.remove();
+                dropSquare.classList.toggle('highlight-square');
+            } else {
+                activeArrow.remove();
+            }
+            activeArrow = null;
+            rightDragStartSquare = null;
+            return;
+        }
+
         if (draggedImg && e.pointerId === pointerId) {
             draggedImg.releasePointerCapture(pointerId);
             
@@ -298,13 +384,23 @@ window.onload = () => {
                 const startI = parseInt(dragStartSquare.dataset.i);
                 const startJ = parseInt(dragStartSquare.dataset.j);
                 
-                if (startI === targetI && startJ === targetJ) {
-                    // It's a click, leave the piece selected
-                } else if (dropSquare.classList.contains('dot')) {
-                    movePiece(targetI, targetJ);
-                } else {
-                    clearDots();
-                    state.selectedSquare = null;
+                const piece = state.board[startI][startJ];
+                if (piece && piece.color === state.currentTurn) {
+                    if (startI === targetI && startJ === targetJ) {
+                        // It's a click, leave the piece selected
+                    } else if (dropSquare.classList.contains('dot')) {
+                        movePiece(targetI, targetJ);
+                    } else {
+                        clearDots();
+                        state.selectedSquare = null;
+                    }
+                } else if (piece && piece.color !== state.currentTurn) {
+                    // Premove logic!
+                    if (startI !== targetI || startJ !== targetJ) {
+                        state.premove = { startI, startJ, targetI, targetJ };
+                        document.querySelectorAll('.premove-square').forEach(el => el.classList.remove('premove-square'));
+                        dropSquare.classList.add('premove-square');
+                    }
                 }
             } else if (isDragging && !dropSquare) {
                 clearDots();
@@ -315,6 +411,21 @@ window.onload = () => {
             dragStartSquare = null;
             pointerId = null;
             isDragging = false;
+        }
+    });
+
+    window.addEventListener('execute-premove', (e) => {
+        const pm = e.detail;
+        const p = state.board[pm.startI][pm.startJ];
+        if (p && p.color === state.currentTurn) {
+            showMoves(pm.startI, pm.startJ);
+            const targetSq = document.querySelector(`.child[data-i="${pm.targetI}"][data-j="${pm.targetJ}"]`);
+            if (targetSq && targetSq.classList.contains('dot')) {
+                movePiece(pm.targetI, pm.targetJ);
+            } else {
+                clearDots();
+                state.selectedSquare = null;
+            }
         }
     });
 };

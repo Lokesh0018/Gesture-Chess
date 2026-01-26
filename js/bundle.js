@@ -31,6 +31,7 @@
     // Store deep copies for Undo
     redoHistory: [],
     // Store copies for Redo
+    premove: null,
     whiteTime: 0,
     blackTime: 0,
     timerInterval: null,
@@ -154,6 +155,30 @@
       }
     }
     container.innerHTML = child;
+    const svgOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svgOverlay.id = "tactical-overlay";
+    svgOverlay.style.position = "absolute";
+    svgOverlay.style.top = "0";
+    svgOverlay.style.left = "0";
+    svgOverlay.style.width = "100%";
+    svgOverlay.style.height = "100%";
+    svgOverlay.style.pointerEvents = "none";
+    svgOverlay.style.zIndex = "500";
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+    marker.setAttribute("id", "arrowhead");
+    marker.setAttribute("markerWidth", "5");
+    marker.setAttribute("markerHeight", "4");
+    marker.setAttribute("refX", "3");
+    marker.setAttribute("refY", "2");
+    marker.setAttribute("orient", "auto-start-reverse");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M 0 0 L 5 2 L 0 4 z");
+    path.setAttribute("fill", "rgba(235, 97, 80, 0.8)");
+    marker.appendChild(path);
+    defs.appendChild(marker);
+    svgOverlay.appendChild(defs);
+    container.appendChild(svgOverlay);
   };
   var renderBoard = () => {
     for (let i = 0; i < 8; i++) {
@@ -463,22 +488,22 @@
   };
   var showPromotionModal = (color, callback) => {
     const overlay = document.createElement("div");
-    overlay.style.position = "fixed";
+    overlay.style.position = "absolute";
     overlay.style.top = "0";
     overlay.style.left = "0";
-    overlay.style.width = "100vw";
-    overlay.style.height = "100vh";
+    overlay.style.width = "100%";
+    overlay.style.height = "100%";
     overlay.style.backgroundColor = "rgba(0,0,0,0.5)";
     overlay.style.zIndex = "999";
     const modal = document.createElement("div");
-    modal.style.position = "fixed";
+    modal.style.position = "absolute";
     modal.style.top = "50%";
     modal.style.left = "50%";
     modal.style.transform = "translate(-50%, -50%)";
-    modal.style.backgroundColor = "#262522";
-    modal.style.padding = "30px";
-    modal.style.boxShadow = "0 10px 30px rgba(0,0,0,0.5)";
-    modal.style.borderRadius = "8px";
+    modal.style.backgroundColor = "#403d39";
+    modal.style.padding = "25px";
+    modal.style.boxShadow = "0 15px 40px rgba(0,0,0,0.6)";
+    modal.style.borderRadius = "12px";
     modal.style.display = "flex";
     modal.style.gap = "15px";
     modal.style.zIndex = "1000";
@@ -487,20 +512,31 @@
       const img = document.createElement("img");
       img.src = `./asserts/${color}${choice}.png`;
       img.style.cursor = "pointer";
-      img.style.width = "60px";
-      img.style.height = "60px";
-      img.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
-      img.style.borderRadius = "8px";
-      img.style.padding = "4px";
+      img.style.width = "70px";
+      img.style.height = "70px";
+      img.style.backgroundColor = "#5c5852";
+      img.style.borderRadius = "10px";
+      img.style.padding = "5px";
+      img.style.transition = "transform 0.2s, background-color 0.2s";
+      img.onmouseover = () => {
+        img.style.backgroundColor = "#7a756d";
+        img.style.transform = "scale(1.1)";
+      };
+      img.onmouseout = () => {
+        img.style.backgroundColor = "#5c5852";
+        img.style.transform = "scale(1)";
+      };
       img.onclick = () => {
-        document.body.removeChild(modal);
-        document.body.removeChild(overlay);
+        const container2 = document.querySelector(".container");
+        container2.removeChild(modal);
+        container2.removeChild(overlay);
         callback(choice);
       };
       modal.appendChild(img);
     });
-    document.body.appendChild(overlay);
-    document.body.appendChild(modal);
+    const container = document.querySelector(".container");
+    container.appendChild(overlay);
+    container.appendChild(modal);
   };
   var showCheckMessage = () => {
     const msg = document.createElement("div");
@@ -1145,7 +1181,36 @@
       state.timerInterval = null;
     }
   };
-  var checkSound = new Audio("https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3");
+  var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  var audioBuffers = {};
+  var loadSound = async (name, url) => {
+    try {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      audioBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+    } catch (e) {
+      console.warn("Failed to load sound", url);
+    }
+  };
+  loadSound("move", "https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3");
+  loadSound("capture", "https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3");
+  loadSound("check", "https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3");
+  var playSpatialSound = (name, targetJ) => {
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const buffer = audioBuffers[name];
+    if (!buffer) return;
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    if (audioCtx.createStereoPanner) {
+      const panner = audioCtx.createStereoPanner();
+      panner.pan.value = targetJ / 7 * 2 - 1;
+      source.connect(panner);
+      panner.connect(audioCtx.destination);
+    } else {
+      source.connect(audioCtx.destination);
+    }
+    source.start(0);
+  };
   var postMoveChecks = () => {
     let kingSq = null;
     for (let i = 0; i < 8; i++) {
@@ -1165,7 +1230,11 @@
     if (inCheck && kingSq) {
       const sq = getSquare(kingSq.i, kingSq.j);
       if (sq) sq.classList.add("in-check");
+      document.body.classList.add("check-vignette");
+    } else {
+      document.body.classList.remove("check-vignette");
     }
+    updateEvalBar();
     if (!hasAnyValidMoves()) {
       if (inCheck) showGameOver(`Checkmate! ${state.currentTurn === COLORS.WHITE ? "Black" : "White"} Wins!`);
       else showGameOver("Stalemate! It's a draw!");
@@ -1185,7 +1254,7 @@
     }
     if (inCheck) {
       showCheckMessage();
-      checkSound.play().catch((e) => console.warn("Audio play prevented", e));
+      playSpatialSound("check", kingSq.j);
     }
   };
   var getAlgebraic = (piece, startI, startJ, targetI, targetJ, captured) => {
@@ -1313,12 +1382,16 @@
     window.isAnimating = false;
     if (targetPiece) {
       addCapturedToPanel(targetPiece, targetI, targetJ);
+      playSpatialSound("capture", targetJ);
     } else if (isEnPassant) {
       const capturedPawn = state.board[startI][targetJ];
       if (capturedPawn) {
         addCapturedToPanel(capturedPawn, startI, targetJ);
         state.board[startI][targetJ] = null;
       }
+      playSpatialSound("capture", targetJ);
+    } else {
+      playSpatialSound("move", targetJ);
     }
     if (piece.type === PIECES.KING && Math.abs(startJ - targetJ) === 2) {
       if (targetJ === 2) {
@@ -1375,6 +1448,9 @@
     };
     if (piece.type === PIECES.PAWN) {
       if (state.currentTurn === COLORS.WHITE && targetI === 0 || state.currentTurn === COLORS.BLACK && targetI === 7) {
+        const originalType = piece.type;
+        piece.type = "Flag";
+        renderBoard();
         showPromotionModal(state.currentTurn, async (chosenType) => {
           piece.type = chosenType;
           let char = chosenType === PIECES.HORSE ? "N" : chosenType[0];
@@ -1399,6 +1475,18 @@
     img.style.padding = "2px";
     const panel = piece.color === COLORS.WHITE ? state.leftPanel : state.rightPanel;
     panel.appendChild(img);
+    const trumpetContainerId = piece.color === COLORS.WHITE ? "p2-trumpet" : "p1-trumpet";
+    const trumpetContainer = document.getElementById(trumpetContainerId);
+    if (trumpetContainer) {
+      trumpetContainer.innerHTML = "";
+      const trumpetImg = document.createElement("img");
+      trumpetImg.src = `./asserts/trumpet.gif?t=${Date.now()}`;
+      trumpetImg.style.width = "50px";
+      trumpetContainer.appendChild(trumpetImg);
+      setTimeout(() => {
+        if (trumpetImg.parentElement) trumpetImg.remove();
+      }, 2500);
+    }
     const startSq = getSquare(victimI, victimJ);
     if (startSq) {
       const startRect = startSq.getBoundingClientRect();
@@ -1447,6 +1535,33 @@
     });
     panel.scrollTop = panel.scrollHeight;
   };
+  var PIECE_VALUES = {
+    [PIECES.PAWN]: 1,
+    [PIECES.HORSE]: 3,
+    [PIECES.BISHOP]: 3,
+    [PIECES.ROOK]: 5,
+    [PIECES.QUEEN]: 9,
+    [PIECES.KING]: 0
+  };
+  var updateEvalBar = () => {
+    let whiteScore = 0;
+    let blackScore = 0;
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        const p = state.board[i][j];
+        if (p) {
+          if (p.color === COLORS.WHITE) whiteScore += PIECE_VALUES[p.type];
+          else blackScore += PIECE_VALUES[p.type];
+        }
+      }
+    }
+    const diff = whiteScore - blackScore;
+    let percentage = 50 + diff / 20 * 50;
+    if (percentage > 100) percentage = 100;
+    if (percentage < 0) percentage = 0;
+    const fill = document.getElementById("eval-fill");
+    if (fill) fill.style.height = `${percentage}%`;
+  };
 
   // js/main.js
   window.onload = () => {
@@ -1468,18 +1583,20 @@
     const topPlayer = document.createElement("div");
     topPlayer.className = "player-info";
     topPlayer.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div class="player-avatar" style="background-color: #7b4f3b; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
             <div class="player-name">Player 2</div>
+            <div id="p2-trumpet" style="position: absolute; right: -60px; bottom: -10px; z-index: 100;"></div>
         </div>
         <div class="player-clock clock-dark" id="black-clock">00:00</div>
     `;
     const bottomPlayer = document.createElement("div");
     bottomPlayer.className = "player-info";
     bottomPlayer.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div class="player-avatar" style="background-color: #aaa; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
             <div class="player-name">Player 1</div>
+            <div id="p1-trumpet" style="position: absolute; right: -60px; bottom: -10px; z-index: 100;"></div>
         </div>
         <div class="player-clock" id="white-clock">00:00</div>
     `;
@@ -1500,6 +1617,10 @@
     whiteCaptures.className = "side-captures";
     whiteCaptures.id = "white-captures";
     rightCapturePanel.appendChild(whiteCaptures);
+    const evalBarWrapper = document.createElement("div");
+    evalBarWrapper.className = "eval-bar-wrapper";
+    evalBarWrapper.innerHTML = `<div id="eval-fill"></div>`;
+    boardRow.appendChild(evalBarWrapper);
     boardRow.appendChild(leftCapturePanel);
     boardRow.appendChild(container);
     boardRow.appendChild(rightCapturePanel);
@@ -1556,6 +1677,7 @@
     layoutWrapper.appendChild(mainGameArea);
     layoutWrapper.appendChild(rightSidebar);
     document.body.appendChild(layoutWrapper);
+    updateEvalBar();
     const dummyTurn = document.createElement("div");
     state.turnIndicator = dummyTurn;
     container.addEventListener("mousemove", (e) => {
@@ -1595,19 +1717,52 @@
         state.selectedSquare = null;
       }
     });
+    container.addEventListener("contextmenu", (e) => e.preventDefault());
     let draggedImg = null;
     let dragStartSquare = null;
     let pointerId = null;
     let startX = 0, startY = 0;
     let isDragging = false;
+    let rightDragStartSquare = null;
+    let activeArrow = null;
     container.addEventListener("pointerdown", (e) => {
       if (window.isAnimating) return;
+      if (e.button === 2) {
+        e.preventDefault();
+        const sq = e.target.closest(".child");
+        if (sq) {
+          rightDragStartSquare = sq;
+          const rect = sq.getBoundingClientRect();
+          const boardRect = container.getBoundingClientRect();
+          const sX = rect.left + rect.width / 2 - boardRect.left;
+          const sY = rect.top + rect.height / 2 - boardRect.top;
+          activeArrow = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          activeArrow.setAttribute("x1", sX);
+          activeArrow.setAttribute("y1", sY);
+          activeArrow.setAttribute("x2", sX);
+          activeArrow.setAttribute("y2", sY);
+          activeArrow.setAttribute("stroke", "rgba(235, 97, 80, 0.8)");
+          activeArrow.setAttribute("stroke-width", "12");
+          activeArrow.setAttribute("stroke-linecap", "round");
+          activeArrow.setAttribute("marker-end", "url(#arrowhead)");
+          const svg = document.getElementById("tactical-overlay");
+          if (svg) svg.appendChild(activeArrow);
+        }
+        return;
+      }
+      if (e.button === 0) {
+        const svg = document.getElementById("tactical-overlay");
+        if (svg) Array.from(svg.querySelectorAll("line")).forEach((line) => line.remove());
+        document.querySelectorAll(".highlight-square").forEach((el) => el.classList.remove("highlight-square"));
+        state.premove = null;
+        document.querySelectorAll(".premove-square").forEach((el) => el.classList.remove("premove-square"));
+      }
       if (e.target.matches("img") && !e.target.classList.contains("particle")) {
         const sq = e.target.parentElement;
         const i = parseInt(sq.dataset.i);
         const j = parseInt(sq.dataset.j);
         const piece = state.board[i][j];
-        if (piece && piece.color === state.currentTurn) {
+        if (piece) {
           e.preventDefault();
           pointerId = e.pointerId;
           draggedImg = e.target;
@@ -1626,11 +1781,17 @@
           draggedImg.dataset.offsetX = startX - imgLeft;
           draggedImg.dataset.offsetY = startY - imgTop;
           draggedImg.setPointerCapture(pointerId);
-          showMoves(i, j);
+          if (piece.color === state.currentTurn) showMoves(i, j);
         }
       }
     });
     window.addEventListener("pointermove", (e) => {
+      if (activeArrow) {
+        const boardRect = container.getBoundingClientRect();
+        activeArrow.setAttribute("x2", e.clientX - boardRect.left);
+        activeArrow.setAttribute("y2", e.clientY - boardRect.top);
+        return;
+      }
       if (draggedImg && e.pointerId === pointerId) {
         if (!isDragging) {
           const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
@@ -1656,6 +1817,30 @@
       }
     });
     window.addEventListener("pointerup", (e) => {
+      if (activeArrow) {
+        const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+        const dropSquare = elemBelow ? elemBelow.closest(".child") : null;
+        if (dropSquare && dropSquare !== rightDragStartSquare) {
+          const rect = dropSquare.getBoundingClientRect();
+          const boardRect = container.getBoundingClientRect();
+          const endX = rect.left + rect.width / 2 - boardRect.left;
+          const endY = rect.top + rect.height / 2 - boardRect.top;
+          const startX2 = parseFloat(activeArrow.getAttribute("x1"));
+          const startY2 = parseFloat(activeArrow.getAttribute("y1"));
+          const angle = Math.atan2(endY - startY2, endX - startX2);
+          const offset = 22;
+          activeArrow.setAttribute("x2", endX - Math.cos(angle) * offset);
+          activeArrow.setAttribute("y2", endY - Math.sin(angle) * offset);
+        } else if (dropSquare === rightDragStartSquare) {
+          activeArrow.remove();
+          dropSquare.classList.toggle("highlight-square");
+        } else {
+          activeArrow.remove();
+        }
+        activeArrow = null;
+        rightDragStartSquare = null;
+        return;
+      }
       if (draggedImg && e.pointerId === pointerId) {
         draggedImg.releasePointerCapture(pointerId);
         let dropSquare = null;
@@ -1681,12 +1866,21 @@
           const targetJ = parseInt(dropSquare.dataset.j);
           const startI = parseInt(dragStartSquare.dataset.i);
           const startJ = parseInt(dragStartSquare.dataset.j);
-          if (startI === targetI && startJ === targetJ) {
-          } else if (dropSquare.classList.contains("dot")) {
-            movePiece(targetI, targetJ);
-          } else {
-            clearDots();
-            state.selectedSquare = null;
+          const piece = state.board[startI][startJ];
+          if (piece && piece.color === state.currentTurn) {
+            if (startI === targetI && startJ === targetJ) {
+            } else if (dropSquare.classList.contains("dot")) {
+              movePiece(targetI, targetJ);
+            } else {
+              clearDots();
+              state.selectedSquare = null;
+            }
+          } else if (piece && piece.color !== state.currentTurn) {
+            if (startI !== targetI || startJ !== targetJ) {
+              state.premove = { startI, startJ, targetI, targetJ };
+              document.querySelectorAll(".premove-square").forEach((el) => el.classList.remove("premove-square"));
+              dropSquare.classList.add("premove-square");
+            }
           }
         } else if (isDragging && !dropSquare) {
           clearDots();
@@ -1696,6 +1890,20 @@
         dragStartSquare = null;
         pointerId = null;
         isDragging = false;
+      }
+    });
+    window.addEventListener("execute-premove", (e) => {
+      const pm = e.detail;
+      const p = state.board[pm.startI][pm.startJ];
+      if (p && p.color === state.currentTurn) {
+        showMoves(pm.startI, pm.startJ);
+        const targetSq = document.querySelector(`.child[data-i="${pm.targetI}"][data-j="${pm.targetJ}"]`);
+        if (targetSq && targetSq.classList.contains("dot")) {
+          movePiece(pm.targetI, pm.targetJ);
+        } else {
+          clearDots();
+          state.selectedSquare = null;
+        }
       }
     });
   };

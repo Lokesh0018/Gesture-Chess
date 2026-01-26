@@ -122,23 +122,23 @@ export const showMoves = (i, j, isHover = false) => {
 
 export const showPromotionModal = (color, callback) => {
     const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
+    overlay.style.position = 'absolute';
     overlay.style.top = '0';
     overlay.style.left = '0';
-    overlay.style.width = '100vw';
-    overlay.style.height = '100vh';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
     overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
     overlay.style.zIndex = '999';
 
     const modal = document.createElement('div');
-    modal.style.position = 'fixed';
+    modal.style.position = 'absolute'; // inside container
     modal.style.top = '50%';
     modal.style.left = '50%';
     modal.style.transform = 'translate(-50%, -50%)';
-    modal.style.backgroundColor = '#262522';
-    modal.style.padding = '30px';
-    modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-    modal.style.borderRadius = '8px';
+    modal.style.backgroundColor = '#403d39'; // solid dark
+    modal.style.padding = '25px';
+    modal.style.boxShadow = '0 15px 40px rgba(0,0,0,0.6)';
+    modal.style.borderRadius = '12px';
     modal.style.display = 'flex';
     modal.style.gap = '15px';
     modal.style.zIndex = '1000';
@@ -148,21 +148,34 @@ export const showPromotionModal = (color, callback) => {
         const img = document.createElement('img');
         img.src = `./asserts/${color}${choice}.png`;
         img.style.cursor = 'pointer';
-        img.style.width = '60px';
-        img.style.height = '60px';
-        img.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-        img.style.borderRadius = '8px';
-        img.style.padding = '4px';
+        img.style.width = '70px';
+        img.style.height = '70px';
+        img.style.backgroundColor = '#5c5852'; // More active look
+        img.style.borderRadius = '10px';
+        img.style.padding = '5px';
+        img.style.transition = 'transform 0.2s, background-color 0.2s';
+        
+        img.onmouseover = () => {
+            img.style.backgroundColor = '#7a756d';
+            img.style.transform = 'scale(1.1)';
+        };
+        img.onmouseout = () => {
+            img.style.backgroundColor = '#5c5852';
+            img.style.transform = 'scale(1)';
+        };
+        
         img.onclick = () => {
-            document.body.removeChild(modal);
-            document.body.removeChild(overlay);
+            const container = document.querySelector('.container');
+            container.removeChild(modal);
+            container.removeChild(overlay);
             callback(choice);
         };
         modal.appendChild(img);
     });
 
-    document.body.appendChild(overlay);
-    document.body.appendChild(modal);
+    const container = document.querySelector('.container');
+    container.appendChild(overlay);
+    container.appendChild(modal);
 };
 
 export const showCheckMessage = () => {

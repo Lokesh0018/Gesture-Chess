@@ -32,7 +32,43 @@ export const stopTimer = () => {
         state.timerInterval = null;
     }
 };
-const checkSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3');
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const audioBuffers = {};
+
+const loadSound = async (name, url) => {
+    try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffers[name] = await audioCtx.decodeAudioData(arrayBuffer);
+    } catch (e) {
+        console.warn("Failed to load sound", url);
+    }
+};
+
+loadSound('move', 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3');
+loadSound('capture', 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3');
+loadSound('check', 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3');
+
+const playSpatialSound = (name, targetJ) => {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const buffer = audioBuffers[name];
+    if (!buffer) return;
+    
+    const source = audioCtx.createBufferSource();
+    source.buffer = buffer;
+    
+    if (audioCtx.createStereoPanner) {
+        const panner = audioCtx.createStereoPanner();
+        // Pan from -1.0 (left) to 1.0 (right) based on file (0 to 7)
+        panner.pan.value = (targetJ / 7) * 2 - 1;
+        source.connect(panner);
+        panner.connect(audioCtx.destination);
+    } else {
+        source.connect(audioCtx.destination);
+    }
+    
+    source.start(0);
+};
 
 export const postMoveChecks = () => {
     let kingSq = null;
@@ -55,7 +91,12 @@ export const postMoveChecks = () => {
     if (inCheck && kingSq) {
         const sq = getSquare(kingSq.i, kingSq.j);
         if(sq) sq.classList.add('in-check');
+        document.body.classList.add('check-vignette');
+    } else {
+        document.body.classList.remove('check-vignette');
     }
+
+    updateEvalBar();
 
     if (!hasAnyValidMoves()) {
         if (inCheck) showGameOver(`Checkmate! ${state.currentTurn === COLORS.WHITE ? 'Black' : 'White'} Wins!`);
@@ -78,7 +119,7 @@ export const postMoveChecks = () => {
 
     if (inCheck) {
         showCheckMessage();
-        checkSound.play().catch(e => console.warn("Audio play prevented", e));
+        playSpatialSound('check', kingSq.j);
     }
 };
 
@@ -226,12 +267,16 @@ export const movePiece = async (targetI, targetJ) => {
 
     if (targetPiece) {
         addCapturedToPanel(targetPiece, targetI, targetJ);
+        playSpatialSound('capture', targetJ);
     } else if (isEnPassant) {
         const capturedPawn = state.board[startI][targetJ];
         if (capturedPawn) {
             addCapturedToPanel(capturedPawn, startI, targetJ);
             state.board[startI][targetJ] = null;
         }
+        playSpatialSound('capture', targetJ);
+    } else {
+        playSpatialSound('move', targetJ);
     }
 
     if (piece.type === PIECES.KING && Math.abs(startJ - targetJ) === 2) {
@@ -294,6 +339,10 @@ export const movePiece = async (targetI, targetJ) => {
 
     if (piece.type === PIECES.PAWN) {
         if ((state.currentTurn === COLORS.WHITE && targetI === 0) || (state.currentTurn === COLORS.BLACK && targetI === 7)) {
+            const originalType = piece.type;
+            piece.type = "Flag";
+            renderBoard();
+
             showPromotionModal(state.currentTurn, async (chosenType) => {
                 piece.type = chosenType;
                 let char = chosenType === PIECES.HORSE ? 'N' : chosenType[0];
@@ -321,6 +370,20 @@ const addCapturedToPanel = (piece, victimI, victimJ) => {
     
     const panel = piece.color === COLORS.WHITE ? state.leftPanel : state.rightPanel;
     panel.appendChild(img);
+
+    // Trumpet logic (if White kills Black, piece.color is BLACK, Player 1 gets trumpet)
+    const trumpetContainerId = piece.color === COLORS.WHITE ? 'p2-trumpet' : 'p1-trumpet';
+    const trumpetContainer = document.getElementById(trumpetContainerId);
+    if (trumpetContainer) {
+        trumpetContainer.innerHTML = '';
+        const trumpetImg = document.createElement('img');
+        trumpetImg.src = `./asserts/trumpet.gif?t=${Date.now()}`;
+        trumpetImg.style.width = '50px';
+        trumpetContainer.appendChild(trumpetImg);
+        setTimeout(() => {
+            if (trumpetImg.parentElement) trumpetImg.remove();
+        }, 2500);
+    }
 
     const startSq = getSquare(victimI, victimJ);
     if (startSq) {
@@ -377,4 +440,36 @@ const renderMoveHistory = () => {
         panel.appendChild(row);
     });
     panel.scrollTop = panel.scrollHeight;
+};
+
+const PIECE_VALUES = {
+    [PIECES.PAWN]: 1,
+    [PIECES.HORSE]: 3,
+    [PIECES.BISHOP]: 3,
+    [PIECES.ROOK]: 5,
+    [PIECES.QUEEN]: 9,
+    [PIECES.KING]: 0
+};
+
+export const updateEvalBar = () => {
+    let whiteScore = 0;
+    let blackScore = 0;
+    
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            const p = state.board[i][j];
+            if (p) {
+                if (p.color === COLORS.WHITE) whiteScore += PIECE_VALUES[p.type];
+                else blackScore += PIECE_VALUES[p.type];
+            }
+        }
+    }
+    
+    const diff = whiteScore - blackScore;
+    let percentage = 50 + (diff / 20) * 50;
+    if (percentage > 100) percentage = 100;
+    if (percentage < 0) percentage = 0;
+    
+    const fill = document.getElementById('eval-fill');
+    if (fill) fill.style.height = `${percentage}%`;
 };

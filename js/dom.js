@@ -24,6 +24,37 @@ export const createBoard = () => {
         }
     }
     container.innerHTML = child;
+
+    // Create SVG overlay for tactical arrows
+    const svgOverlay = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgOverlay.id = 'tactical-overlay';
+    svgOverlay.style.position = 'absolute';
+    svgOverlay.style.top = '0';
+    svgOverlay.style.left = '0';
+    svgOverlay.style.width = '100%';
+    svgOverlay.style.height = '100%';
+    svgOverlay.style.pointerEvents = 'none';
+    svgOverlay.style.zIndex = '500';
+    
+    // Arrowhead marker
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'arrowhead');
+    marker.setAttribute('markerWidth', '5');
+    marker.setAttribute('markerHeight', '4');
+    marker.setAttribute('refX', '3');
+    marker.setAttribute('refY', '2');
+    marker.setAttribute('orient', 'auto-start-reverse');
+    
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M 0 0 L 5 2 L 0 4 z');
+    path.setAttribute('fill', 'rgba(235, 97, 80, 0.8)');
+    
+    marker.appendChild(path);
+    defs.appendChild(marker);
+    svgOverlay.appendChild(defs);
+    
+    container.appendChild(svgOverlay);
 };
 
 export const renderBoard = () => {
