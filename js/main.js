@@ -12,6 +12,7 @@ window.onload = () => {
 
     // Main layout wrapper
     const layoutWrapper = document.createElement("div");
+    layoutWrapper.className = "layout-wrapper";
     layoutWrapper.style.display = "flex";
     layoutWrapper.style.flexDirection = "row";
     layoutWrapper.style.justifyContent = "center";
@@ -51,6 +52,7 @@ window.onload = () => {
 
     // Board Row (Left Capture, Board, Right Capture)
     const boardRow = document.createElement("div");
+    boardRow.className = "board-row";
     boardRow.style.display = "flex";
     boardRow.style.flexDirection = "row";
     boardRow.style.alignItems = "stretch";
