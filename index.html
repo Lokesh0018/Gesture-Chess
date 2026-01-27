@@ -51,6 +51,24 @@
     .menu-btn.secondary:hover {
       background-color: #5c5852;
     }
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: #ebecd0;
+      text-decoration: none;
+      font-size: 1.2rem;
+      font-weight: bold;
+      background: #403d39;
+      padding: 10px 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      transition: background-color 0.2s, transform 0.2s;
+    }
+    .back-btn:hover {
+      background-color: #5c5852;
+      transform: translateY(-2px);
+    }
     @media (max-width: 600px) {
       h1 {
         font-size: 2.5rem;
@@ -63,13 +81,14 @@
   </style>
 </head>
 <body>
+  <a href="landing.html" class="back-btn">◀ Back</a>
   <h1>LoChess</h1>
   <p>Select a game mode to begin</p>
   <div class="menu-container">
     <a href="play.html" class="menu-btn">Play Local Multiplayer</a>
-    <a href="#" class="menu-btn secondary" onclick="alert('Puzzle Mode coming soon!')">Daily Puzzle</a>
-    <a href="#" class="menu-btn secondary" onclick="alert('AI Mode coming soon!')">Play vs AI</a>
-    <a href="#" class="menu-btn secondary" onclick="alert('Settings coming soon!')">Settings</a>
+    <a href="javascript:void(0)" class="menu-btn secondary" onclick="alert('Puzzle Mode coming soon!')">Daily Puzzle</a>
+    <a href="javascript:void(0)" class="menu-btn secondary" onclick="alert('AI Mode coming soon!')">Play vs AI</a>
+    <a href="javascript:void(0)" class="menu-btn secondary" onclick="alert('Settings coming soon!')">Settings</a>
   </div>
 </body>
 </html>

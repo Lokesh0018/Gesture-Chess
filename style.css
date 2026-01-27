@@ -493,7 +493,7 @@ img:active {
     .layout-wrapper {
         flex-direction: column !important;
         align-items: center !important;
-        padding: 10px !important;
+        padding: 60px 10px 10px 10px !important;
         width: 100% !important;
         box-sizing: border-box;
     }
@@ -533,4 +533,24 @@ img:active {
         margin: 10px 0;
         height: 350px;
     }
+}
+
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: #ebecd0;
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+    background: #403d39;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    transition: background-color 0.2s, transform 0.2s;
+    z-index: 2000;
+}
+.back-btn:hover {
+    background-color: #5c5852;
+    transform: translateY(-2px);
 }

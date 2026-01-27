@@ -108,28 +108,13 @@ window.onload = () => {
     const rightSidebar = document.createElement("div");
     rightSidebar.className = "right-sidebar";
 
-    const headerActions = document.createElement("div");
-    headerActions.style.display = "flex";
-    headerActions.style.width = "100%";
-
-    const menuBtn = document.createElement("a");
-    menuBtn.href = "index.html";
-    menuBtn.innerHTML = "◀ Menu";
-    menuBtn.title = "Back to Main Menu";
-    menuBtn.style.cssText = "background:#2b2927; text-decoration:none; border-right: 1px solid #403d39; border-bottom: 1px solid #403d39; color:#fff; font-size:16px; font-weight:bold; cursor:pointer; padding:15px; flex: 1; text-align:center; display:flex; align-items:center; justify-content:center;";
-    menuBtn.onmouseover = () => menuBtn.style.backgroundColor = "#3d3b39";
-    menuBtn.onmouseout = () => menuBtn.style.backgroundColor = "#2b2927";
-
     const restartBtn = document.createElement("button");
-    restartBtn.innerHTML = "↻ Restart";
+    restartBtn.innerHTML = "↻ Restart Game";
     restartBtn.title = "Restart Game";
-    restartBtn.style.cssText = "background:#2b2927; border:none; border-bottom: 1px solid #403d39; color:#fff; font-size:16px; font-weight:bold; cursor:pointer; padding:15px; flex: 1; text-align:center;";
+    restartBtn.style.cssText = "background:#2b2927; border:none; border-bottom: 1px solid #403d39; color:#fff; font-size:16px; font-weight:bold; cursor:pointer; padding:15px; width: 100%; text-align:center;";
     restartBtn.onclick = () => location.reload();
     restartBtn.onmouseover = () => restartBtn.style.backgroundColor = "#3d3b39";
     restartBtn.onmouseout = () => restartBtn.style.backgroundColor = "#2b2927";
-
-    headerActions.appendChild(menuBtn);
-    headerActions.appendChild(restartBtn);
 
     const controlsBar = document.createElement("div");
     controlsBar.className = "controls-bar";
@@ -173,7 +158,7 @@ window.onload = () => {
     movesContainer.className = "moves-container";
     state.moveHistoryPanel = movesContainer;
 
-    rightSidebar.appendChild(headerActions);
+    rightSidebar.appendChild(restartBtn);
     rightSidebar.appendChild(controlsBar);
     rightSidebar.appendChild(movesContainer);
 
