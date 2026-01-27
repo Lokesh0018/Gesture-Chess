@@ -312,8 +312,11 @@ export const movePiece = async (targetI, targetJ) => {
         
         const kingSq = findKing(state.currentTurn);
         if (kingSq && isUnderAttack(kingSq.i, kingSq.j, state.currentTurn)) {
-            // Need to know if checkmate for '#' but we check mate in postMoveChecks. Just add '+'
-            notation += "+";
+            if (!hasAnyValidMoves(state.currentTurn)) {
+                notation += "#";
+            } else {
+                notation += "+";
+            }
         }
         
         updateMoveHistory(notation);
