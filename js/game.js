@@ -3,6 +3,7 @@ import { clearDots, renderBoard, getSquare } from './dom.js';
 import { isUnderAttack, hasAnyValidMoves, checkDrawConditions } from './logic.js';
 import { showPromotionModal, showCheckMessage, showGameOver, showNotification, showMoves } from './ui.js';
 import { playMoveAnimation, playCastlingRookAnimation, playPromotionAscension } from './animations.js';
+import { emitMove } from './network.js';
 
 const moveSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3');
 const captureSound = new Audio('https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3');
@@ -329,6 +330,10 @@ export const movePiece = async (targetI, targetJ) => {
         renderBoard();
         postMoveChecks();
         startTimer(); // Ensure timer runs after the first move
+        
+        if (window.isOnlineMultiplayer && !state.isExecutingNetworkMove) {
+            emitMove(startI, startJ, targetI, targetJ, promotionChar ? piece.type : null);
+        }
     };
 
     if (piece.type === PIECES.PAWN) {
@@ -337,14 +342,23 @@ export const movePiece = async (targetI, targetJ) => {
             piece.type = "Flag";
             renderBoard();
 
-            showPromotionModal(state.currentTurn, async (chosenType) => {
-                piece.type = chosenType;
-                let char = chosenType === PIECES.HORSE ? 'N' : chosenType[0];
+            if (state.isExecutingNetworkMove && state.networkPromotionType) {
+                piece.type = state.networkPromotionType;
+                let char = state.networkPromotionType === PIECES.HORSE ? 'N' : state.networkPromotionType[0];
                 window.isAnimating = true;
-                await playPromotionAscension(targetI, targetJ, state.currentTurn, chosenType);
+                await playPromotionAscension(targetI, targetJ, state.currentTurn, state.networkPromotionType);
                 window.isAnimating = false;
                 endTurn(char);
-            });
+            } else {
+                showPromotionModal(state.currentTurn, async (chosenType) => {
+                    piece.type = chosenType;
+                    let char = chosenType === PIECES.HORSE ? 'N' : chosenType[0];
+                    window.isAnimating = true;
+                    await playPromotionAscension(targetI, targetJ, state.currentTurn, chosenType);
+                    window.isAnimating = false;
+                    endTurn(char);
+                });
+            }
             return;
         }
     }

@@ -2,6 +2,7 @@ import { state, initializeBoard } from './state.js';
 import { createBoard, renderBoard, clearDots } from './dom.js';
 import { showMoves, showGameOver } from './ui.js';
 import { movePiece, undoAction, redoAction, handleHover, handleHoverOut, updateEvalBar } from './game.js';
+import { initNetwork } from './network.js';
 
 window.onload = () => {
     initializeBoard();
@@ -169,6 +170,10 @@ window.onload = () => {
 
     updateEvalBar();
 
+    if (window.isOnlineMultiplayer) {
+        initNetwork();
+    }
+
     container.addEventListener("mousemove", (e) => {
         const rect = container.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -269,6 +274,8 @@ window.onload = () => {
             const j = parseInt(sq.dataset.j);
             const piece = state.board[i][j];
             if (piece) {
+                if (window.isOnlineMultiplayer && state.playerRole && piece.color !== state.playerRole) return;
+                
                 e.preventDefault();
                 pointerId = e.pointerId;
                 draggedImg = e.target;

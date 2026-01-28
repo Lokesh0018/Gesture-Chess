@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LoChess - Online Multiplayer</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* Lobby Overlay Styles */
+    #lobby-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.8);
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ebecd0;
+      font-family: Arial, sans-serif;
+    }
+    .lobby-box {
+      background: #302e2b;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-align: center;
+      width: 300px;
+    }
+    .lobby-btn {
+      background-color: #739552;
+      color: #fff;
+      border: none;
+      padding: 15px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 15px;
+      transition: background-color 0.2s;
+    }
+    .lobby-btn:hover { background-color: #81b64c; }
+    .lobby-input {
+      width: calc(100% - 30px);
+      padding: 15px;
+      margin-top: 15px;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      border: 1px solid #5c5852;
+      background: #262522;
+      color: white;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    #room-display {
+      margin-top: 20px;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #f04e30;
+      letter-spacing: 5px;
+    }
+    #chat-container {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 300px;
+      height: 400px;
+      background: rgba(38, 37, 34, 0.9);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      z-index: 50;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    #chat-messages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      color: #ebecd0;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #chat-input {
+      padding: 10px;
+      border: none;
+      background: #403d39;
+      color: white;
+      border-radius: 0 0 8px 8px;
+      outline: none;
+    }
+    .chat-msg {
+      background: #403d39;
+      padding: 8px 12px;
+      border-radius: 12px;
+      align-self: flex-start;
+      max-width: 80%;
+    }
+    .chat-msg.self {
+      background: #739552;
+      align-self: flex-end;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-btn" style="position: absolute; top: 20px; left: 20px; z-index: 100;">◀ Quit</a>
+  
+  <div id="lobby-overlay">
+    <div class="lobby-box">
+      <h2>Online Multiplayer</h2>
+      <button class="lobby-btn" id="btn-create">Create Game</button>
+      <div style="margin: 20px 0; color: #aaa;">OR</div>
+      <input type="text" id="input-join" class="lobby-input" placeholder="Room Code" maxlength="4">
+      <button class="lobby-btn" id="btn-join" style="background-color: #f04e30;">Join Game</button>
+      <div id="room-display"></div>
+      <div id="lobby-status" style="margin-top: 15px; color: #aaa;"></div>
+    </div>
+  </div>
+
+  <div class="container"></div>
+
+  <div id="chat-container" style="display: none;">
+    <div style="background: #1a1917; padding: 10px; text-align: center; font-weight: bold; border-radius: 8px 8px 0 0;">Live Chat</div>
+    <div id="chat-messages"></div>
+    <div style="display: flex; background: #403d39; border-radius: 0 0 8px 8px;">
+      <input type="text" id="chat-input" placeholder="Type a message..." style="flex: 1; padding: 10px; border: none; background: transparent; color: white; outline: none;">
+      <button id="chat-send" style="background: #739552; color: white; border: none; padding: 0 15px; border-radius: 0 0 8px 0; cursor: pointer; font-weight: bold;">Send</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- We set a global flag so our bundle knows we are online -->
+  <script>
+    window.isOnlineMultiplayer = true;
+  </script>
+  <script src="./js/bundle.js?v=3"></script>
+</body>
+</html>
