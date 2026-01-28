@@ -27,7 +27,8 @@ export const state = {
     positionHistory: {}, // Store counts of FEN-like strings
     moveList: [], // Array of {white: 'e4', black: 'e5'}
     stateHistory: [], // Store deep copies for Undo
-    redoHistory: [], // Store copies for Redo
+    redoHistory: [], // Store copies for Redo / Live State
+    viewIndex: -1, // -1 means viewing LIVE state
     
     premove: null,
     whiteTime: 0,
@@ -62,6 +63,7 @@ export const initializeBoard = () => {
     state.moveList = [];
     state.stateHistory = [];
     state.redoHistory = [];
+    state.viewIndex = -1;
     state.whiteTime = 0;
     state.blackTime = 0;
     state.currentTurn = COLORS.WHITE;
@@ -110,23 +112,45 @@ const _applyStateSnapshot = (snap) => {
 };
 
 export const saveState = () => {
+    if (state.viewIndex !== -1) {
+        state.viewIndex = -1;
+        _applyStateSnapshot(state.redoHistory[0]);
+    }
     state.stateHistory.push(_captureStateSnapshot());
     state.redoHistory = [];
+    if (window.isOnlineMultiplayer) {
+        sessionStorage.setItem('chessGameState', JSON.stringify(_captureStateSnapshot()));
+    }
 };
 
-export const restoreState = () => {
+export const viewPrev = () => {
     if (state.stateHistory.length === 0) return false;
-    state.redoHistory.push(_captureStateSnapshot());
-    const prev = state.stateHistory.pop();
-    _applyStateSnapshot(prev);
+    
+    if (state.viewIndex === -1) {
+        state.viewIndex = state.stateHistory.length - 1;
+        state.redoHistory = [_captureStateSnapshot()]; // Store live state
+    } else {
+        if (state.viewIndex > 0) {
+            state.viewIndex--;
+        } else {
+            return false;
+        }
+    }
+    
+    _applyStateSnapshot(state.stateHistory[state.viewIndex]);
     return true;
 };
 
-export const redoState = () => {
-    if (state.redoHistory.length === 0) return false;
-    state.stateHistory.push(_captureStateSnapshot());
-    const next = state.redoHistory.pop();
-    _applyStateSnapshot(next);
+export const viewNext = () => {
+    if (state.viewIndex === -1) return false;
+    
+    state.viewIndex++;
+    if (state.viewIndex >= state.stateHistory.length) {
+        state.viewIndex = -1;
+        _applyStateSnapshot(state.redoHistory[0]);
+    } else {
+        _applyStateSnapshot(state.stateHistory[state.viewIndex]);
+    }
     return true;
 };
 
@@ -141,4 +165,13 @@ export const recordPosition = () => {
     const newCount = (state.positionHistory[pos] || 0) + 1;
     state.positionHistory[pos] = newCount;
     return newCount;
+};
+
+export const restoreFromSession = () => {
+    const savedState = sessionStorage.getItem('chessGameState');
+    if (savedState) {
+        _applyStateSnapshot(JSON.parse(savedState));
+        return true;
+    }
+    return false;
 };

@@ -72,17 +72,49 @@ io.on('connection', (socket) => {
         io.to(data.roomCode).emit('player_emote', data);
     });
 
+    socket.on('offer_draw', (roomCode) => {
+        socket.to(roomCode).emit('draw_offered');
+    });
+
+    socket.on('accept_draw', (roomCode) => {
+        io.to(roomCode).emit('draw_agreed');
+    });
+
+    socket.on('rejoin_room', (data) => {
+        const room = rooms[data.roomCode];
+        if (room) {
+            const player = room.players.find(p => p.role === data.role);
+            if (player && player.disconnected) {
+                clearTimeout(player.disconnectTimer);
+                player.disconnected = false;
+                player.id = socket.id;
+                socket.join(data.roomCode);
+                console.log(`${socket.id} rejoined room ${data.roomCode}`);
+            }
+        } else {
+            socket.emit('rejoin_failed');
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
-        // Clean up rooms
         for (const [code, room] of Object.entries(rooms)) {
             const index = room.players.findIndex(p => p.id === socket.id);
             if (index !== -1) {
-                room.players.splice(index, 1);
-                io.to(code).emit('opponent_disconnected');
-                if (room.players.length === 0) {
-                    delete rooms[code];
-                }
+                const disconnectedPlayer = room.players[index];
+                disconnectedPlayer.disconnected = true;
+                disconnectedPlayer.disconnectTimer = setTimeout(() => {
+                    if (rooms[code]) {
+                        const i = rooms[code].players.findIndex(p => p.id === socket.id && p.disconnected);
+                        if (i !== -1) {
+                            rooms[code].players.splice(i, 1);
+                            io.to(code).emit('opponent_disconnected');
+                            if (rooms[code].players.length === 0) {
+                                delete rooms[code];
+                            }
+                        }
+                    }
+                }, 5000);
                 break;
             }
         }

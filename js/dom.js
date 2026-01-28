@@ -12,13 +12,17 @@ export const clearDots = () => {
 export const createBoard = () => {
     const container = document.querySelector(".container");
     let child = "";
-    for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
+    const isBlack = state.playerRole === 'Black';
+    
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            const i = isBlack ? 7 - row : row;
+            const j = isBlack ? 7 - col : col;
             const colorClass = (i + j) % 2 === 0 ? "black" : "white";
             let coords = "";
             const textColor = (i + j) % 2 === 0 ? "#fff" : "#000";
-            if (j === 0) coords += `<span style="position:absolute; top:2px; left:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${8 - i}</span>`;
-            if (i === 7) coords += `<span style="position:absolute; bottom:2px; right:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${String.fromCharCode(97 + j)}</span>`;
+            if (col === 0) coords += `<span style="position:absolute; top:2px; left:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${8 - i}</span>`;
+            if (row === 7) coords += `<span style="position:absolute; bottom:2px; right:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${String.fromCharCode(97 + j)}</span>`;
 
             child += `<div class="child ${colorClass}" style="position:relative;" data-i="${i}" data-j="${j}">${coords}</div>`;
         }

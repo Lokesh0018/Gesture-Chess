@@ -1,7 +1,7 @@
-import { state, initializeBoard } from './state.js';
+import { state, initializeBoard, restoreFromSession } from './state.js';
 import { createBoard, renderBoard, clearDots } from './dom.js';
 import { showMoves, showGameOver } from './ui.js';
-import { movePiece, undoAction, redoAction, handleHover, handleHoverOut, updateEvalBar } from './game.js';
+import { movePiece, viewPrevMove, viewNextMove, handleHover, handleHoverOut, updateEvalBar } from './game.js';
 import { initNetwork } from './network.js';
 
 window.onload = () => {
@@ -33,7 +33,7 @@ window.onload = () => {
     topPlayer.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div class="player-avatar" style="background-color: #7b4f3b; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
-            <div class="player-name">Player 2</div>
+            <div class="player-name" id="top-player-name">Player 2</div>
             <div id="p2-trumpet" style="position: absolute; right: -60px; bottom: -10px; z-index: 100;"></div>
         </div>
         <div class="player-clock clock-dark" id="black-clock">00:00</div>
@@ -45,7 +45,7 @@ window.onload = () => {
     bottomPlayer.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div class="player-avatar" style="background-color: #aaa; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
-            <div class="player-name">Player 1</div>
+            <div class="player-name" id="bottom-player-name">Player 1</div>
             <div id="p1-trumpet" style="position: absolute; right: -60px; bottom: -10px; z-index: 100;"></div>
         </div>
         <div class="player-clock" id="white-clock">00:00</div>
@@ -109,13 +109,7 @@ window.onload = () => {
     const rightSidebar = document.createElement("div");
     rightSidebar.className = "right-sidebar";
 
-    const restartBtn = document.createElement("button");
-    restartBtn.innerHTML = "↻ Restart Game";
-    restartBtn.title = "Restart Game";
-    restartBtn.style.cssText = "background:#2b2927; border:none; border-bottom: 1px solid #403d39; color:#fff; font-size:16px; font-weight:bold; cursor:pointer; padding:15px; width: 100%; text-align:center;";
-    restartBtn.onclick = () => location.reload();
-    restartBtn.onmouseover = () => restartBtn.style.backgroundColor = "#3d3b39";
-    restartBtn.onmouseout = () => restartBtn.style.backgroundColor = "#2b2927";
+    // Restart button removed
 
     const controlsBar = document.createElement("div");
     controlsBar.className = "controls-bar";
@@ -126,7 +120,13 @@ window.onload = () => {
     const drawBtn = document.createElement("button");
     drawBtn.className = "action-btn";
     drawBtn.innerHTML = "½ Draw";
-    drawBtn.onclick = () => showGameOver("Draw by Agreement");
+    drawBtn.onclick = () => {
+        if (window.isOnlineMultiplayer) {
+            import('./network.js').then(net => net.offerDraw());
+        } else {
+            showGameOver("Draw by Agreement");
+        }
+    };
 
     const resignBtn = document.createElement("button");
     resignBtn.className = "action-btn";
@@ -141,13 +141,13 @@ window.onload = () => {
 
     const undoBtn = document.createElement("button");
     undoBtn.className = "action-btn";
-    undoBtn.innerHTML = "⤺ Undo";
-    undoBtn.onclick = undoAction;
+    undoBtn.innerHTML = "◀ Prev";
+    undoBtn.onclick = viewPrevMove;
 
     const redoBtn = document.createElement("button");
     redoBtn.className = "action-btn";
-    redoBtn.innerHTML = "⤻ Redo";
-    redoBtn.onclick = redoAction;
+    redoBtn.innerHTML = "Next ▶";
+    redoBtn.onclick = viewNextMove;
 
     undoRedoRow.appendChild(undoBtn);
     undoRedoRow.appendChild(redoBtn);
@@ -159,7 +159,7 @@ window.onload = () => {
     movesContainer.className = "moves-container";
     state.moveHistoryPanel = movesContainer;
 
-    rightSidebar.appendChild(restartBtn);
+    // Restart button removed
     rightSidebar.appendChild(controlsBar);
     rightSidebar.appendChild(movesContainer);
 
@@ -172,6 +172,9 @@ window.onload = () => {
 
     if (window.isOnlineMultiplayer) {
         initNetwork();
+        if (restoreFromSession()) {
+            renderBoard();
+        }
     }
 
     container.addEventListener("mousemove", (e) => {
@@ -269,6 +272,8 @@ window.onload = () => {
         }
 
         if (e.target.matches("img") && !e.target.classList.contains('particle')) {
+            if (state.viewIndex !== -1) return; // Prevent drag/click when viewing history
+            
             const sq = e.target.parentElement;
             const i = parseInt(sq.dataset.i);
             const j = parseInt(sq.dataset.j);

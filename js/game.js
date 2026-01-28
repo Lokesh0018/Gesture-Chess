@@ -1,4 +1,4 @@
-import { state, COLORS, PIECES, recordPosition, saveState, restoreState, redoState } from './state.js';
+import { state, COLORS, PIECES, recordPosition, saveState, viewPrev, viewNext } from './state.js';
 import { clearDots, renderBoard, getSquare } from './dom.js';
 import { isUnderAttack, hasAnyValidMoves, checkDrawConditions } from './logic.js';
 import { showPromotionModal, showCheckMessage, showGameOver, showNotification, showMoves } from './ui.js';
@@ -150,7 +150,7 @@ const getAlgebraic = (piece, startI, startJ, targetI, targetJ, captured) => {
 }
 
 export const handleHover = (i, j) => {
-    if (window.isAnimating || state.selectedSquare) return;
+    if (window.isAnimating || state.selectedSquare || state.viewIndex !== -1) return;
     const piece = state.board[i][j];
     if (piece && piece.color === state.currentTurn) {
         showMoves(i, j, true);
@@ -182,18 +182,18 @@ const restoreHighlights = () => {
     }
 };
 
-export const undoAction = () => {
+export const viewPrevMove = () => {
     if (window.isAnimating) return;
-    if (restoreState()) {
+    if (viewPrev()) {
         restoreHighlights();
         renderBoard();
         renderMoveHistory();
     }
 };
 
-export const redoAction = () => {
+export const viewNextMove = () => {
     if (window.isAnimating) return;
-    if (redoState()) {
+    if (viewNext()) {
         restoreHighlights();
         renderBoard();
         renderMoveHistory();
@@ -202,25 +202,42 @@ export const redoAction = () => {
 
 export const timeTravelTo = (targetIndex) => {
     if (window.isAnimating) return;
-    if (targetIndex < state.stateHistory.length) {
-        while (state.stateHistory.length > targetIndex) {
-            if (!restoreState()) break;
+    const targetView = targetIndex - 1;
+    
+    if (targetView >= state.stateHistory.length) {
+        // Snap to live
+        if (state.viewIndex !== -1) {
+            while (viewNext()) {
+                if (state.viewIndex === -1) break;
+            }
+            restoreHighlights();
+            renderBoard();
+            renderMoveHistory();
         }
-        restoreHighlights();
-        renderBoard();
-        renderMoveHistory();
-    } else if (targetIndex > state.stateHistory.length) {
-        while (state.stateHistory.length < targetIndex) {
-            if (!redoState()) break;
-        }
-        restoreHighlights();
-        renderBoard();
-        renderMoveHistory();
+        return;
     }
+    
+    if (state.viewIndex === -1) {
+        while (viewPrev()) {
+            if (state.viewIndex === targetView) break;
+        }
+    } else if (state.viewIndex > targetView) {
+        while (viewPrev()) {
+            if (state.viewIndex === targetView) break;
+        }
+    } else if (state.viewIndex < targetView) {
+        while (viewNext()) {
+            if (state.viewIndex === targetView || state.viewIndex === -1) break;
+        }
+    }
+    
+    restoreHighlights();
+    renderBoard();
+    renderMoveHistory();
 };
 
 export const movePiece = async (targetI, targetJ) => {
-    if (window.isAnimating) return;
+    if (window.isAnimating || state.viewIndex !== -1) return;
     saveState();
     const {i: startI, j: startJ} = state.selectedSquare;
     const piece = state.board[startI][startJ];

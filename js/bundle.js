@@ -1,4 +1,5 @@
 (() => {
+  var __defProp = Object.defineProperty;
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __esm = (fn, res, err) => function __init() {
     if (err) throw err[0];
@@ -15,9 +16,13 @@
       throw mod = 0, e;
     }
   };
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
 
   // js/state.js
-  var COLORS, PIECES, state, initializeBoard, _captureStateSnapshot, _applyStateSnapshot, saveState, restoreState, redoState, getBoardString, recordPosition;
+  var COLORS, PIECES, state, initializeBoard, _captureStateSnapshot, _applyStateSnapshot, saveState, viewPrev, viewNext, getBoardString, recordPosition, restoreFromSession;
   var init_state = __esm({
     "js/state.js"() {
       COLORS = {
@@ -50,7 +55,9 @@
         stateHistory: [],
         // Store deep copies for Undo
         redoHistory: [],
-        // Store copies for Redo
+        // Store copies for Redo / Live State
+        viewIndex: -1,
+        // -1 means viewing LIVE state
         premove: null,
         whiteTime: 0,
         blackTime: 0,
@@ -81,6 +88,7 @@
         state.moveList = [];
         state.stateHistory = [];
         state.redoHistory = [];
+        state.viewIndex = -1;
         state.whiteTime = 0;
         state.blackTime = 0;
         state.currentTurn = COLORS.WHITE;
@@ -125,21 +133,40 @@
         }
       };
       saveState = () => {
+        if (state.viewIndex !== -1) {
+          state.viewIndex = -1;
+          _applyStateSnapshot(state.redoHistory[0]);
+        }
         state.stateHistory.push(_captureStateSnapshot());
         state.redoHistory = [];
+        if (window.isOnlineMultiplayer) {
+          sessionStorage.setItem("chessGameState", JSON.stringify(_captureStateSnapshot()));
+        }
       };
-      restoreState = () => {
+      viewPrev = () => {
         if (state.stateHistory.length === 0) return false;
-        state.redoHistory.push(_captureStateSnapshot());
-        const prev = state.stateHistory.pop();
-        _applyStateSnapshot(prev);
+        if (state.viewIndex === -1) {
+          state.viewIndex = state.stateHistory.length - 1;
+          state.redoHistory = [_captureStateSnapshot()];
+        } else {
+          if (state.viewIndex > 0) {
+            state.viewIndex--;
+          } else {
+            return false;
+          }
+        }
+        _applyStateSnapshot(state.stateHistory[state.viewIndex]);
         return true;
       };
-      redoState = () => {
-        if (state.redoHistory.length === 0) return false;
-        state.stateHistory.push(_captureStateSnapshot());
-        const next = state.redoHistory.pop();
-        _applyStateSnapshot(next);
+      viewNext = () => {
+        if (state.viewIndex === -1) return false;
+        state.viewIndex++;
+        if (state.viewIndex >= state.stateHistory.length) {
+          state.viewIndex = -1;
+          _applyStateSnapshot(state.redoHistory[0]);
+        } else {
+          _applyStateSnapshot(state.stateHistory[state.viewIndex]);
+        }
         return true;
       };
       getBoardString = () => {
@@ -153,10 +180,26 @@
         state.positionHistory[pos] = newCount;
         return newCount;
       };
+      restoreFromSession = () => {
+        const savedState = sessionStorage.getItem("chessGameState");
+        if (savedState) {
+          _applyStateSnapshot(JSON.parse(savedState));
+          return true;
+        }
+        return false;
+      };
     }
   });
 
   // js/dom.js
+  var dom_exports = {};
+  __export(dom_exports, {
+    clearDots: () => clearDots,
+    createBoard: () => createBoard,
+    getSquare: () => getSquare,
+    isFirstRender: () => isFirstRender,
+    renderBoard: () => renderBoard
+  });
   var isFirstRender, getSquare, clearDots, createBoard, renderBoard;
   var init_dom = __esm({
     "js/dom.js"() {
@@ -170,13 +213,16 @@
       createBoard = () => {
         const container = document.querySelector(".container");
         let child = "";
-        for (let i = 0; i < 8; i++) {
-          for (let j = 0; j < 8; j++) {
+        const isBlack = state.playerRole === "Black";
+        for (let row = 0; row < 8; row++) {
+          for (let col = 0; col < 8; col++) {
+            const i = isBlack ? 7 - row : row;
+            const j = isBlack ? 7 - col : col;
             const colorClass = (i + j) % 2 === 0 ? "black" : "white";
             let coords = "";
             const textColor = (i + j) % 2 === 0 ? "#fff" : "#000";
-            if (j === 0) coords += `<span style="position:absolute; top:2px; left:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${8 - i}</span>`;
-            if (i === 7) coords += `<span style="position:absolute; bottom:2px; right:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${String.fromCharCode(97 + j)}</span>`;
+            if (col === 0) coords += `<span style="position:absolute; top:2px; left:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${8 - i}</span>`;
+            if (row === 7) coords += `<span style="position:absolute; bottom:2px; right:4px; font-size:12px; font-weight:bold; color:${textColor}; pointer-events:none;">${String.fromCharCode(97 + j)}</span>`;
             child += `<div class="child ${colorClass}" style="position:relative;" data-i="${i}" data-j="${j}">${coords}</div>`;
           }
         }
@@ -415,6 +461,15 @@
   });
 
   // js/ui.js
+  var ui_exports = {};
+  __export(ui_exports, {
+    markMove: () => markMove,
+    showCheckMessage: () => showCheckMessage,
+    showGameOver: () => showGameOver,
+    showMoves: () => showMoves,
+    showNotification: () => showNotification,
+    showPromotionModal: () => showPromotionModal
+  });
   var markMove, showMoves, showPromotionModal, showCheckMessage, showNotification, showGameOver;
   var init_ui = __esm({
     "js/ui.js"() {
@@ -1217,6 +1272,13 @@
   });
 
   // js/network.js
+  var network_exports = {};
+  __export(network_exports, {
+    emitMove: () => emitMove,
+    initNetwork: () => initNetwork,
+    roomCode: () => roomCode,
+    socket: () => socket
+  });
   var socket, roomCode, initNetwork, emitMove, addChatMessage;
   var init_network = __esm({
     "js/network.js"() {
@@ -1232,6 +1294,25 @@
         const inputJoin = document.getElementById("input-join");
         const statusDiv = document.getElementById("lobby-status");
         const roomDisplay = document.getElementById("room-display");
+        const savedRoom = sessionStorage.getItem("chessRoomCode");
+        const savedRole = sessionStorage.getItem("chessPlayerRole");
+        if (savedRoom && savedRole) {
+          roomCode = savedRoom;
+          state.playerRole = savedRole;
+          socket.emit("rejoin_room", { roomCode, role: state.playerRole });
+          document.getElementById("lobby-overlay").style.display = "none";
+          document.getElementById("chat-fab").style.display = "flex";
+          if (state.playerRole === "Black") {
+            Promise.resolve().then(() => (init_dom(), dom_exports)).then((dom) => {
+              dom.createBoard();
+              dom.renderBoard();
+            });
+            const topName = document.getElementById("top-player-name");
+            const botName = document.getElementById("bottom-player-name");
+            if (topName) topName.innerText = "Player 1";
+            if (botName) botName.innerText = "Player 2";
+          }
+        }
         if (btnCreate) {
           btnCreate.addEventListener("click", () => {
             socket.emit("create_room");
@@ -1265,11 +1346,19 @@
             roomCode = inputJoin.value.trim().toUpperCase();
           }
           document.getElementById("lobby-overlay").style.display = "none";
-          document.getElementById("chat-container").style.display = "flex";
-          if (state.playerRole === COLORS.BLACK) {
-            document.querySelector(".container").classList.add("flipped-board");
-            document.body.classList.add("playing-black");
+          document.getElementById("chat-fab").style.display = "flex";
+          if (state.playerRole === "Black") {
+            Promise.resolve().then(() => (init_dom(), dom_exports)).then((dom) => {
+              dom.createBoard();
+              dom.renderBoard();
+            });
+            const topName = document.getElementById("top-player-name");
+            const botName = document.getElementById("bottom-player-name");
+            if (topName) topName.innerText = "Player 1";
+            if (botName) botName.innerText = "Player 2";
           }
+          sessionStorage.setItem("chessRoomCode", roomCode);
+          sessionStorage.setItem("chessPlayerRole", state.playerRole);
         });
         socket.on("opponent_move", (moveData) => {
           state.isExecutingNetworkMove = true;
@@ -1281,6 +1370,11 @@
         });
         socket.on("chat_message", (data) => {
           addChatMessage(data.message, data.senderRole === state.playerRole);
+          const chatContainer2 = document.getElementById("chat-container");
+          const chatFab2 = document.getElementById("chat-fab");
+          if (chatContainer2 && chatContainer2.style.display !== "flex" && chatFab2) {
+            chatFab2.classList.add("unread");
+          }
         });
         socket.on("error", (msg) => {
           statusDiv.innerText = msg;
@@ -1289,11 +1383,45 @@
           inputJoin.disabled = false;
         });
         socket.on("opponent_disconnected", () => {
-          alert("Opponent disconnected!");
-          window.location.href = "index.html";
+          document.getElementById("lobby-status").innerText = "Opponent disconnected.";
+          alert("Opponent has disconnected. The game has ended.");
+          sessionStorage.removeItem("chessRoomCode");
+          sessionStorage.removeItem("chessPlayerRole");
+          sessionStorage.removeItem("chessGameState");
+          window.location.reload();
+        });
+        socket.on("rejoin_failed", () => {
+          sessionStorage.removeItem("chessRoomCode");
+          sessionStorage.removeItem("chessPlayerRole");
+          sessionStorage.removeItem("chessGameState");
+          window.location.reload();
+        });
+        socket.on("draw_offered", () => {
+          if (confirm("Your opponent has offered a draw. Do you accept?")) {
+            socket.emit("accept_draw", roomCode);
+          }
+        });
+        socket.on("draw_agreed", () => {
+          Promise.resolve().then(() => (init_ui(), ui_exports)).then((ui) => ui.showGameOver("Draw by Agreement"));
         });
         const chatInput = document.getElementById("chat-input");
         const chatSendBtn = document.getElementById("chat-send");
+        const chatFab = document.getElementById("chat-fab");
+        const chatContainer = document.getElementById("chat-container");
+        const chatClose = document.getElementById("chat-close");
+        if (chatFab) {
+          chatFab.addEventListener("click", () => {
+            chatContainer.style.display = "flex";
+            chatFab.classList.remove("unread");
+            chatFab.style.display = "none";
+          });
+        }
+        if (chatClose) {
+          chatClose.addEventListener("click", () => {
+            chatContainer.style.display = "none";
+            chatFab.style.display = "flex";
+          });
+        }
         const sendChat = () => {
           if (chatInput.value.trim()) {
             socket.emit("chat", {
@@ -1335,7 +1463,7 @@
   });
 
   // js/game.js
-  var moveSound, captureSound, formatTime, startTimer, stopTimer, audioCtx, audioBuffers, loadSound, playSpatialSound, findKing, postMoveChecks, getAlgebraic, handleHover, handleHoverOut, restoreHighlights, undoAction, redoAction, timeTravelTo, movePiece, addCapturedToPanel, updateMoveHistory, renderMoveHistory, PIECE_VALUES, updateEvalBar;
+  var moveSound, captureSound, formatTime, startTimer, stopTimer, audioCtx, audioBuffers, loadSound, playSpatialSound, findKing, postMoveChecks, getAlgebraic, handleHover, handleHoverOut, restoreHighlights, viewPrevMove, viewNextMove, timeTravelTo, movePiece, addCapturedToPanel, updateMoveHistory, renderMoveHistory, PIECE_VALUES, updateEvalBar;
   var init_game = __esm({
     "js/game.js"() {
       init_state();
@@ -1465,7 +1593,7 @@
         return notation;
       };
       handleHover = (i, j) => {
-        if (window.isAnimating || state.selectedSquare) return;
+        if (window.isAnimating || state.selectedSquare || state.viewIndex !== -1) return;
         const piece = state.board[i][j];
         if (piece && piece.color === state.currentTurn) {
           showMoves(i, j, true);
@@ -1491,17 +1619,17 @@
           if (kDom) kDom.classList.add("in-check");
         }
       };
-      undoAction = () => {
+      viewPrevMove = () => {
         if (window.isAnimating) return;
-        if (restoreState()) {
+        if (viewPrev()) {
           restoreHighlights();
           renderBoard();
           renderMoveHistory();
         }
       };
-      redoAction = () => {
+      viewNextMove = () => {
         if (window.isAnimating) return;
-        if (redoState()) {
+        if (viewNext()) {
           restoreHighlights();
           renderBoard();
           renderMoveHistory();
@@ -1509,24 +1637,37 @@
       };
       timeTravelTo = (targetIndex) => {
         if (window.isAnimating) return;
-        if (targetIndex < state.stateHistory.length) {
-          while (state.stateHistory.length > targetIndex) {
-            if (!restoreState()) break;
+        const targetView = targetIndex - 1;
+        if (targetView >= state.stateHistory.length) {
+          if (state.viewIndex !== -1) {
+            while (viewNext()) {
+              if (state.viewIndex === -1) break;
+            }
+            restoreHighlights();
+            renderBoard();
+            renderMoveHistory();
           }
-          restoreHighlights();
-          renderBoard();
-          renderMoveHistory();
-        } else if (targetIndex > state.stateHistory.length) {
-          while (state.stateHistory.length < targetIndex) {
-            if (!redoState()) break;
-          }
-          restoreHighlights();
-          renderBoard();
-          renderMoveHistory();
+          return;
         }
+        if (state.viewIndex === -1) {
+          while (viewPrev()) {
+            if (state.viewIndex === targetView) break;
+          }
+        } else if (state.viewIndex > targetView) {
+          while (viewPrev()) {
+            if (state.viewIndex === targetView) break;
+          }
+        } else if (state.viewIndex < targetView) {
+          while (viewNext()) {
+            if (state.viewIndex === targetView || state.viewIndex === -1) break;
+          }
+        }
+        restoreHighlights();
+        renderBoard();
+        renderMoveHistory();
       };
       movePiece = async (targetI, targetJ) => {
-        if (window.isAnimating) return;
+        if (window.isAnimating || state.viewIndex !== -1) return;
         saveState();
         const { i: startI, j: startJ } = state.selectedSquare;
         const piece = state.board[startI][startJ];
@@ -1783,7 +1924,7 @@
         topPlayer.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div class="player-avatar" style="background-color: #7b4f3b; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
-            <div class="player-name">Player 2</div>
+            <div class="player-name" id="top-player-name">Player 2</div>
             <div id="p2-trumpet" style="position: absolute; right: -60px; bottom: -10px; z-index: 100;"></div>
         </div>
         <div class="player-clock clock-dark" id="black-clock">00:00</div>
@@ -1793,7 +1934,7 @@
         bottomPlayer.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px; position:relative;">
             <div class="player-avatar" style="background-color: #aaa; background-image: url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png');"></div>
-            <div class="player-name">Player 1</div>
+            <div class="player-name" id="bottom-player-name">Player 1</div>
             <div id="p1-trumpet" style="position: absolute; right: -60px; bottom: -10px; z-index: 100;"></div>
         </div>
         <div class="player-clock" id="white-clock">00:00</div>
@@ -1837,13 +1978,6 @@
         state.clockWhiteDOM = bottomPlayer.querySelector("#white-clock");
         const rightSidebar = document.createElement("div");
         rightSidebar.className = "right-sidebar";
-        const restartBtn = document.createElement("button");
-        restartBtn.innerHTML = "\u21BB Restart Game";
-        restartBtn.title = "Restart Game";
-        restartBtn.style.cssText = "background:#2b2927; border:none; border-bottom: 1px solid #403d39; color:#fff; font-size:16px; font-weight:bold; cursor:pointer; padding:15px; width: 100%; text-align:center;";
-        restartBtn.onclick = () => location.reload();
-        restartBtn.onmouseover = () => restartBtn.style.backgroundColor = "#3d3b39";
-        restartBtn.onmouseout = () => restartBtn.style.backgroundColor = "#2b2927";
         const controlsBar = document.createElement("div");
         controlsBar.className = "controls-bar";
         const drawResignRow = document.createElement("div");
@@ -1851,7 +1985,13 @@
         const drawBtn = document.createElement("button");
         drawBtn.className = "action-btn";
         drawBtn.innerHTML = "\xBD Draw";
-        drawBtn.onclick = () => showGameOver("Draw by Agreement");
+        drawBtn.onclick = () => {
+          if (window.isOnlineMultiplayer) {
+            Promise.resolve().then(() => (init_network(), network_exports)).then((net) => net.offerDraw());
+          } else {
+            showGameOver("Draw by Agreement");
+          }
+        };
         const resignBtn = document.createElement("button");
         resignBtn.className = "action-btn";
         resignBtn.innerHTML = "\u{1F3F3} Resign";
@@ -1862,12 +2002,12 @@
         undoRedoRow.className = "action-buttons";
         const undoBtn = document.createElement("button");
         undoBtn.className = "action-btn";
-        undoBtn.innerHTML = "\u293A Undo";
-        undoBtn.onclick = undoAction;
+        undoBtn.innerHTML = "\u25C0 Prev";
+        undoBtn.onclick = viewPrevMove;
         const redoBtn = document.createElement("button");
         redoBtn.className = "action-btn";
-        redoBtn.innerHTML = "\u293B Redo";
-        redoBtn.onclick = redoAction;
+        redoBtn.innerHTML = "Next \u25B6";
+        redoBtn.onclick = viewNextMove;
         undoRedoRow.appendChild(undoBtn);
         undoRedoRow.appendChild(redoBtn);
         controlsBar.appendChild(drawResignRow);
@@ -1875,7 +2015,6 @@
         const movesContainer = document.createElement("div");
         movesContainer.className = "moves-container";
         state.moveHistoryPanel = movesContainer;
-        rightSidebar.appendChild(restartBtn);
         rightSidebar.appendChild(controlsBar);
         rightSidebar.appendChild(movesContainer);
         layoutWrapper.appendChild(mainGameArea);
@@ -1884,6 +2023,9 @@
         updateEvalBar();
         if (window.isOnlineMultiplayer) {
           initNetwork();
+          if (restoreFromSession()) {
+            renderBoard();
+          }
         }
         container.addEventListener("mousemove", (e) => {
           const rect = container.getBoundingClientRect();
@@ -1963,6 +2105,7 @@
             document.querySelectorAll(".premove-square").forEach((el) => el.classList.remove("premove-square"));
           }
           if (e.target.matches("img") && !e.target.classList.contains("particle")) {
+            if (state.viewIndex !== -1) return;
             const sq = e.target.parentElement;
             const i = parseInt(sq.dataset.i);
             const j = parseInt(sq.dataset.j);

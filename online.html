@@ -60,16 +60,16 @@
     }
     #chat-container {
       position: absolute;
-      bottom: 20px;
+      bottom: 90px;
       right: 20px;
       width: 300px;
       height: 400px;
-      background: rgba(38, 37, 34, 0.9);
-      border-radius: 8px;
-      display: flex;
+      background: rgba(38, 37, 34, 0.95);
+      border-radius: 12px;
+      display: none;
       flex-direction: column;
-      z-index: 50;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      z-index: 150;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.7);
     }
     #chat-messages {
       flex: 1;
@@ -100,6 +100,37 @@
       background: #739552;
       align-self: flex-end;
     }
+    #chat-fab {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: #739552;
+      color: white;
+      font-size: 28px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      z-index: 150;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+    #chat-fab:hover {
+      transform: scale(1.1);
+      background-color: #81b64c;
+    }
+    #chat-fab.unread {
+      animation: pulse-fab 1.5s infinite;
+    }
+    @keyframes pulse-fab {
+      0% { box-shadow: 0 0 0 0 rgba(240, 78, 48, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(240, 78, 48, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(240, 78, 48, 0); }
+    }
   </style>
 </head>
 <body>
@@ -119,12 +150,17 @@
 
   <div class="container"></div>
 
-  <div id="chat-container" style="display: none;">
-    <div style="background: #1a1917; padding: 10px; text-align: center; font-weight: bold; border-radius: 8px 8px 0 0;">Live Chat</div>
+  <button id="chat-fab">💬</button>
+
+  <div id="chat-container">
+    <div style="background: #1a1917; padding: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; border-radius: 12px 12px 0 0;">
+      <span>Live Chat</span>
+      <button id="chat-close" style="background: transparent; border: none; color: #ebecd0; font-size: 16px; cursor: pointer;">✖</button>
+    </div>
     <div id="chat-messages"></div>
-    <div style="display: flex; background: #403d39; border-radius: 0 0 8px 8px;">
+    <div style="display: flex; background: #403d39; border-radius: 0 0 12px 12px;">
       <input type="text" id="chat-input" placeholder="Type a message..." style="flex: 1; padding: 10px; border: none; background: transparent; color: white; outline: none;">
-      <button id="chat-send" style="background: #739552; color: white; border: none; padding: 0 15px; border-radius: 0 0 8px 0; cursor: pointer; font-weight: bold;">Send</button>
+      <button id="chat-send" style="background: #739552; color: white; border: none; padding: 0 15px; border-radius: 0 0 12px 0; cursor: pointer; font-weight: bold;">Send</button>
     </div>
   </div>
 
