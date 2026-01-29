@@ -2,16 +2,23 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const { Chess } = require('chess.js');
+
+const getSquare = (i, j) => {
+    const file = String.fromCharCode(97 + j);
+    const rank = 8 - i;
+    return `${file}${rank}`;
+};
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'client', 'dist')));
 
-// Serve index.html by default
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Serve index.html by default for any unmatched route
+app.get(/.*/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
 });
 
 // Rooms state
@@ -26,7 +33,10 @@ io.on('connection', (socket) => {
 
     socket.on('create_room', () => {
         const roomCode = generateRoomCode();
-        rooms[roomCode] = { players: [{ id: socket.id, role: 'White' }] };
+        rooms[roomCode] = { 
+            players: [{ id: socket.id, role: 'White' }],
+            chess: new Chess()
+        };
         socket.join(roomCode);
         socket.emit('room_created', roomCode);
         console.log(`Room ${roomCode} created by ${socket.id}`);
@@ -58,8 +68,19 @@ io.on('connection', (socket) => {
     });
 
     socket.on('move', (data) => {
-        // data contains { roomCode, move: {...} }
-        socket.to(data.roomCode).emit('opponent_move', data.move);
+        const room = rooms[data.roomCode];
+        if (!room || !room.chess) return;
+
+        try {
+            const move = room.chess.move(data.move);
+            if (move) {
+                socket.to(data.roomCode).emit('opponent_move', data.move);
+            } else {
+                socket.emit('error', 'Invalid move detected by server');
+            }
+        } catch (e) {
+            socket.emit('error', 'Invalid move detected by server');
+        }
     });
 
     socket.on('chat', (data) => {
