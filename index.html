@@ -1,95 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>LoChess - Main Menu</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #302e2b;
-      color: #ebecd0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
-    h1 {
-      font-size: 4rem;
-      margin-bottom: 10px;
-      text-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    }
-    .menu-container {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      width: 300px;
-      margin-top: 40px;
-    }
-    .menu-btn {
-      background-color: #739552;
-      color: #fff;
-      border: none;
-      padding: 15px 20px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background-color 0.2s, transform 0.2s;
-      text-align: center;
-      text-decoration: none;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    }
-    .menu-btn:hover {
-      background-color: #81b64c;
-      transform: translateY(-2px);
-    }
-    .menu-btn.secondary {
-      background-color: #403d39;
-    }
-    .menu-btn.secondary:hover {
-      background-color: #5c5852;
-    }
-    .back-btn {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      color: #ebecd0;
-      text-decoration: none;
-      font-size: 1.2rem;
-      font-weight: bold;
-      background: #403d39;
-      padding: 10px 15px;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      transition: background-color 0.2s, transform 0.2s;
-    }
-    .back-btn:hover {
-      background-color: #5c5852;
-      transform: translateY(-2px);
-    }
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 2.5rem;
-        text-align: center;
-      }
-      .menu-container {
-        width: 90%;
-      }
-    }
-  </style>
-</head>
-<body>
-  <a href="landing.html" class="back-btn">◀ Back</a>
-  <h1>LoChess</h1>
-  <p>Select a game mode to begin</p>
-  <div class="menu-container">
-    <a href="online.html" class="menu-btn" style="background-color: #f04e30;">Play Online Multiplayer</a>
-    <a href="play.html" class="menu-btn secondary">Play Local Multiplayer</a>
-    <a href="javascript:void(0)" class="menu-btn secondary" onclick="alert('Puzzle Mode coming soon!')">Daily Puzzle</a>
-    <a href="javascript:void(0)" class="menu-btn secondary" onclick="alert('AI Mode coming soon!')">Play vs AI</a>
-    <a href="javascript:void(0)" class="menu-btn secondary" onclick="alert('Settings coming soon!')">Settings</a>
-  </div>
-</body>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>client</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

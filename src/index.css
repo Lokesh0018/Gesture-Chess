@@ -23,6 +23,7 @@ body {
     align-items: start;
     width: 100%;
     min-height: 100%;
+    padding-top: 40px;
 }
 
 .menu-container {
@@ -153,12 +154,11 @@ body.check-vignette::before {
     box-sizing: border-box;
 }
 .side-captures {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(2, 35px);
+    gap: 12px;
     justify-content: center;
-    gap: 0px;
+    align-content: flex-start;
 }
 .side-captures img {
     width: 35px !important;
@@ -213,17 +213,8 @@ body.check-vignette::before {
     align-items: center;
     gap: 5px;
     font-weight: bold;
-    transition: color 0.2s ease;
 }
 .action-btn:hover { color: #fff; }
-
-.action-btn svg, .action-btn i {
-    font-size: 1.2rem;
-    transition: transform 0.2s ease;
-}
-.action-btn:hover svg, .action-btn:hover i {
-    transform: scale(1.15);
-}
 
 /* The Board */
 .container {
@@ -278,15 +269,14 @@ body.check-vignette::before {
 }
 
 .selected {
-    background-color: rgba(246, 246, 105, 0.35) !important;
-    box-shadow: inset 0 0 25px rgba(246, 246, 105, 0.7) !important;
+    background-color: #f6f669 !important;
 }
 
 .highlight-square::after {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle, rgba(235, 97, 80, 0.8) 0%, rgba(235, 97, 80, 0) 70%);
+    background-color: rgba(235, 97, 80, 0.6);
     pointer-events: none;
     z-index: 5;
 }
@@ -295,26 +285,24 @@ body.check-vignette::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle, rgba(255, 50, 50, 0.6) 0%, rgba(255, 50, 50, 0) 70%);
+    background-color: rgba(255, 50, 50, 0.4);
     pointer-events: none;
     z-index: 5;
 }
 
-img, .child > svg {
+img {
     width: 85%;
     height: 85%;
     cursor: grab;
     z-index: 10;
-    transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), filter 0.25s ease;
-    filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.6)) drop-shadow(0 3px 4px rgba(0, 0, 0, 0.4));
+    transition: transform 0.15s ease;
 }
 
-img:hover, .child > svg:hover {
-    transform: scale(1.15) translateY(-4px);
-    filter: drop-shadow(0 15px 20px rgba(0, 0, 0, 0.8)) brightness(1.1);
+img:hover {
+    transform: scale(1.15);
 }
 
-img:active, .child > svg:active {
+img:active {
     cursor: grabbing;
 }
 
@@ -369,7 +357,7 @@ img:active, .child > svg:active {
     z-index: 5;
 }
 
-.dot:has(img)::after, .dot:has(svg)::after {
+.dot:has(img)::after {
     width: 85%;
     height: 85%;
     background-color: transparent;
@@ -487,7 +475,7 @@ img:active, .child > svg:active {
     background-color: rgba(255, 255, 0, 0.6) !important;
 }
 
-.dot:has(img).pulsing-dot::after, .dot:has(svg).pulsing-dot::after {
+.dot:has(img).pulsing-dot::after {
     background-color: transparent !important;
     border-color: rgba(255, 0, 0, 0.8) !important;
     animation: pulseDot 1s infinite ease-in-out !important;
@@ -623,7 +611,7 @@ img:active, .child > svg:active {
     rotate: 180deg !important;
 }
 
-body.playing-black .child img:not(.dragging), body.playing-black .child svg:not(.dragging) {
+body.playing-black .child img:not(.dragging) {
     transform: rotate(180deg) !important;
 }
 

@@ -1,8 +1,12 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
-const { Chess } = require('chess.js');
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import path from 'path';
+import { Chess } from 'chess.js';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const getSquare = (i, j) => {
     const file = String.fromCharCode(97 + j);
@@ -14,11 +18,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, 'client', 'dist')));
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Serve index.html by default for any unmatched route
 app.get(/.*/, (req, res) => {
-    res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Rooms state
