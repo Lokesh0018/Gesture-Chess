@@ -171,19 +171,19 @@ export default function GameLayout({
         <div className="right-sidebar glass-panel" style={{ gridArea: 'moveHistory', display: 'flex', flexDirection: 'column', margin: '0', width: '100%', height: '100%' }}>
           
           {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #403d39' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
             <button 
               onClick={() => setActiveTab('moves')}
-              style={{ flex: 1, padding: '15px', background: activeTab === 'moves' ? 'rgba(0,0,0,0.2)' : 'transparent', color: activeTab === 'moves' ? 'var(--text-main)' : 'var(--text-muted)', border: 'none', cursor: 'pointer', fontWeight: 'bold', transition: 'background 0.2s' }}>
+              style={{ flex: 1, padding: '16px', background: activeTab === 'moves' ? 'rgba(255,255,255,0.05)' : 'transparent', color: activeTab === 'moves' ? 'var(--text-main)' : 'var(--text-muted)', border: 'none', cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s', borderBottom: activeTab === 'moves' ? '2px solid var(--accent)' : '2px solid transparent' }}>
               Moves
             </button>
             {!hideChat && (
               <button 
                 onClick={() => setActiveTab('chat')}
-                style={{ flex: 1, padding: '15px', background: activeTab === 'chat' ? 'rgba(0,0,0,0.2)' : 'transparent', color: activeTab === 'chat' ? 'var(--text-main)' : 'var(--text-muted)', border: 'none', cursor: 'pointer', fontWeight: 'bold', position: 'relative', transition: 'background 0.2s' }}>
+                style={{ flex: 1, padding: '16px', background: activeTab === 'chat' ? 'rgba(255,255,255,0.05)' : 'transparent', color: activeTab === 'chat' ? 'var(--text-main)' : 'var(--text-muted)', border: 'none', cursor: 'pointer', fontWeight: 'bold', position: 'relative', transition: 'all 0.2s', borderBottom: activeTab === 'chat' ? '2px solid var(--accent)' : '2px solid transparent' }}>
                 Chat
                 {chatUnread > 0 && activeTab !== 'chat' && (
-                  <span style={{ position: 'absolute', top: 8, right: 10, background: '#f04e30', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px' }}>{chatUnread}</span>
+                  <span style={{ position: 'absolute', top: 12, right: 12, background: '#f04e30', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', boxShadow: '0 0 10px rgba(240, 78, 48, 0.5)' }}>{chatUnread}</span>
                 )}
               </button>
             )}
@@ -229,28 +229,30 @@ export default function GameLayout({
           {/* Chat Container */}
           {!hideChat && (
             <div style={{ display: activeTab === 'chat' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '15px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {chatMessages.map((msg, i) => (
-                <div key={i} style={{ alignSelf: msg.sender === bottomPlayerName ? 'flex-end' : 'flex-start', background: msg.sender === bottomPlayerName ? 'var(--accent)' : 'rgba(255,255,255,0.1)', padding: '8px 12px', borderRadius: '8px', maxWidth: '85%', wordBreak: 'break-word', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', marginBottom: '2px' }}>{msg.sender}</div>
-                  <div>{msg.text}</div>
+                <div key={i} style={{ alignSelf: msg.sender === bottomPlayerName ? 'flex-end' : 'flex-start', background: msg.sender === bottomPlayerName ? 'var(--accent)' : 'rgba(255,255,255,0.08)', padding: '10px 14px', borderRadius: '12px', maxWidth: '85%', wordBreak: 'break-word', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', color: msg.sender === bottomPlayerName ? '#fff' : 'var(--text-main)' }}>
+                  <div style={{ fontSize: '11px', color: msg.sender === bottomPlayerName ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)', marginBottom: '4px', fontWeight: '600' }}>{msg.sender}</div>
+                  <div style={{ lineHeight: '1.4' }}>{msg.text}</div>
                 </div>
               ))}
               <div ref={chatEndRef} />
             </div>
-            <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '5px' }}>
+            <div style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '8px' }}>
               <input 
                 type="text" 
                 value={chatInput} 
                 onChange={(e) => setChatInput && setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onSendChat && onSendChat()}
                 placeholder="Message..."
-                style={{ flex: 1, padding: '10px', borderRadius: '4px', border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.05)', color: 'white' }}
+                style={{ flex: 1, padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', outline: 'none', transition: 'border-color 0.2s', fontFamily: 'inherit' }}
+                onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
               />
               <button 
                 onClick={onSendChat}
                 className="menu-btn"
-                style={{ padding: '0 15px', borderRadius: '4px' }}>
+                style={{ padding: '0 20px', borderRadius: '8px', boxShadow: 'none' }}>
                 Send
               </button>
             </div>
