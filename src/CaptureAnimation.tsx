@@ -54,7 +54,16 @@ export default function CaptureAnimation({
 
   if (pos.size === 0) return null;
 
+  const particles = Array.from({ length: 15 }).map((_, i) => {
+    const angle = (Math.PI * 2 * i) / 15;
+    const distance = pos.size * 0.8;
+    const dx = Math.cos(angle) * distance;
+    const dy = Math.sin(angle) * distance;
+    return { id: i, dx, dy };
+  });
+
   return (
+    <>
     <motion.div
       initial={{ scale: 1, opacity: 1, filter: 'blur(0px)' }}
       animate={controls}
@@ -73,5 +82,24 @@ export default function CaptureAnimation({
     >
       <Piece type={pieceType} color={pieceColor} squareWidth={pos.size} />
     </motion.div>
+    {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          initial={{ opacity: 1, x: pos.x + pos.size / 2, y: pos.y + pos.size / 2, scale: 1 }}
+          animate={{ opacity: 0, x: pos.x + pos.size / 2 + p.dx, y: pos.y + pos.size / 2 + p.dy, scale: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          style={{
+            position: 'fixed',
+            width: pos.size * 0.15,
+            height: pos.size * 0.15,
+            backgroundColor: pieceColor === 'w' ? '#f8fafc' : '#0f172a',
+            boxShadow: `0 0 10px ${pieceColor === 'w' ? '#f8fafc' : '#0f172a'}`,
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            zIndex: 9999
+          }}
+        />
+    ))}
+    </>
   );
 }

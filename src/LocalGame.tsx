@@ -131,7 +131,7 @@ export default function LocalGame() {
   }
 
   function onDrop(sourceSquare: string, targetSquare: string, piece: string) {
-    const moves = game.moves({ square: sourceSquare, verbose: true }) as any[];
+    const moves = game.moves({ square: sourceSquare as import('chess.js').Square, verbose: true }) as any[];
     const validMove = moves.find((m) => m.to === targetSquare);
 
     if (!validMove) return false;
@@ -175,7 +175,7 @@ export default function LocalGame() {
 
   function getMoveOptions(square: string) {
     const moves = game.moves({
-      square,
+      square: square as import('chess.js').Square,
       verbose: true,
     }) as any[];
     if (moves.length === 0) {
@@ -186,7 +186,7 @@ export default function LocalGame() {
     const newSquares: any = {};
     moves.map((move) => {
       newSquares[move.to] = {
-        background: game.get(move.to as any) && game.get(move.to as any).color !== game.get(square as any).color
+        background: game.get(move.to as any) && game.get(move.to as any)?.color !== game.get(square as any)?.color
           ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
           : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
         borderRadius: '50%',
@@ -211,7 +211,7 @@ export default function LocalGame() {
       return;
     }
 
-    const moves = game.moves({ square: moveFrom, verbose: true }) as any[];
+    const moves = game.moves({ square: moveFrom as import('chess.js').Square, verbose: true }) as any[];
     const validMove = moves.find((m) => m.to === square);
 
     if (!validMove) {
@@ -284,7 +284,7 @@ export default function LocalGame() {
       let times = index - historyLength + 1;
       const gameCopy = new Chess();
       gameCopy.loadPgn(game.pgn());
-      const newRedoStack = [...redoStack];
+      const newRedoStack: any[] = [...redoStack];
       while (times > 0 && newRedoStack.length > 0) {
         const moveToRedo = newRedoStack.pop();
         if (moveToRedo) gameCopy.move(moveToRedo);
@@ -426,12 +426,15 @@ export default function LocalGame() {
           onSquareClick={onSquareClick}
           customSquareStyles={{ ...moveHighlightStyles, ...optionSquares }}
           customPieces={customPieces}
-          promotionToSquare={promotionSquare}
+          promotionToSquare={promotionSquare as import('chess.js').Square | null}
           showPromotionDialog={!!promotionSquare}
           onPromotionPieceSelect={onPromotionPieceSelect}
           boardWidth={boardWidth}
           customDarkSquareStyle={{ backgroundColor: 'var(--board-dark)' }}
           customLightSquareStyle={{ backgroundColor: 'var(--board-light)' }}
+          arePremovesAllowed={true}
+          clearPremovesOnRightClick={true}
+          areArrowsAllowed={true}
         />
       </GameLayout>
       {showActions && (

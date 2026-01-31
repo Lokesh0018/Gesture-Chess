@@ -223,7 +223,7 @@ export default function OnlineGame() {
     if (playerRole === 'White' && game.turn() === 'b') return false;
     if (playerRole === 'Black' && game.turn() === 'w') return false;
 
-    const moves = game.moves({ square: sourceSquare, verbose: true }) as any[];
+    const moves = game.moves({ square: sourceSquare as import('chess.js').Square, verbose: true }) as any[];
     const validMove = moves.find((m) => m.to === targetSquare);
 
     if (!validMove) return false;
@@ -266,7 +266,7 @@ export default function OnlineGame() {
 
   function getMoveOptions(square: string) {
     const moves = game.moves({
-      square,
+      square: square as import('chess.js').Square,
       verbose: true,
     }) as any[];
     if (moves.length === 0) {
@@ -277,7 +277,7 @@ export default function OnlineGame() {
     const newSquares: any = {};
     moves.map((move) => {
       newSquares[move.to] = {
-        background: game.get(move.to as any) && game.get(move.to as any).color !== game.get(square as any).color
+        background: game.get(move.to as any) && game.get(move.to as any)?.color !== game.get(square as any)?.color
           ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
           : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
         borderRadius: '50%',
@@ -306,7 +306,7 @@ export default function OnlineGame() {
       return;
     }
 
-    const moves = game.moves({ square: moveFrom, verbose: true }) as any[];
+    const moves = game.moves({ square: moveFrom as import('chess.js').Square, verbose: true }) as any[];
     const validMove = moves.find((m) => m.to === square);
 
     if (!validMove) {
@@ -403,6 +403,7 @@ export default function OnlineGame() {
   const evalPercentage = Math.max(5, Math.min(95, rawPercentage));
 
   const isGameOver = !!(gameOverMsg || checkmateState || game.isDraw());
+  const isMyTurn = (game.turn() === 'w' && playerRole === 'White') || (game.turn() === 'b' && playerRole === 'Black');
   const activeTurn = isGameOver ? null : (isMyTurn ? 'bottom' : 'top');
   const turnIndicator = gameOverMsg ? gameOverMsg : checkmateState ? `🏆 CHECKMATE • ${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "🏆 DRAW" : `${game.turn() === 'w' ? 'White' : 'Black'}'s Turn`;
 
@@ -497,13 +498,16 @@ export default function OnlineGame() {
           onSquareClick={onSquareClick}
           customSquareStyles={{ ...moveHighlightStyles, ...optionSquares }}
           customPieces={customPieces}
-          promotionToSquare={promotionSquare}
+          promotionToSquare={promotionSquare as import('chess.js').Square | null}
           showPromotionDialog={!!promotionSquare}
           onPromotionPieceSelect={onPromotionPieceSelect}
           boardOrientation={playerRole === 'Black' ? 'black' : 'white'}
           boardWidth={boardWidth}
           customDarkSquareStyle={{ backgroundColor: 'var(--board-dark)' }}
           customLightSquareStyle={{ backgroundColor: 'var(--board-light)' }}
+          arePremovesAllowed={true}
+          clearPremovesOnRightClick={true}
+          areArrowsAllowed={true}
         />
       </GameLayout>
       {showActions && (

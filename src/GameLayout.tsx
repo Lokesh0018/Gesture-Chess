@@ -176,6 +176,17 @@ export default function GameLayout({
               {onPrev && <button className="action-btn" onClick={onPrev}>{prevLabel}</button>}
               {onNext && <button className="action-btn" onClick={onNext}>{nextLabel}</button>}
             </div>
+            <div style={{ marginTop: '10px' }}>
+              <select 
+                className="theme-selector"
+                onChange={(e) => document.body.setAttribute('data-theme', e.target.value)}
+              >
+                <option value="midnight">Theme: Midnight Glass</option>
+                <option value="wood">Theme: Tournament Wood</option>
+                <option value="chesscom">Theme: Chess.com Green</option>
+                <option value="cyber">Theme: Cyber Neon</option>
+              </select>
+            </div>
           </div>
           
           <div className="moves-container" style={{ display: activeTab === 'moves' ? 'flex' : 'none' }}>
