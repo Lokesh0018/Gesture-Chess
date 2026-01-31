@@ -319,9 +319,33 @@ export default function LocalGame() {
     }
   });
 
+  const pieceValues: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  let whiteMaterial = 0;
+  let blackMaterial = 0;
+  const boardData = game.board();
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = boardData[r][c];
+      if (p) {
+        if (p.color === 'w') whiteMaterial += pieceValues[p.type] || 0;
+        else blackMaterial += pieceValues[p.type] || 0;
+      }
+    }
+  }
+  const advantage = whiteMaterial - blackMaterial;
+  const rawPercentage = 50 + (advantage / 15) * 50;
+  const evalPercentage = Math.max(5, Math.min(95, rawPercentage));
+
   const isGameOver = !!(gameOverMsg || checkmateState || game.isDraw());
   const activeTurn = isGameOver ? null : game.turn() === 'w' ? 'top' : 'bottom';
   const turnIndicator = gameOverMsg ? gameOverMsg : checkmateState ? `🏆 CHECKMATE • ${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "🏆 DRAW" : `${game.turn() === 'w' ? 'White' : 'Black'}'s Turn`;
+
+  const h = game.history({ verbose: true }) as any[];
+  const lastMove = h[h.length - 1];
+  const moveHighlightStyles = lastMove ? {
+    [lastMove.from]: { boxShadow: 'inset 0 0 15px rgba(46, 204, 113, 0.5), inset 0 0 2px 2px rgba(46, 204, 113, 0.6)' },
+    [lastMove.to]: { boxShadow: 'inset 0 0 15px rgba(46, 204, 113, 0.5), inset 0 0 2px 2px rgba(46, 204, 113, 0.6)' }
+  } : {};
 
   useEffect(() => {
     if (isGameOver) {
@@ -341,7 +365,7 @@ export default function LocalGame() {
         topPlayerClock="10:00"
         bottomPlayerClock="10:00"
         turnIndicator={turnIndicator}
-        evalPercentage={50}
+        evalPercentage={evalPercentage}
         topCaptures={blackC}
         bottomCaptures={whiteC}
         moveHistory={moveHistory}
@@ -400,7 +424,7 @@ export default function LocalGame() {
           position={game.fen()}
           onPieceDrop={onDrop}
           onSquareClick={onSquareClick}
-          customSquareStyles={optionSquares}
+          customSquareStyles={{ ...moveHighlightStyles, ...optionSquares }}
           customPieces={customPieces}
           promotionToSquare={promotionSquare}
           showPromotionDialog={!!promotionSquare}
