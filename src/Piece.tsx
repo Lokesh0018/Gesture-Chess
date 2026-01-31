@@ -18,9 +18,15 @@ const pieceNames = {
 };
 
 export default function Piece({ type, color, squareWidth = 50, isDragging = false }: PieceProps) {
-  const colorPrefix = color === 'w' ? 'White' : 'Black';
   const pieceName = pieceNames[type];
-  const src = `/asserts/${colorPrefix}${pieceName}.png`;
+  const src = `/asserts/Black${pieceName}.png`;
+
+  const whiteFilterBase = 'brightness(0) invert(1) drop-shadow(1px 0px 0px #000) drop-shadow(0px 1px 0px #000) drop-shadow(-1px 0px 0px #000) drop-shadow(0px -1px 0px #000)';
+  const blackFilterBase = 'drop-shadow(1px 0px 0px rgba(255,255,255,0.5)) drop-shadow(0px 1px 0px rgba(255,255,255,0.5)) drop-shadow(-1px 0px 0px rgba(255,255,255,0.5)) drop-shadow(0px -1px 0px rgba(255,255,255,0.5))';
+  
+  const baseFilter = color === 'w' ? whiteFilterBase : blackFilterBase;
+  const filterNormal = `${baseFilter} drop-shadow(0px 2px 4px rgba(0,0,0,0.3))`;
+  const filterDrag = `${baseFilter} drop-shadow(0px 15px 15px rgba(0,0,0,0.6))`;
 
   return (
     <div style={{ 
@@ -39,13 +45,11 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
           cursor: isDragging ? 'grabbing' : 'grab', 
           userSelect: 'none' 
         }}
-        initial={{ scale: 1, y: 0, filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.3))' }}
+        initial={{ scale: 1, y: 0, filter: filterNormal }}
         animate={{
           scale: isDragging ? 1.15 : 1,
           y: isDragging ? -8 : 0,
-          filter: isDragging 
-            ? 'drop-shadow(0px 15px 15px rgba(0,0,0,0.6))' 
-            : 'drop-shadow(0px 2px 4px rgba(0,0,0,0.3))'
+          filter: isDragging ? filterDrag : filterNormal
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         draggable={false}

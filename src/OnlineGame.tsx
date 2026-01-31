@@ -33,10 +33,10 @@ export default function OnlineGame() {
   const playerRoleRef = useRef<'White' | 'Black' | null>(null);
   const [status, setStatus] = useState('Not connected');
   const [boardWidth, setBoardWidth] = useState(window.innerWidth > 850 ? 500 : window.innerWidth - 60);
-  const [cinematic, setCinematic] = useState<{square: string, color: 'w'|'b', type: 'q'|'r'|'b'|'n'} | null>(null);
-  const [captureAnim, setCaptureAnim] = useState<{square: string, pieceType: 'P'|'N'|'B'|'R'|'Q'|'K', pieceColor: 'w'|'b'} | null>(null);
-  const [checkState, setCheckState] = useState<{king: string, attacker: string | null} | null>(null);
-  const [checkmateState, setCheckmateState] = useState<{defKing: string, winKing: string, color: 'w'|'b', text: string} | null>(null);
+  const [cinematic, setCinematic] = useState<{ square: string, color: 'w' | 'b', type: 'q' | 'r' | 'b' | 'n' } | null>(null);
+  const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b' } | null>(null);
+  const [checkState, setCheckState] = useState<{ king: string, attacker: string | null } | null>(null);
+  const [checkmateState, setCheckmateState] = useState<{ defKing: string, winKing: string, color: 'w' | 'b', text: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
 
   const [moveFrom, setMoveFrom] = useState('');
@@ -45,7 +45,7 @@ export default function OnlineGame() {
   const moveFromRef = useRef<string | null>(null);
   const promoteToRef = useRef<string | null>(null);
 
-  const [chatMessages, setChatMessages] = useState<{sender: string, text: string}[]>([]);
+  const [chatMessages, setChatMessages] = useState<{ sender: string, text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatUnread, setChatUnread] = useState(0);
 
@@ -134,14 +134,14 @@ export default function OnlineGame() {
           if (result.captured) {
             audio.capture();
             const capturedColor = result.color === 'w' ? 'b' : 'w';
-            const capturedType = result.captured.toUpperCase() as 'P'|'N'|'B'|'R'|'Q'|'K';
+            const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
             setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
           }
           if (result.promotion) {
             audio.promote();
-            setCinematic({ square: result.to, color: result.color as 'w'|'b', type: result.promotion as 'q'|'r'|'b'|'n' });
+            setCinematic({ square: result.to, color: result.color as 'w' | 'b', type: result.promotion as 'q' | 'r' | 'b' | 'n' });
           }
-        } catch(e) {}
+        } catch (e) { }
         return newGame;
       });
     });
@@ -181,26 +181,27 @@ export default function OnlineGame() {
     try {
       const result = gameCopy.move(move);
       setGame(gameCopy);
-      
+
       const boardElement = document.querySelector('.react-board-wrapper') as HTMLElement;
       const orientation = playerRole?.toLowerCase() === 'black' ? 'black' : 'white';
       if (result.captured) {
         audio.capture();
         const capturedColor = result.color === 'w' ? 'b' : 'w';
-        const capturedType = result.captured.toUpperCase() as 'P'|'N'|'B'|'R'|'Q'|'K';
+        const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
         setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
       }
       if (result.promotion) {
         audio.promote();
-        setCinematic({ square: result.to, color: result.color as 'w'|'b', type: result.promotion as 'q'|'r'|'b'|'n' });
+        setCinematic({ square: result.to, color: result.color as 'w' | 'b', type: result.promotion as 'q' | 'r' | 'b' | 'n' });
       }
 
       if (socket) {
-        socket.emit('move', { roomCode, move: { 
+        socket.emit('move', {
+          roomCode, move: {
             from: result.from,
             to: result.to,
             promotion: result.promotion
-         } 
+          }
         });
       }
 
@@ -224,7 +225,7 @@ export default function OnlineGame() {
       moveFromRef.current = sourceSquare;
       promoteToRef.current = targetSquare;
       setPromotionSquare(targetSquare);
-      return true; 
+      return true;
     }
 
     const move = makeAMove({
@@ -270,8 +271,8 @@ export default function OnlineGame() {
     moves.map((move) => {
       newSquares[move.to] = {
         background: game.get(move.to as any) && game.get(move.to as any).color !== game.get(square as any).color
-            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
-            : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+          ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
+          : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
         borderRadius: '50%',
       };
       return move;
@@ -337,10 +338,10 @@ export default function OnlineGame() {
           <h2>Online Multiplayer</h2>
           <button onClick={handleCreate} className="menu-btn" style={{ width: '100%', marginTop: '15px' }}>Create Game</button>
           <div style={{ margin: '20px 0', color: '#aaa' }}>OR</div>
-          <input 
-            type="text" 
-            placeholder="Room Code" 
-            maxLength={4} 
+          <input
+            type="text"
+            placeholder="Room Code"
+            maxLength={4}
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
             style={{ width: 'calc(100% - 30px)', padding: '15px', fontSize: '1.2rem', borderRadius: '8px', border: '1px solid #5c5852', background: '#262522', color: 'white', textAlign: 'center', textTransform: 'uppercase' }}
@@ -361,7 +362,7 @@ export default function OnlineGame() {
 
   const whiteC: string[] = [];
   const blackC: string[] = [];
-  
+
   (game.history({ verbose: true }) as any[]).forEach((m) => {
     if (m.captured) {
       if (m.color === 'w') whiteC.push(`b${m.captured}`);
@@ -372,6 +373,9 @@ export default function OnlineGame() {
   let turnIndicator = `${game.turn() === 'w' ? "White" : "Black"}'s Turn`;
   if (game.isCheckmate()) turnIndicator = `Checkmate! ${game.turn() === 'w' ? 'Black' : 'White'} Wins!`;
   else if (game.isDraw()) turnIndicator = "Draw!";
+
+  const isMyTurn = playerRole?.[0].toLowerCase() === game.turn();
+  const activeTurn = game.isCheckmate() || game.isDraw() ? null : (isMyTurn ? 'bottom' : 'top');
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -399,6 +403,7 @@ export default function OnlineGame() {
             setChatInput('');
           }
         }}
+        activeTurn={activeTurn}
       >
         {cinematic && (
           <style>{`
@@ -446,24 +451,24 @@ export default function OnlineGame() {
             orientation={playerRole === 'Black' ? 'black' : 'white'}
             boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
             text={checkmateState.text}
-            onComplete={() => {}}
+            onComplete={() => { }}
           />
         )}
         {/* @ts-ignore */}
-        <Chessboard 
-            id="OnlineBoard"
-            position={game.fen()} 
-            onPieceDrop={onDrop}
-            onSquareClick={onSquareClick}
-            customSquareStyles={optionSquares}
-            customPieces={customPieces}
-            promotionToSquare={promotionSquare}
-            showPromotionDialog={!!promotionSquare}
-            onPromotionPieceSelect={onPromotionPieceSelect}
-            boardOrientation={playerRole === 'Black' ? 'black' : 'white'}
-            boardWidth={boardWidth}
-            customDarkSquareStyle={{ backgroundColor: '#739552' }}
-            customLightSquareStyle={{ backgroundColor: '#ebecd0' }}
+        <Chessboard
+          id="OnlineBoard"
+          position={game.fen()}
+          onPieceDrop={onDrop}
+          onSquareClick={onSquareClick}
+          customSquareStyles={optionSquares}
+          customPieces={customPieces}
+          promotionToSquare={promotionSquare}
+          showPromotionDialog={!!promotionSquare}
+          onPromotionPieceSelect={onPromotionPieceSelect}
+          boardOrientation={playerRole === 'Black' ? 'black' : 'white'}
+          boardWidth={boardWidth}
+          customDarkSquareStyle={{ backgroundColor: 'var(--board-dark)' }}
+          customLightSquareStyle={{ backgroundColor: 'var(--board-light)' }}
         />
       </GameLayout>
     </div>

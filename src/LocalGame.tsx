@@ -26,10 +26,10 @@ const customPieces = pieces.reduce((res: any, p) => {
 export default function LocalGame() {
   const [game, setGame] = useState(new Chess());
   const [boardWidth, setBoardWidth] = useState(window.innerWidth > 850 ? 500 : window.innerWidth - 60);
-  const [cinematic, setCinematic] = useState<{square: string, color: 'w'|'b', type: 'q'|'r'|'b'|'n'} | null>(null);
-  const [captureAnim, setCaptureAnim] = useState<{square: string, pieceType: 'P'|'N'|'B'|'R'|'Q'|'K', pieceColor: 'w'|'b'} | null>(null);
-  const [checkState, setCheckState] = useState<{king: string, attacker: string | null} | null>(null);
-  const [checkmateState, setCheckmateState] = useState<{defKing: string, winKing: string, color: 'w'|'b', text: string} | null>(null);
+  const [cinematic, setCinematic] = useState<{ square: string, color: 'w' | 'b', type: 'q' | 'r' | 'b' | 'n' } | null>(null);
+  const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b' } | null>(null);
+  const [checkState, setCheckState] = useState<{ king: string, attacker: string | null } | null>(null);
+  const [checkmateState, setCheckmateState] = useState<{ defKing: string, winKing: string, color: 'w' | 'b', text: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
 
   const [moveFrom, setMoveFrom] = useState('');
@@ -107,19 +107,19 @@ export default function LocalGame() {
       const result = gameCopy.move(move);
       setGame(gameCopy);
       setRedoStack([]);
-      
+
       const boardElement = document.querySelector('.react-board-wrapper') as HTMLElement;
       if (result.captured) {
         audio.capture();
         const capturedColor = result.color === 'w' ? 'b' : 'w';
-        const capturedType = result.captured.toUpperCase() as 'P'|'N'|'B'|'R'|'Q'|'K';
+        const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
         setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
       }
       if (result.promotion) {
         audio.promote();
-        setCinematic({ square: result.to, color: result.color as 'w'|'b', type: result.promotion as 'q'|'r'|'b'|'n' });
+        setCinematic({ square: result.to, color: result.color as 'w' | 'b', type: result.promotion as 'q' | 'r' | 'b' | 'n' });
       }
-      
+
       return result;
     } catch (e) {
       return null;
@@ -136,7 +136,7 @@ export default function LocalGame() {
       moveFromRef.current = sourceSquare;
       promoteToRef.current = targetSquare;
       setPromotionSquare(targetSquare);
-      return true; 
+      return true;
     }
 
     const move = makeAMove({
@@ -144,7 +144,7 @@ export default function LocalGame() {
       to: targetSquare,
       promotion: validMove.promotion ? 'q' : undefined,
     });
-    
+
     if (move !== null) {
       setMoveFrom('');
       setOptionSquares({});
@@ -183,8 +183,8 @@ export default function LocalGame() {
     moves.map((move) => {
       newSquares[move.to] = {
         background: game.get(move.to as any) && game.get(move.to as any).color !== game.get(square as any).color
-            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
-            : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+          ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
+          : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
         borderRadius: '50%',
       };
       return move;
@@ -318,7 +318,7 @@ export default function LocalGame() {
 
   const whiteC: string[] = [];
   const blackC: string[] = [];
-  
+
   (game.history({ verbose: true }) as any[]).forEach((m) => {
     if (m.captured) {
       if (m.color === 'w') whiteC.push(`b${m.captured}`);
@@ -331,6 +331,8 @@ export default function LocalGame() {
   else if (checkmateState) turnIndicator = `Checkmate! ${game.turn() === 'w' ? 'Black' : 'White'} wins!`;
   else if (game.isDraw()) turnIndicator = 'Draw!';
   else turnIndicator = `${game.turn() === 'w' ? 'White' : 'Black'}'s Turn`;
+
+  const activeTurn = gameOverMsg || checkmateState || game.isDraw() ? null : (game.turn() === 'w' ? 'bottom' : 'top');
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -353,6 +355,7 @@ export default function LocalGame() {
         prevLabel="⎌ Undo"
         nextLabel="Redo ⎎"
         hideChat={true}
+        activeTurn={activeTurn}
       >
         {cinematic && (
           <style>{`
@@ -400,23 +403,23 @@ export default function LocalGame() {
             orientation="white"
             boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
             text={checkmateState.text}
-            onComplete={() => {}}
+            onComplete={() => { }}
           />
         )}
         {/* @ts-ignore */}
-        <Chessboard 
-            id="LocalBoard"
-            position={game.fen()} 
-            onPieceDrop={onDrop}
-            onSquareClick={onSquareClick}
-            customSquareStyles={optionSquares}
-            customPieces={customPieces}
-            promotionToSquare={promotionSquare}
-            showPromotionDialog={!!promotionSquare}
-            onPromotionPieceSelect={onPromotionPieceSelect}
-            boardWidth={boardWidth}
-            customDarkSquareStyle={{ backgroundColor: '#739552' }}
-            customLightSquareStyle={{ backgroundColor: '#ebecd0' }}
+        <Chessboard
+          id="LocalBoard"
+          position={game.fen()}
+          onPieceDrop={onDrop}
+          onSquareClick={onSquareClick}
+          customSquareStyles={optionSquares}
+          customPieces={customPieces}
+          promotionToSquare={promotionSquare}
+          showPromotionDialog={!!promotionSquare}
+          onPromotionPieceSelect={onPromotionPieceSelect}
+          boardWidth={boardWidth}
+          customDarkSquareStyle={{ backgroundColor: 'var(--board-dark)' }}
+          customLightSquareStyle={{ backgroundColor: 'var(--board-light)' }}
         />
       </GameLayout>
     </div>
