@@ -98,34 +98,49 @@ function VFXLayer() {
   const spawnCaptureParticles = (x: number, y: number, color = '#ebecd0') => {
     const newParticles: Particle[] = [];
     const baseColor = color === 'black' ? '#4a4a4a' : '#f0d9b5';
-    const dustColor = color === 'black' ? '#2b2b2b' : '#d4b581';
+    
+    // Intense glowing core burst
+    for (let i = 0; i < 20; i++) {
+      newParticles.push({
+        x: x + (Math.random() - 0.5) * 20,
+        y: y + (Math.random() - 0.5) * 20,
+        vx: (Math.random() - 0.5) * 400, // fast explosion
+        vy: (Math.random() - 0.5) * 400,
+        size: Math.random() * 8 + 4,
+        life: 0.3 + Math.random() * 0.3,
+        maxLife: 0.6,
+        color: '#ff4d4d',
+        type: 'glow'
+      });
+    }
 
-    // Soft, lightweight fragments breaking from edges
+    // Glowing embers shooting outwards and falling
+    for (let i = 0; i < 30; i++) {
+      newParticles.push({
+        x: x + (Math.random() - 0.5) * 30,
+        y: y + (Math.random() - 0.5) * 30,
+        vx: (Math.random() - 0.5) * 300,
+        vy: (Math.random() - 1) * 300, // biased upwards initially
+        size: Math.random() * 4 + 2,
+        life: 0.5 + Math.random() * 1.5,
+        maxLife: 2.0,
+        color: '#ff9933', // orange embers
+        type: 'ember'
+      });
+    }
+
+    // Scattered piece dust
     for (let i = 0; i < 15; i++) {
       newParticles.push({
         x: x + (Math.random() - 0.5) * 40,
         y: y + (Math.random() - 0.5) * 40,
-        vx: (Math.random() - 0.5) * 100, // gentle
-        vy: (Math.random() - 0.5) * 100 - 50, // slight upward drift
-        size: Math.random() * 4 + 2,
+        vx: (Math.random() - 0.5) * 150,
+        vy: (Math.random() - 0.5) * 150 - 50,
+        size: Math.random() * 5 + 2,
         life: 0.8 + Math.random() * 0.4,
         maxLife: 1.2,
         color: baseColor,
         type: 'dust'
-      });
-    }
-    // Fine marble/wood dust dispersing outward smoothly
-    for (let i = 0; i < 25; i++) {
-      newParticles.push({
-        x: x + (Math.random() - 0.5) * 50,
-        y: y + (Math.random() - 0.5) * 50,
-        vx: (Math.random() - 0.5) * 50,
-        vy: (Math.random() - 0.5) * 50 - 20,
-        size: Math.random() * 2 + 1,
-        life: 1 + Math.random(),
-        maxLife: 2,
-        color: dustColor,
-        type: 'falling-dust'
       });
     }
     particlesRef.current.push(...newParticles);

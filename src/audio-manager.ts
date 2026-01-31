@@ -96,11 +96,34 @@ class AudioManager {
     osc.stop(t + 0.1);
   }
 
+  playCheck() {
+    this.initCtx();
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    
+    // Low, dramatic bell tone
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, t);
+    osc.frequency.exponentialRampToValueAtTime(100, t + 1);
+    
+    gain.gain.setValueAtTime(0.5, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
+    
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    osc.start(t);
+    osc.stop(t + 1.6);
+  }
+
   // Backwards compatibility for existing code
   capture() { this.playCapture(); }
   promote() { this.playCapture(); }
   promoteCharge() { this.playHoverBlip(); }
   promoteBurst() { this.playThud(); }
+  check() { this.playCheck(); }
 }
 
 export const audio = new AudioManager();

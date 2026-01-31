@@ -4,6 +4,7 @@ import { Chessboard } from 'react-chessboard';
 import { Link } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { audio } from './audio-manager';
+import { vfx } from './vfx-manager';
 import { motion, AnimatePresence } from 'framer-motion';
 import CheckIndicator from './CheckIndicator';
 import GameLayout from './GameLayout';
@@ -105,6 +106,7 @@ export default function OnlineGame() {
       setCheckmateState(null);
       const sqEl = document.querySelector(`[data-square="${kSq}"]`);
       if (sqEl) sqEl.classList.add('in-check');
+      audio.check();
     } else {
       setCheckState(null);
       setCheckmateState(null);
@@ -157,6 +159,7 @@ export default function OnlineGame() {
           const orientation = playerRoleRef.current?.toLowerCase() === 'black' ? 'black' : 'white';
           if (result.captured) {
             audio.capture();
+            vfx.triggerFromSquare('capture', result.to, orientation, boardElement);
             const capturedColor = result.color === 'w' ? 'b' : 'w';
             const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
             setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
@@ -227,6 +230,7 @@ export default function OnlineGame() {
       const orientation = playerRole?.toLowerCase() === 'black' ? 'black' : 'white';
       if (result.captured) {
         audio.capture();
+        vfx.triggerFromSquare('capture', result.to, orientation, boardElement);
         const capturedColor = result.color === 'w' ? 'b' : 'w';
         const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
         setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });

@@ -3,6 +3,7 @@ import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { Link } from 'react-router-dom';
 import { audio } from './audio-manager';
+import { vfx } from './vfx-manager';
 import CheckIndicator from './CheckIndicator';
 import GameLayout from './GameLayout';
 import type { MoveHistory } from './GameLayout';
@@ -94,6 +95,9 @@ export default function LocalGame() {
       // apply in-check to square
       const sqEl = document.querySelector(`[data-square="${kSq}"]`);
       if (sqEl) sqEl.classList.add('in-check');
+      
+      // Play check audio
+      audio.check();
     } else {
       setCheckState(null);
       setCheckmateState(null);
@@ -112,6 +116,7 @@ export default function LocalGame() {
       const boardElement = document.querySelector('.react-board-wrapper') as HTMLElement;
       if (result.captured) {
         audio.capture();
+        vfx.triggerFromSquare('capture', result.to, 'white', boardElement);
         const capturedColor = result.color === 'w' ? 'b' : 'w';
         const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
         setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });

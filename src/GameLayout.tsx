@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Piece from './Piece';
 
 export type MoveHistory = {
@@ -78,6 +79,7 @@ export default function GameLayout({
   onSendChat
 }: GameLayoutProps) {
   const [activeTab, setActiveTab] = useState<'moves' | 'chat'>('moves');
+  const [showThemeDrawer, setShowThemeDrawer] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -91,6 +93,13 @@ export default function GameLayout({
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, activeTab]);
+
+  const themes = [
+    { id: 'midnight', name: 'Midnight Glass', color: '#0f172a' },
+    { id: 'wood', name: 'Tournament Wood', color: '#3e2723' },
+    { id: 'chesscom', name: 'Classic Green', color: '#312e2b' },
+    { id: 'cyber', name: 'Cyber Neon', color: '#050014' },
+  ];
 
   return (
     <div className="layout-wrapper" style={hideSidebar ? { gridTemplateColumns: '180px auto 180px' } : {}}>
@@ -168,7 +177,7 @@ export default function GameLayout({
 
       {/* Far Right Column: Sidebar */}
       {!hideSidebar && (
-        <div className="right-sidebar glass-panel" style={{ gridArea: 'moveHistory', display: 'flex', flexDirection: 'column', margin: '0', width: '100%', height: '100%' }}>
+        <div className="right-sidebar glass-panel" style={{ gridArea: 'moveHistory', display: 'flex', flexDirection: 'column', margin: '0', width: '100%', height: '100%', position: 'relative' }}>
           
           {/* Tabs */}
           <div style={{ display: 'flex', borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
@@ -187,6 +196,13 @@ export default function GameLayout({
                 )}
               </button>
             )}
+            <button 
+              onClick={() => setShowThemeDrawer(true)}
+              style={{ padding: '16px', background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', transition: 'all 0.2s', borderBottom: '2px solid transparent' }}
+              title="Settings & Themes"
+            >
+              ⚙️
+            </button>
           </div>
 
           <div className="controls-bar" style={{ display: activeTab === 'moves' ? 'flex' : 'none' }}>
@@ -203,17 +219,6 @@ export default function GameLayout({
                 {moveScrubber}
               </div>
             )}
-            <div style={{ marginTop: '10px' }}>
-              <select 
-                className="theme-selector"
-                onChange={(e) => document.body.setAttribute('data-theme', e.target.value)}
-              >
-                <option value="midnight">Theme: Midnight Glass</option>
-                <option value="wood">Theme: Tournament Wood</option>
-                <option value="chesscom">Theme: Chess.com Green</option>
-                <option value="cyber">Theme: Cyber Neon</option>
-              </select>
-            </div>
           </div>
           
           <div className="moves-container" style={{ display: activeTab === 'moves' ? 'flex' : 'none' }}>
@@ -258,6 +263,48 @@ export default function GameLayout({
             </div>
           </div>
           )}
+
+          {/* Theme Drawer */}
+          <AnimatePresence>
+            {showThemeDrawer && (
+              <motion.div 
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                style={{
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(20px)',
+                  zIndex: 100, display: 'flex', flexDirection: 'column',
+                  borderLeft: '1px solid var(--glass-border)'
+                }}
+              >
+                <div style={{ padding: '20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Themes</h3>
+                  <button onClick={() => setShowThemeDrawer(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                </div>
+                <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {themes.map(t => (
+                    <div 
+                      key={t.id} 
+                      onClick={() => document.body.setAttribute('data-theme', t.id)}
+                      style={{
+                        padding: '15px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '15px', transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                    >
+                      <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: t.color, border: '2px solid rgba(255,255,255,0.2)' }} />
+                      <div style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{t.name}</div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
         </div>
       )}
       
