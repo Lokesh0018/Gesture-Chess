@@ -109,15 +109,17 @@ io.on('connection', (socket) => {
         const room = rooms[data.roomCode];
         if (room) {
             const player = room.players.find(p => p.role === data.role);
-            if (player && player.disconnected) {
-                clearTimeout(player.disconnectTimer);
+            if (player) {
+                if (player.disconnectTimer) clearTimeout(player.disconnectTimer);
                 player.disconnected = false;
                 player.id = socket.id;
                 socket.join(data.roomCode);
                 console.log(`${socket.id} rejoined room ${data.roomCode}`);
+                
+                socket.emit('game_state', { pgn: room.chess.pgn() });
             }
         } else {
-            socket.emit('rejoin_failed');
+            socket.emit('error', 'Room not found or expired');
         }
     });
 
@@ -139,7 +141,7 @@ io.on('connection', (socket) => {
                             }
                         }
                     }
-                }, 5000);
+                }, 30000);
                 break;
             }
         }

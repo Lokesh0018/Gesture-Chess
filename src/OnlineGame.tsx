@@ -3,13 +3,14 @@ import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { Link } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
-import { vfx } from './vfx-manager';
 import { audio } from './audio-manager';
+import { motion, AnimatePresence } from 'framer-motion';
 import CheckIndicator from './CheckIndicator';
 import GameLayout from './GameLayout';
 import type { MoveHistory } from './GameLayout';
 import PromotionCinematic from './PromotionCinematic';
 import CaptureAnimation from './CaptureAnimation';
+import PostGameModal from './PostGameModal';
 
 import Piece from './Piece';
 
@@ -61,6 +62,7 @@ export default function OnlineGame() {
   const [chatMessages, setChatMessages] = useState<{ sender: string, text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [chatUnread, setChatUnread] = useState(0);
+  const [floatingChats, setFloatingChats] = useState<{ id: string, sender: string, text: string }[]>([]);
 
   useEffect(() => {
     const handleResize = () => setBoardWidth(window.innerWidth > 850 ? 500 : window.innerWidth - 60);
@@ -113,11 +115,32 @@ export default function OnlineGame() {
     const newSocket = io();
     setSocket(newSocket);
 
+    const savedRoom = sessionStorage.getItem('chess_room');
+    const savedRole = sessionStorage.getItem('chess_role');
+    if (savedRoom && savedRole) {
+      setRoomCode(savedRoom);
+      setPlayerRole(savedRole as 'White' | 'Black');
+      playerRoleRef.current = savedRole as 'White' | 'Black';
+      setStatus('Reconnecting...');
+      newSocket.emit('rejoin_room', { roomCode: savedRoom, role: savedRole });
+    }
+
+    newSocket.on('game_state', (data) => {
+      setGame((g) => {
+        const newGame = new Chess();
+        newGame.loadPgn(data.pgn);
+        return newGame;
+      });
+      setStatus('Game Started!');
+    });
+
     newSocket.on('room_created', (code) => {
       setRoomCode(code);
       setPlayerRole('White');
       playerRoleRef.current = 'White';
       setStatus('Waiting for opponent...');
+      sessionStorage.setItem('chess_room', code);
+      sessionStorage.setItem('chess_role', 'White');
     });
 
     newSocket.on('game_start', () => {
@@ -153,10 +176,22 @@ export default function OnlineGame() {
     newSocket.on('chat_message', (data) => {
       setChatMessages(prev => [...prev, { sender: data.senderRole, text: data.message }]);
       setChatUnread(prev => prev + 1);
+      
+      const id = Math.random().toString(36).substr(2, 9);
+      setFloatingChats(prev => [...prev, { id, sender: data.senderRole, text: data.message }]);
+      setTimeout(() => {
+        setFloatingChats(prev => prev.filter(c => c.id !== id));
+      }, 4000);
     });
 
     newSocket.on('error', (msg) => {
       alert(msg);
+      if (msg === 'Room not found or expired' || msg === 'Room not found') {
+        sessionStorage.removeItem('chess_room');
+        sessionStorage.removeItem('chess_role');
+        setPlayerRole(null);
+        setRoomCode('');
+      }
     });
 
     return () => {
@@ -173,6 +208,8 @@ export default function OnlineGame() {
       setRoomCode(joinCode.toUpperCase());
       setPlayerRole('Black');
       playerRoleRef.current = 'Black';
+      sessionStorage.setItem('chess_room', joinCode.toUpperCase());
+      sessionStorage.setItem('chess_role', 'Black');
       socket.emit('join_room', joinCode.toUpperCase());
     }
   };
@@ -337,10 +374,31 @@ export default function OnlineGame() {
     }
   }
 
+  const isGameOver = !!(gameOverMsg || checkmateState || game.isDraw());
+  const isMyTurn = (game.turn() === 'w' && playerRole === 'White') || (game.turn() === 'b' && playerRole === 'Black');
+  const activeTurn = isGameOver ? null : (isMyTurn ? 'bottom' : 'top');
+  const turnIndicator = gameOverMsg ? gameOverMsg : checkmateState ? `🏆 CHECKMATE • ${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "🏆 DRAW" : `${game.turn() === 'w' ? 'White' : 'Black'}'s Turn`;
+
+  const h = game.history({ verbose: true }) as any[];
+  const lastMove = h[h.length - 1];
+  const moveHighlightStyles = lastMove ? {
+    [lastMove.from]: { boxShadow: 'inset 0 0 15px rgba(46, 204, 113, 0.5), inset 0 0 2px 2px rgba(46, 204, 113, 0.6)' },
+    [lastMove.to]: { boxShadow: 'inset 0 0 15px rgba(46, 204, 113, 0.5), inset 0 0 2px 2px rgba(46, 204, 113, 0.6)' }
+  } : {};
+
+  useEffect(() => {
+    if (isGameOver) {
+      const timer = setTimeout(() => setShowActions(true), 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowActions(false);
+    }
+  }, [isGameOver]);
+
   if (!playerRole || status === 'Waiting for opponent...') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#ebecd0', padding: '20px', height: '100vh', justifyContent: 'center' }}>
-        <Link to="/lobby" className="back-btn" style={{ position: 'absolute', top: 20, left: 20, color: '#ebecd0', textDecoration: 'none', background: '#403d39', padding: '10px 15px', borderRadius: 8 }}>◀ Quit</Link>
+        <Link to="/lobby" onClick={() => { sessionStorage.removeItem('chess_room'); sessionStorage.removeItem('chess_role'); }} className="back-btn" style={{ position: 'absolute', top: 20, left: 20, color: '#ebecd0', textDecoration: 'none', background: '#403d39', padding: '10px 15px', borderRadius: 8 }}>◀ Quit</Link>
         <div style={{ background: '#302e2b', padding: '40px', borderRadius: '12px', textAlign: 'center', width: '300px' }}>
           <h2>Online Multiplayer</h2>
           <button onClick={handleCreate} className="menu-btn" style={{ width: '100%', marginTop: '15px' }}>Create Game</button>
@@ -402,30 +460,32 @@ export default function OnlineGame() {
   const rawPercentage = 50 + (advantage / 15) * 50;
   const evalPercentage = Math.max(5, Math.min(95, rawPercentage));
 
-  const isGameOver = !!(gameOverMsg || checkmateState || game.isDraw());
-  const isMyTurn = (game.turn() === 'w' && playerRole === 'White') || (game.turn() === 'b' && playerRole === 'Black');
-  const activeTurn = isGameOver ? null : (isMyTurn ? 'bottom' : 'top');
-  const turnIndicator = gameOverMsg ? gameOverMsg : checkmateState ? `🏆 CHECKMATE • ${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "🏆 DRAW" : `${game.turn() === 'w' ? 'White' : 'Black'}'s Turn`;
-
-  const h = game.history({ verbose: true }) as any[];
-  const lastMove = h[h.length - 1];
-  const moveHighlightStyles = lastMove ? {
-    [lastMove.from]: { boxShadow: 'inset 0 0 15px rgba(46, 204, 113, 0.5), inset 0 0 2px 2px rgba(46, 204, 113, 0.6)' },
-    [lastMove.to]: { boxShadow: 'inset 0 0 15px rgba(46, 204, 113, 0.5), inset 0 0 2px 2px rgba(46, 204, 113, 0.6)' }
-  } : {};
-
-  useEffect(() => {
-    if (isGameOver) {
-      const timer = setTimeout(() => setShowActions(true), 3000);
-      return () => clearTimeout(timer);
-    } else {
-      setShowActions(false);
-    }
-  }, [isGameOver]);
+  const renderFloatingChats = () => (
+    <div style={{ position: 'absolute', bottom: '20px', left: '20px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 1000, pointerEvents: 'none' }}>
+      <AnimatePresence>
+        {floatingChats.map(chat => (
+          <motion.div
+            key={chat.id}
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            style={{ 
+              background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', 
+              padding: '10px 14px', borderRadius: '12px', color: 'white', 
+              fontSize: '14px', maxWidth: '280px', border: '1px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+            }}
+          >
+            <span style={{ color: chat.sender === playerRole ? 'var(--accent)' : '#38bdf8', fontWeight: 'bold', marginRight: '6px' }}>{chat.sender}:</span>
+            {chat.text}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Link to="/lobby" className="back-btn">◀ Quit</Link>
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <GameLayout
         topPlayerName={playerRole === 'White' ? "Opponent" : "Opponent"}
         bottomPlayerName={playerRole}
@@ -509,14 +569,19 @@ export default function OnlineGame() {
           clearPremovesOnRightClick={true}
           areArrowsAllowed={true}
         />
+        {renderFloatingChats()}
       </GameLayout>
-      {showActions && (
-        <div className="post-game-actions" style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', zIndex: 1000, animation: 'fadeInUp 0.5s ease-out' }}>
-          <button style={actionBtnStyle} onClick={() => window.location.reload()}>New Game</button>
-          <button style={actionBtnStyle} onClick={() => alert("Analysis mode coming soon!")}>Analysis</button>
-          <button style={actionBtnStyle} onClick={() => window.location.href = '/lobby'}>Exit</button>
-        </div>
-      )}
+
+      <PostGameModal 
+        isOpen={isGameOver}
+        winnerTitle={checkmateState ? `${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "DRAW" : "GAME OVER"}
+        totalMoves={game.history().length}
+        materialAdvantage={advantage}
+        onRematch={() => {
+          if (socket) socket.emit('create_room'); // simplistic rematch
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

@@ -2,13 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { Link } from 'react-router-dom';
-import { vfx } from './vfx-manager';
 import { audio } from './audio-manager';
 import CheckIndicator from './CheckIndicator';
 import GameLayout from './GameLayout';
 import type { MoveHistory } from './GameLayout';
 import PromotionCinematic from './PromotionCinematic';
 import CaptureAnimation from './CaptureAnimation';
+import PostGameModal from './PostGameModal';
 
 import Piece from './Piece';
 
@@ -273,7 +273,7 @@ export default function LocalGame() {
     if (index < historyLength - 1) {
       const gameCopy = new Chess();
       gameCopy.loadPgn(game.pgn());
-      const newRedos = [];
+      const newRedos: any[] = [];
       while (gameCopy.history().length > index + 1) {
         const undone = gameCopy.undo();
         if (undone) newRedos.push(undone);
@@ -356,24 +356,42 @@ export default function LocalGame() {
     }
   }, [isGameOver]);
 
+  const currentMoveIndex = game.history().length - 1;
+  const totalMoves = currentMoveIndex + redoStack.length;
+
+  const moveScrubber = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)' }}>
+        <span>Start</span>
+        <span>Move {currentMoveIndex + 1} / {totalMoves + 1}</span>
+      </div>
+      <input 
+        type="range" 
+        min="-1" 
+        max={totalMoves} 
+        value={currentMoveIndex} 
+        onChange={(e) => handleMoveClick(parseInt(e.target.value))}
+        style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
+      />
+    </div>
+  );
+
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <Link to="/lobby" className="back-btn">◀ Back</Link>
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <GameLayout
-        topPlayerName="Player 2"
-        bottomPlayerName="Player 1"
+        topPlayerName="Opponent"
         topPlayerClock="10:00"
+        bottomPlayerName="Player 1"
         bottomPlayerClock="10:00"
         turnIndicator={turnIndicator}
         evalPercentage={evalPercentage}
         topCaptures={blackC}
         bottomCaptures={whiteC}
         moveHistory={moveHistory}
-        onDraw={handleDraw}
-        onResign={handleResign}
+        onMoveClick={handleMoveClick}
         onPrev={handleUndo}
         onNext={handleRedo}
-        onMoveClick={handleMoveClick}
+        moveScrubber={moveScrubber}
         prevLabel="⎌ Undo"
         nextLabel="Redo ⎎"
         hideChat={true}
@@ -437,13 +455,13 @@ export default function LocalGame() {
           areArrowsAllowed={true}
         />
       </GameLayout>
-      {showActions && (
-        <div className="post-game-actions" style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', zIndex: 1000, animation: 'fadeInUp 0.5s ease-out' }}>
-          <button style={actionBtnStyle} onClick={() => window.location.reload()}>New Game</button>
-          <button style={actionBtnStyle} onClick={() => alert("Analysis mode coming soon!")}>Analysis</button>
-          <button style={actionBtnStyle} onClick={() => window.location.href = '/lobby'}>Exit</button>
-        </div>
-      )}
+      <PostGameModal 
+        isOpen={isGameOver}
+        winnerTitle={checkmateState ? `${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "DRAW" : "GAME OVER"}
+        totalMoves={game.history().length}
+        materialAdvantage={advantage}
+        onRematch={() => window.location.reload()}
+      />
     </div>
   );
 }

@@ -9,9 +9,13 @@ export type MoveHistory = {
 type GameLayoutProps = {
   children: ReactNode;
   topPlayerName: string;
+  topPlayerElo?: string;
+  topPlayerFlag?: string;
   bottomPlayerName: string;
   topPlayerClock: string;
   bottomPlayerClock: string;
+  bottomPlayerElo?: string;
+  bottomPlayerFlag?: string;
   turnIndicator: string;
   evalPercentage: number;
   topCaptures: string[];
@@ -24,6 +28,7 @@ type GameLayoutProps = {
   onMoveClick?: (index: number) => void;
   prevLabel?: string;
   nextLabel?: string;
+  moveScrubber?: React.ReactNode;
   hideSidebar?: boolean;
   hideChat?: boolean;
   activeTurn?: 'top' | 'bottom' | null;
@@ -41,9 +46,13 @@ type GameLayoutProps = {
 export default function GameLayout({
   children,
   topPlayerName,
-  bottomPlayerName,
   topPlayerClock,
+  topPlayerElo = "1850",
+  topPlayerFlag = "🇯🇵",
+  bottomPlayerName,
   bottomPlayerClock,
+  bottomPlayerElo = "1920",
+  bottomPlayerFlag = "🇺🇸",
   turnIndicator,
   evalPercentage,
   topCaptures,
@@ -56,6 +65,7 @@ export default function GameLayout({
   onMoveClick,
   prevLabel = "◀ Prev",
   nextLabel = "Next ▶",
+  moveScrubber,
   hideSidebar,
   hideChat = false,
   activeTurn = null,
@@ -101,8 +111,14 @@ export default function GameLayout({
         
         <div className="player-info" style={{ width: '100%', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
-            <div className={`player-avatar ${activeTurn === 'top' ? 'active-avatar-ring' : ''}`} style={{ backgroundColor: '#7b4f3b', backgroundImage: "url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png')" }}></div>
-            <div className="player-name">{topPlayerName}</div>
+            <div className={`player-avatar ${activeTurn === 'top' ? 'active-avatar-ring' : ''}`} style={{ backgroundColor: '#7b4f3b', backgroundImage: "url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png')" }}>
+              <div className="live-dot" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="player-name" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                {topPlayerFlag} {topPlayerName} <span className="player-elo">({topPlayerElo})</span>
+              </div>
+            </div>
           </div>
           <div className="player-clock clock-dark">{topPlayerClock}</div>
         </div>
@@ -125,8 +141,14 @@ export default function GameLayout({
 
         <div className="player-info" style={{ width: '100%', marginTop: '10px', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
-            <div className={`player-avatar ${activeTurn === 'bottom' ? 'active-avatar-ring' : ''}`} style={{ backgroundColor: '#aaa', backgroundImage: "url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png')" }}></div>
-            <div className="player-name">{bottomPlayerName}</div>
+            <div className={`player-avatar ${activeTurn === 'bottom' ? 'active-avatar-ring' : ''}`} style={{ backgroundColor: '#aaa', backgroundImage: "url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png')" }}>
+              <div className="live-dot" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="player-name" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                {bottomPlayerFlag} {bottomPlayerName} <span className="player-elo">({bottomPlayerElo})</span>
+              </div>
+            </div>
           </div>
           <div className="player-clock">{bottomPlayerClock}</div>
         </div>
@@ -176,6 +198,11 @@ export default function GameLayout({
               {onPrev && <button className="action-btn" onClick={onPrev}>{prevLabel}</button>}
               {onNext && <button className="action-btn" onClick={onNext}>{nextLabel}</button>}
             </div>
+            {moveScrubber && (
+              <div style={{ marginTop: '15px', padding: '0 5px' }}>
+                {moveScrubber}
+              </div>
+            )}
             <div style={{ marginTop: '10px' }}>
               <select 
                 className="theme-selector"
@@ -201,7 +228,7 @@ export default function GameLayout({
 
           {/* Chat Container */}
           {!hideChat && (
-            <div style={{ display: activeTab === 'chat' ? 'flex' : 'none', flexDirection: 'column', flex: 1, height: '100%', overflow: 'hidden' }}>
+            <div style={{ display: activeTab === 'chat' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <div style={{ flex: 1, overflowY: 'auto', padding: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {chatMessages.map((msg, i) => (
                 <div key={i} style={{ alignSelf: msg.sender === bottomPlayerName ? 'flex-end' : 'flex-start', background: msg.sender === bottomPlayerName ? 'var(--accent)' : 'rgba(255,255,255,0.1)', padding: '8px 12px', borderRadius: '8px', maxWidth: '85%', wordBreak: 'break-word', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
