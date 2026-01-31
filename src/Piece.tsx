@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 type PieceProps = {
@@ -6,6 +6,7 @@ type PieceProps = {
   color: 'w' | 'b';
   squareWidth?: number;
   isDragging?: boolean;
+  square?: string;
 };
 
 const pieceNames = {
@@ -17,7 +18,38 @@ const pieceNames = {
   K: 'King'
 };
 
-export default function Piece({ type, color, squareWidth = 50, isDragging = false }: PieceProps) {
+export default function Piece({ type, color, squareWidth = 50, isDragging = false, square }: PieceProps) {
+  const [isDefeated, setIsDefeated] = useState(false);
+  const [isWinner, setIsWinner] = useState(false);
+
+  useEffect(() => {
+    const checkState = () => {
+      const defColor = document.body.getAttribute('data-def-color');
+      const winColor = document.body.getAttribute('data-win-color');
+      
+      if (defColor === color && type === 'K') {
+        setIsDefeated(true);
+      } else {
+        setIsDefeated(false);
+      }
+
+      if (winColor === color && type === 'K') {
+        setIsWinner(true);
+      } else {
+        setIsWinner(false);
+      }
+    };
+
+    // Check immediately
+    checkState();
+
+    // Observe body attributes for changes
+    const observer = new MutationObserver(checkState);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-def-color', 'data-win-color'] });
+
+    return () => observer.disconnect();
+  }, [color, type]);
+
   const pieceName = pieceNames[type];
   const src = `/asserts/Black${pieceName}.png`;
 
@@ -27,33 +59,54 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
   const baseFilter = color === 'w' ? whiteFilterBase : blackFilterBase;
   const filterNormal = `${baseFilter} drop-shadow(0px 2px 4px rgba(0,0,0,0.3))`;
   const filterDrag = `${baseFilter} drop-shadow(0px 15px 15px rgba(0,0,0,0.6))`;
+  const filterWinner = `${baseFilter} drop-shadow(0 0 20px rgba(255, 215, 0, 0.8))`;
+  const filterDefeated = `${baseFilter} drop-shadow(0px 15px 15px rgba(0,0,0,0.5))`;
+
+  const currentFilter = isWinner ? filterWinner : isDefeated ? filterDefeated : (isDragging ? filterDrag : filterNormal);
 
   return (
-    <div style={{ 
+    <div data-piece-square={square} style={{ 
       width: squareWidth, 
       height: squareWidth, 
       display: 'flex', 
       justifyContent: 'center', 
-      alignItems: 'center'
+      alignItems: 'center',
+      position: 'relative',
+      zIndex: isDefeated ? 9999 : (isDragging ? 100 : 1)
     }}>
-      <motion.img
-        src={src}
+      <motion.div
+        initial={false}
+        animate={isDefeated ? { 
+          rotateZ: 85,
+          y: squareWidth * 0.15,
+          scale: 1
+        } : { rotateZ: 0, rotateX: 0, y: 0, scale: 1 }}
+        transition={isDefeated ? { duration: 1.0, ease: "easeIn" } : { duration: 0 }}
         style={{ 
-          width: '90%', 
-          height: '90%', 
-          objectFit: 'contain', 
-          cursor: isDragging ? 'grabbing' : 'grab', 
-          userSelect: 'none' 
+          width: '100%', height: '100%', 
+          transformOrigin: 'bottom right', 
+          display: 'flex', justifyContent: 'center', alignItems: 'center' 
         }}
-        initial={{ scale: 1, y: 0, filter: filterNormal }}
-        animate={{
-          scale: isDragging ? 1.15 : 1,
-          y: isDragging ? -8 : 0,
-          filter: isDragging ? filterDrag : filterNormal
-        }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        draggable={false}
-      />
+      >
+        <motion.img
+          src={src}
+          style={{ 
+            width: '90%', 
+            height: '90%', 
+            objectFit: 'contain', 
+            cursor: isDragging ? 'grabbing' : 'grab', 
+            userSelect: 'none' 
+          }}
+          initial={{ scale: 1, y: 0, filter: filterNormal }}
+          animate={{
+            scale: isDragging && !isDefeated ? 1.15 : 1,
+            y: isDragging && !isDefeated ? -8 : 0,
+            filter: currentFilter
+          }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          draggable={false}
+        />
+      </motion.div>
     </div>
   );
 }

@@ -6,7 +6,6 @@ import { io, Socket } from 'socket.io-client';
 import { vfx } from './vfx-manager';
 import { audio } from './audio-manager';
 import CheckIndicator from './CheckIndicator';
-import CheckmateAnimation from './CheckmateAnimation';
 import GameLayout from './GameLayout';
 import type { MoveHistory } from './GameLayout';
 import PromotionCinematic from './PromotionCinematic';
@@ -18,11 +17,24 @@ const pieces = ['wP', 'wN', 'wB', 'wR', 'wQ', 'wK', 'bP', 'bN', 'bB', 'bR', 'bQ'
 const customPieces = pieces.reduce((res: any, p) => {
   const color = p[0] as 'w' | 'b';
   const type = p[1] as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
-  res[p] = ({ squareWidth, isDragging }: any) => (
-    <Piece type={type} color={color} squareWidth={squareWidth} isDragging={isDragging} />
+  res[p] = ({ squareWidth, isDragging, square }: any) => (
+    <Piece type={type} color={color} squareWidth={squareWidth} isDragging={isDragging} square={square} />
   );
   return res;
 }, {});
+
+const actionBtnStyle = {
+  padding: '12px 24px',
+  backgroundColor: 'var(--bg-glass)',
+  color: 'var(--text-main)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: '8px',
+  fontWeight: 'bold',
+  cursor: 'pointer',
+  backdropFilter: 'blur(10px)',
+  transition: 'all 0.2s ease',
+  boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+};
 
 export default function OnlineGame() {
   const [game, setGame] = useState(new Chess());
@@ -36,8 +48,9 @@ export default function OnlineGame() {
   const [cinematic, setCinematic] = useState<{ square: string, color: 'w' | 'b', type: 'q' | 'r' | 'b' | 'n' } | null>(null);
   const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b' } | null>(null);
   const [checkState, setCheckState] = useState<{ king: string, attacker: string | null } | null>(null);
-  const [checkmateState, setCheckmateState] = useState<{ defKing: string, winKing: string, color: 'w' | 'b', text: string } | null>(null);
+  const [checkmateState, setCheckmateState] = useState<{ color: 'w' | 'b', text: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
+  const [showActions, setShowActions] = useState(false);
 
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
@@ -57,34 +70,22 @@ export default function OnlineGame() {
 
   useEffect(() => {
     if (checkmateState) {
-      const styleEl = document.getElementById('hide-def-king');
-      if (!styleEl) {
-        const style = document.createElement('style');
-        style.id = 'hide-def-king';
-        style.innerHTML = `div[data-square="${checkmateState.defKing}"] > div, div[data-square="${checkmateState.defKing}"] img, div[data-square="${checkmateState.defKing}"] svg { opacity: 0 !important; }`;
-        document.head.appendChild(style);
-      }
+      document.body.setAttribute('data-def-color', checkmateState.color);
+      document.body.setAttribute('data-win-color', checkmateState.color === 'w' ? 'b' : 'w');
     } else {
-      const styleEl = document.getElementById('hide-def-king');
-      if (styleEl) styleEl.remove();
+      document.body.removeAttribute('data-def-color');
+      document.body.removeAttribute('data-win-color');
     }
+  }, [checkmateState]);
+
+  useEffect(() => {
 
     // cleanup in-check classes
     document.querySelectorAll('.in-check').forEach(el => el.classList.remove('in-check'));
 
     if (game.isCheckmate()) {
-      let dKing = '';
-      let wKing = '';
-      const board = game.board();
-      for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-          if (board[r][c]?.type === 'k') {
-            if (board[r][c]?.color === game.turn()) dKing = String.fromCharCode(97 + c) + (8 - r);
-            else wKing = String.fromCharCode(97 + c) + (8 - r);
-          }
-        }
-      }
-      setCheckmateState({ defKing: dKing, winKing: wKing, color: game.turn(), text: 'CHECKMATE' });
+      audio.playBassDrop();
+      setCheckmateState({ color: game.turn(), text: 'CHECKMATE' });
       setCheckState(null);
     } else if ((typeof game.inCheck === 'function' ? game.inCheck() : (game as any).isCheck?.())) {
       let kSq = '';
@@ -136,7 +137,10 @@ export default function OnlineGame() {
             const capturedColor = result.color === 'w' ? 'b' : 'w';
             const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
             setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
+          } else if (!result.promotion) {
+            audio.playThud();
           }
+
           if (result.promotion) {
             audio.promote();
             setCinematic({ square: result.to, color: result.color as 'w' | 'b', type: result.promotion as 'q' | 'r' | 'b' | 'n' });
@@ -189,7 +193,10 @@ export default function OnlineGame() {
         const capturedColor = result.color === 'w' ? 'b' : 'w';
         const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
         setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
+      } else if (!result.promotion) {
+        audio.playThud();
       }
+
       if (result.promotion) {
         audio.promote();
         setCinematic({ square: result.to, color: result.color as 'w' | 'b', type: result.promotion as 'q' | 'r' | 'b' | 'n' });
@@ -370,12 +377,26 @@ export default function OnlineGame() {
     }
   });
 
-  let turnIndicator = `${game.turn() === 'w' ? "White" : "Black"}'s Turn`;
-  if (game.isCheckmate()) turnIndicator = `Checkmate! ${game.turn() === 'w' ? 'Black' : 'White'} Wins!`;
-  else if (game.isDraw()) turnIndicator = "Draw!";
+  const handleResign = () => {
+    if (gameOverMsg || !playerRole) return;
+    if (socket) socket.emit('resign', { roomCode, role: playerRole });
+    const defeatedColor = playerRole === 'White' ? 'w' : 'b';
+    setCheckmateState({ color: defeatedColor, text: `${defeatedColor === 'w' ? 'WHITE' : 'BLACK'} RESIGNED` });
+    setGameOverMsg(`${defeatedColor === 'w' ? 'White' : 'Black'} Resigned. ${defeatedColor === 'w' ? 'Black' : 'White'} Wins!`);
+  };
 
-  const isMyTurn = playerRole?.[0].toLowerCase() === game.turn();
-  const activeTurn = game.isCheckmate() || game.isDraw() ? null : (isMyTurn ? 'bottom' : 'top');
+  const isGameOver = !!(gameOverMsg || checkmateState || game.isDraw());
+  const activeTurn = isGameOver ? null : (isMyTurn ? 'bottom' : 'top');
+  const turnIndicator = gameOverMsg ? gameOverMsg : checkmateState ? `🏆 CHECKMATE • ${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "🏆 DRAW" : `${game.turn() === 'w' ? 'White' : 'Black'}'s Turn`;
+
+  useEffect(() => {
+    if (isGameOver) {
+      const timer = setTimeout(() => setShowActions(true), 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowActions(false);
+    }
+  }, [isGameOver]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -391,7 +412,7 @@ export default function OnlineGame() {
         bottomCaptures={playerRole === 'White' ? whiteC : blackC}
         moveHistory={moveHistory}
         onDraw={() => alert('Draw offered')}
-        onResign={() => alert('Resigned')}
+        onResign={handleResign}
         chatMessages={chatMessages}
         chatInput={chatInput}
         setChatInput={setChatInput}
@@ -404,6 +425,7 @@ export default function OnlineGame() {
           }
         }}
         activeTurn={activeTurn}
+        isGameOver={!!(gameOverMsg || checkmateState || game.isDraw())}
       >
         {cinematic && (
           <style>{`
@@ -443,17 +465,6 @@ export default function OnlineGame() {
             boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
           />
         )}
-        {checkmateState && (
-          <CheckmateAnimation
-            defeatedKingSquare={checkmateState.defKing}
-            winningKingSquare={checkmateState.winKing}
-            defeatedColor={checkmateState.color}
-            orientation={playerRole === 'Black' ? 'black' : 'white'}
-            boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
-            text={checkmateState.text}
-            onComplete={() => { }}
-          />
-        )}
         {/* @ts-ignore */}
         <Chessboard
           id="OnlineBoard"
@@ -471,6 +482,13 @@ export default function OnlineGame() {
           customLightSquareStyle={{ backgroundColor: 'var(--board-light)' }}
         />
       </GameLayout>
+      {showActions && (
+        <div className="post-game-actions" style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '15px', zIndex: 1000, animation: 'fadeInUp 0.5s ease-out' }}>
+          <button style={actionBtnStyle} onClick={() => window.location.reload()}>New Game</button>
+          <button style={actionBtnStyle} onClick={() => alert("Analysis mode coming soon!")}>Analysis</button>
+          <button style={actionBtnStyle} onClick={() => window.location.href = '/lobby'}>Exit</button>
+        </div>
+      )}
     </div>
   );
 }

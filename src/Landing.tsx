@@ -8,8 +8,8 @@ const piecesList = ['wP', 'wN', 'wB', 'wR', 'wQ', 'wK', 'bP', 'bN', 'bB', 'bR', 
 const customPieces = piecesList.reduce((res: any, p) => {
   const color = p[0] as 'w' | 'b';
   const type = p[1] as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
-  res[p] = ({ squareWidth, isDragging }: any) => (
-    <Piece type={type} color={color} squareWidth={squareWidth} isDragging={isDragging} />
+  res[p] = ({ squareWidth, isDragging, square }: any) => (
+    <Piece type={type} color={color} squareWidth={squareWidth} isDragging={isDragging} square={square} />
   );
   return res;
 }, {});

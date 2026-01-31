@@ -27,6 +27,7 @@ type GameLayoutProps = {
   hideSidebar?: boolean;
   hideChat?: boolean;
   activeTurn?: 'top' | 'bottom' | null;
+  isGameOver?: boolean;
   
   // Chat props
   chatMessages?: {sender: string, text: string}[];
@@ -58,6 +59,7 @@ export default function GameLayout({
   hideSidebar,
   hideChat = false,
   activeTurn = null,
+  isGameOver = false,
   chatMessages = [],
   chatInput = '',
   setChatInput,
@@ -105,7 +107,7 @@ export default function GameLayout({
           <div className="player-clock clock-dark">{topPlayerClock}</div>
         </div>
 
-        <div className="glass-panel" style={{ textAlign: 'center', fontSize: '20px', fontWeight: 'bold', color: 'var(--text-main)', margin: '5px 0 10px 0', padding: '10px', borderRadius: '8px', width: '100%', boxSizing: 'border-box' }}>
+        <div className={isGameOver ? "game-over-banner" : "glass-panel"} style={!isGameOver ? { textAlign: 'center', fontSize: '20px', fontWeight: 'bold', color: 'var(--text-main)', margin: '5px 0 10px 0', padding: '10px', borderRadius: '8px', width: '100%', boxSizing: 'border-box' } : {}}>
           {turnIndicator}
         </div>
 
