@@ -127,7 +127,7 @@ export default function GameLayout({
     if (move === 'O-O' || move === 'O-O-O') {
       return (
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <img src="/asserts/BlackKing.png" style={{ width: '16px', height: '16px', filter: color === 'w' ? 'brightness(0) invert(1)' : 'none' }} />
+          <img src="/asserts/BlackKing.png" style={{ width: '18px', height: '18px', filter: color === 'w' ? 'brightness(0) invert(1)' : 'drop-shadow(0px 0px 2px rgba(255, 255, 255, 0.9))' }} />
           <span style={{ fontFamily: 'monospace' }}>{move}</span>
         </span>
       );
@@ -145,7 +145,7 @@ export default function GameLayout({
     
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <img src={`/asserts/Black${pieceName}.png`} style={{ width: '16px', height: '16px', filter: color === 'w' ? 'brightness(0) invert(1)' : 'none' }} />
+        <img src={`/asserts/Black${pieceName}.png`} style={{ width: '18px', height: '18px', filter: color === 'w' ? 'brightness(0) invert(1)' : 'drop-shadow(0px 0px 2px rgba(255, 255, 255, 0.9))' }} />
         {isCapture && <span style={{ color: '#ef4444', fontSize: '12px' }}>⚔</span>}
         <span style={{ fontFamily: 'monospace' }}>{restOfMove}</span>
         {isCheck && <span style={{ color: '#ef4444', fontWeight: 'bold' }}>+</span>}
@@ -194,7 +194,7 @@ export default function GameLayout({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div className="player-name" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                {topPlayerFlag} {topPlayerName} <span className="player-elo">({topPlayerElo})</span>
+                {topPlayerFlag} <span className="player-name-text">{topPlayerName}</span> <span className="player-elo">({topPlayerElo})</span>
               </div>
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function GameLayout({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <div className="player-name" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                {bottomPlayerFlag} {bottomPlayerName} <span className="player-elo">({bottomPlayerElo})</span>
+                {bottomPlayerFlag} <span className="player-name-text">{bottomPlayerName}</span> <span className="player-elo">({bottomPlayerElo})</span>
               </div>
             </div>
           </div>

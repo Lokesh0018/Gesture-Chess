@@ -72,9 +72,10 @@ body {
     border: 1px solid var(--glass-border);
     border-radius: 16px;
     box-shadow: 
-        0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-        0 2px 4px -1px rgba(0, 0, 0, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        0 8px 32px 0 rgba(0, 0, 0, 0.3), 
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+        inset 1px 0 0 rgba(255, 255, 255, 0.05);
 }
 
 .theme-selector {
@@ -384,10 +385,29 @@ body.critical-time .state-overlay {
 }
 
 .player-name {
-    font-weight: 700;
-    font-size: 1.1rem;
+    font-weight: 800;
+    font-size: 1.15rem;
     color: #fff;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.player-name-text {
+    background: linear-gradient(90deg, #ffffff, #cbd5e1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.player-elo {
+    font-size: 0.75em;
+    color: var(--accent);
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 6px;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+    letter-spacing: normal;
 }
 .player-clock {
     background: rgba(0,0,0,0.3);
@@ -424,10 +444,23 @@ body.critical-time .state-overlay {
     width: 100%;
     height: 50%; /* 50% = equal material */
     transition: height 0.5s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s;
+    box-shadow: 0 0 10px rgba(255,255,255,0.2);
+    animation: evalBreathing 3s ease-in-out infinite alternate;
+}
+
+@keyframes evalBreathing {
+    0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.1); }
+    100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
 }
 
 .eval-glow {
-    box-shadow: 0 -10px 20px rgba(255, 255, 255, 0.6);
+    box-shadow: 0 -10px 25px rgba(255, 255, 255, 0.8) !important;
+    animation: evalHighGlow 1.5s ease-in-out infinite alternate !important;
+}
+
+@keyframes evalHighGlow {
+    0% { box-shadow: 0 -10px 15px rgba(255, 255, 255, 0.6), 0 0 5px rgba(255,255,255,0.5); }
+    100% { box-shadow: 0 -15px 35px rgba(255, 255, 255, 1), 0 0 20px rgba(255,255,255,0.8); }
 }
 
 .blunder-flash {
@@ -522,7 +555,7 @@ body.critical-time .state-overlay {
 }
 .action-btn {
     flex: 1;
-    background: rgba(255,255,255,0.05);
+    background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
     border: 1px solid rgba(255,255,255,0.1);
     color: inherit;
     cursor: pointer;
@@ -530,15 +563,23 @@ body.critical-time .state-overlay {
     align-items: center;
     justify-content: center;
     gap: 5px;
-    padding: 8px;
+    padding: 10px 8px;
     border-radius: 8px;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 .action-btn:hover { 
     color: #fff; 
-    background: rgba(255,255,255,0.1);
-    transform: translateY(-1px);
+    background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.2);
+}
+.action-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.1);
 }
 
 /* The Board */
@@ -737,10 +778,11 @@ img:active {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 14px;
     font-weight: bold;
-    transition: background-color 0.2s;
+    transition: all 0.3s ease;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
 }
 .move-row:nth-child(even) {
-    background: rgba(0, 0, 0, 0.1);
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%);
 }
 .move-number {
     color: var(--text-muted);
@@ -754,10 +796,12 @@ img:active {
     padding: 6px 15px;
     color: var(--text-main);
     cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .move-white:hover, .move-black:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.08);
+    transform: translateX(4px);
+    box-shadow: -2px 0 0 var(--accent);
 }
 
 @keyframes cameraShake {
