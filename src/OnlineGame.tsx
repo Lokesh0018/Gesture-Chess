@@ -162,7 +162,7 @@ export default function OnlineGame() {
         try {
           const result = newGame.move(move);
           const boardElement = document.querySelector('.react-board-wrapper') as HTMLElement;
-          
+
           const movedPiece = result.piece.toLowerCase();
           if (result.captured || ['r', 'q', 'k'].includes(movedPiece)) {
             boardElement.classList.remove('board-ripple');
@@ -193,12 +193,28 @@ export default function OnlineGame() {
     newSocket.on('chat_message', (data) => {
       setChatMessages(prev => [...prev, { sender: data.senderRole, text: data.message }]);
       setChatUnread(prev => prev + 1);
-      
+
       const id = Math.random().toString(36).substr(2, 9);
       setFloatingChats(prev => [...prev, { id, sender: data.senderRole, text: data.message }]);
       setTimeout(() => {
         setFloatingChats(prev => prev.filter(c => c.id !== id));
       }, 4000);
+    });
+
+    newSocket.on('opponent_resigned', (role) => {
+      const defeatedColor = role === 'White' ? 'w' : 'b';
+      setCheckmateState({ color: defeatedColor, text: `${defeatedColor === 'w' ? 'WHITE' : 'BLACK'} RESIGNED` });
+      setGameOverMsg(`${defeatedColor === 'w' ? 'White' : 'Black'} Resigned. ${defeatedColor === 'w' ? 'Black' : 'White'} Wins!`);
+    });
+
+    newSocket.on('draw_offered', () => {
+      if (confirm('Opponent offered a draw. Accept?')) {
+        newSocket.emit('accept_draw', sessionStorage.getItem('chess_room'));
+      }
+    });
+
+    newSocket.on('draw_agreed', () => {
+      setGameOverMsg('Draw agreed.');
     });
 
     newSocket.on('error', (msg) => {
@@ -412,6 +428,21 @@ export default function OnlineGame() {
     [lastMove.to]: { boxShadow: 'inset 0 0 15px rgba(46, 204, 113, 0.5), inset 0 0 2px 2px rgba(46, 204, 113, 0.6)' }
   } : {};
 
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (isGameOver) {
+      if (checkmateState) {
+        const timer = setTimeout(() => setShowModal(true), 2000);
+        return () => clearTimeout(timer);
+      } else {
+        setShowModal(true);
+      }
+    } else {
+      setShowModal(false);
+    }
+  }, [isGameOver, checkmateState]);
+
   useEffect(() => {
     if (isGameOver) {
       const timer = setTimeout(() => setShowActions(true), 3000);
@@ -495,9 +526,9 @@ export default function OnlineGame() {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            style={{ 
-              background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', 
-              padding: '10px 14px', borderRadius: '12px', color: 'white', 
+            style={{
+              background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+              padding: '10px 14px', borderRadius: '12px', color: 'white',
               fontSize: '14px', maxWidth: '280px', border: '1px solid rgba(255,255,255,0.1)',
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
             }}
@@ -522,7 +553,10 @@ export default function OnlineGame() {
         topCaptures={playerRole === 'White' ? blackC : whiteC}
         bottomCaptures={playerRole === 'White' ? whiteC : blackC}
         moveHistory={moveHistory}
-        onDraw={() => alert('Draw offered')}
+        onDraw={() => {
+          if (socket) socket.emit('offer_draw', roomCode);
+          alert('Draw offered to opponent.');
+        }}
         onResign={handleResign}
         chatMessages={chatMessages}
         chatInput={chatInput}
@@ -581,7 +615,7 @@ export default function OnlineGame() {
               pieceColor={captureAnim.pieceColor}
               orientation={playerRole === 'Black' ? 'black' : 'white'}
               boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
-              onComplete={() => {}}
+              onComplete={() => { }}
             />
             <FlyingPiece
               startSquare={captureAnim.square}
@@ -623,8 +657,8 @@ export default function OnlineGame() {
         {renderFloatingChats()}
       </GameLayout>
 
-      <PostGameModal 
-        isOpen={isGameOver}
+      <PostGameModal
+        isOpen={showModal}
         winnerTitle={checkmateState ? `${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "DRAW" : "GAME OVER"}
         totalMoves={game.history().length}
         materialAdvantage={advantage}

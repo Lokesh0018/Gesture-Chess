@@ -105,6 +105,10 @@ io.on('connection', (socket) => {
         io.to(roomCode).emit('draw_agreed');
     });
 
+    socket.on('resign', (data) => {
+        io.to(data.roomCode).emit('opponent_resigned', data.role);
+    });
+
     socket.on('rejoin_room', (data) => {
         const room = rooms[data.roomCode];
         if (room) {

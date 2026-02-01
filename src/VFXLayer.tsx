@@ -98,7 +98,7 @@ function VFXLayer() {
   const spawnCaptureParticles = (x: number, y: number, color = '#ebecd0') => {
     const newParticles: Particle[] = [];
     const baseColor = color === 'black' ? '#4a4a4a' : '#f0d9b5';
-    
+
     // Intense glowing core burst
     for (let i = 0; i < 20; i++) {
       newParticles.push({
@@ -109,7 +109,7 @@ function VFXLayer() {
         size: Math.random() * 8 + 4,
         life: 0.3 + Math.random() * 0.3,
         maxLife: 0.6,
-        color: '#ff4d4d',
+        color: '#10b981', // emerald core to match UI accent
         type: 'glow'
       });
     }
@@ -124,7 +124,7 @@ function VFXLayer() {
         size: Math.random() * 4 + 2,
         life: 0.5 + Math.random() * 1.5,
         maxLife: 2.0,
-        color: '#ff9933', // orange embers
+        color: '#38bdf8', // cyan embers for a magical tech feel
         type: 'ember'
       });
     }

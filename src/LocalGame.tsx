@@ -108,7 +108,7 @@ export default function LocalGame() {
       // apply in-check to square
       const sqEl = document.querySelector(`[data-square="${kSq}"]`);
       if (sqEl) sqEl.classList.add('in-check');
-      
+
       // Play check audio
       audio.check();
     } else {
@@ -155,7 +155,7 @@ export default function LocalGame() {
       setRedoStack([]);
 
       const boardElement = document.querySelector('.react-board-wrapper') as HTMLElement;
-      
+
       const movedPiece = result.piece.toLowerCase();
       if (result.captured || ['r', 'q', 'k'].includes(movedPiece)) {
         boardElement.classList.remove('board-ripple');
@@ -173,7 +173,7 @@ export default function LocalGame() {
         audio.playThud();
       }
 
-      if (result.promotion) {
+      if (result.promotion) { 
         audio.promote();
         setCinematic({ square: result.to, color: result.color as 'w' | 'b', type: result.promotion as 'q' | 'r' | 'b' | 'n' });
       }
@@ -400,6 +400,21 @@ export default function LocalGame() {
     [lastMove.to]: { boxShadow: 'inset 0 0 15px rgba(46, 204, 113, 0.5), inset 0 0 2px 2px rgba(46, 204, 113, 0.6)' }
   } : {};
 
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    if (isGameOver) {
+      if (checkmateState) {
+        const timer = setTimeout(() => setShowModal(true), 2000);
+        return () => clearTimeout(timer);
+      } else {
+        setShowModal(true);
+      }
+    } else {
+      setShowModal(false);
+    }
+  }, [isGameOver, checkmateState]);
+
   useEffect(() => {
     if (isGameOver) {
       const timer = setTimeout(() => setShowActions(true), 3000);
@@ -418,11 +433,11 @@ export default function LocalGame() {
         <span>Start</span>
         <span>Move {currentMoveIndex + 1} / {totalMoves + 1}</span>
       </div>
-      <input 
-        type="range" 
-        min="-1" 
-        max={totalMoves} 
-        value={currentMoveIndex} 
+      <input
+        type="range"
+        min="-1"
+        max={totalMoves}
+        value={currentMoveIndex}
         onChange={(e) => handleMoveClick(parseInt(e.target.value))}
         style={{ width: '100%', accentColor: 'var(--accent)', cursor: 'pointer' }}
       />
@@ -450,6 +465,8 @@ export default function LocalGame() {
         onMoveClick={handleMoveClick}
         onPrev={handleUndo}
         onNext={handleRedo}
+        onDraw={handleDraw}
+        onResign={handleResign}
         moveScrubber={moveScrubber}
         prevLabel="⎌ Undo"
         nextLabel="Redo ⎎"
@@ -495,7 +512,7 @@ export default function LocalGame() {
               pieceColor={captureAnim.pieceColor}
               orientation="white"
               boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
-              onComplete={() => {}}
+              onComplete={() => { }}
             />
             <FlyingPiece
               startSquare={captureAnim.square}
@@ -535,8 +552,8 @@ export default function LocalGame() {
           areArrowsAllowed={true}
         />
       </GameLayout>
-      <PostGameModal 
-        isOpen={isGameOver}
+      <PostGameModal
+        isOpen={showModal}
         winnerTitle={checkmateState ? `${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "DRAW" : "GAME OVER"}
         totalMoves={game.history().length}
         materialAdvantage={advantage}

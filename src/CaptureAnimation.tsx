@@ -37,10 +37,6 @@ export default function CaptureAnimation({
     if (pos.size === 0) return;
 
     const sequence = async () => {
-      // Trigger subtle dust
-      const dustColor = pieceColor === 'w' ? 'white' : 'black';
-      vfx.triggerFromSquare('capture', targetSquare, orientation, boardElement, dustColor);
-
       await controls.start({
         scale: 0.95,
         opacity: 0,
