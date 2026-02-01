@@ -38,10 +38,10 @@ export default function CaptureAnimation({
 
     const sequence = async () => {
       await controls.start({
-        scale: 0.95,
-        opacity: 0,
-        filter: 'blur(2px)',
-        transition: { duration: 0.5, ease: "easeOut" }
+        scale: [1, 1.2, 0],
+        opacity: [1, 1, 0],
+        filter: ['blur(0px) brightness(1)', 'blur(0px) brightness(2)', 'blur(4px) brightness(0)'],
+        transition: { duration: 0.4, times: [0, 0.3, 1], ease: "easeInOut" }
       });
       onComplete();
     };
@@ -78,6 +78,23 @@ export default function CaptureAnimation({
     >
       <Piece type={pieceType} color={pieceColor} squareWidth={pos.size} />
     </motion.div>
+    <motion.div
+      initial={{ opacity: 0.8, scale: 0 }}
+      animate={{ opacity: 0, scale: 2.5 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      style={{
+        position: 'fixed',
+        left: pos.x,
+        top: pos.y,
+        width: pos.size,
+        height: pos.size,
+        borderRadius: '50%',
+        border: `3px solid ${pieceColor === 'w' ? '#f8fafc' : '#0f172a'}`,
+        boxShadow: `0 0 15px ${pieceColor === 'w' ? '#f8fafc' : '#0f172a'}`,
+        pointerEvents: 'none',
+        zIndex: 9997,
+      }}
+    />
     {particles.map((p) => (
         <motion.div
           key={p.id}

@@ -2,7 +2,7 @@ import { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { vfx } from './vfx-manager';
 
 export type VFXHandle = {
-  spawnCaptureParticles: (x: number, y: number, color?: string) => void;
+  spawnCaptureParticles: (x: number, y: number, color?: string, pieceType?: string) => void;
   spawnPromotionGlow: (x: number, y: number) => void;
 };
 
@@ -97,27 +97,53 @@ function VFXLayer() {
     };
   }, []);
 
-  const spawnCaptureParticles = (x: number, y: number, color = '#ebecd0') => {
+  const spawnCaptureParticles = (x: number, y: number, color = '#ebecd0', pieceType?: string) => {
     const newParticles: Particle[] = [];
     const baseColor = color === 'black' ? '#4a4a4a' : '#f0d9b5';
+    
+    const computedStyle = getComputedStyle(document.body);
+    const accent = computedStyle.getPropertyValue('--accent').trim() || '#10b981';
+
+    let glowCount = 20;
+    let emberCount = 30;
+    let dustCount = 15;
+    let glowColor = accent;
+    let emberColor = '#38bdf8'; // Default secondary
+
+    if (pieceType === 'P') {
+      glowCount = 10; emberCount = 15; dustCount = 10;
+    } else if (pieceType === 'N') {
+      glowCount = 15; emberCount = 25; dustCount = 15;
+    } else if (pieceType === 'B') {
+      glowCount = 20; emberCount = 30; dustCount = 15;
+      emberColor = '#a855f7'; // Purple magic
+    } else if (pieceType === 'R') {
+      glowCount = 25; emberCount = 20; dustCount = 30; // More rubble
+    } else if (pieceType === 'Q') {
+      glowCount = 40; emberCount = 50; dustCount = 20; // Supernova
+      emberColor = accent; // Intense
+    } else if (pieceType === 'K') {
+      glowCount = 50; emberCount = 60; dustCount = 30;
+      emberColor = '#fbbf24'; // Golden shockwave
+    }
 
     // Intense glowing core burst
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < glowCount; i++) {
       newParticles.push({
         x: x + (Math.random() - 0.5) * 20,
         y: y + (Math.random() - 0.5) * 20,
-        vx: (Math.random() - 0.5) * 400, // fast explosion
-        vy: (Math.random() - 0.5) * 400,
-        size: Math.random() * 8 + 4,
+        vx: (Math.random() - 0.5) * (pieceType === 'Q' ? 600 : 400),
+        vy: (Math.random() - 0.5) * (pieceType === 'Q' ? 600 : 400),
+        size: Math.random() * 8 + (pieceType === 'K' ? 8 : 4),
         life: 0.3 + Math.random() * 0.3,
-        maxLife: 0.6,
-        color: '#10b981', // emerald core to match UI accent
+        maxLife: pieceType === 'K' ? 1.0 : 0.6,
+        color: glowColor,
         type: 'glow'
       });
     }
 
     // Glowing embers shooting outwards and falling
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < emberCount; i++) {
       newParticles.push({
         x: x + (Math.random() - 0.5) * 30,
         y: y + (Math.random() - 0.5) * 30,
@@ -126,13 +152,13 @@ function VFXLayer() {
         size: Math.random() * 4 + 2,
         life: 0.5 + Math.random() * 1.5,
         maxLife: 2.0,
-        color: '#38bdf8', // cyan embers for a magical tech feel
+        color: emberColor,
         type: 'ember'
       });
     }
 
     // Scattered piece dust
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < dustCount; i++) {
       newParticles.push({
         x: x + (Math.random() - 0.5) * 40,
         y: y + (Math.random() - 0.5) * 40,
@@ -203,9 +229,9 @@ function VFXLayer() {
   };
 
   useEffect(() => {
-    return vfx.subscribe((type, x, y, color) => {
+    return vfx.subscribe((type, x, y, color, pieceType) => {
       if (type === 'capture') {
-        spawnCaptureParticles(x, y, color);
+        spawnCaptureParticles(x, y, color, pieceType);
       } else if (type === 'promotion') {
         spawnPromotionGlow(x, y);
       } else if (type === 'classicalDust') {

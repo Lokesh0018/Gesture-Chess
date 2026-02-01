@@ -160,15 +160,17 @@ export default function LocalGame() {
       const movedPiece = result.piece.toLowerCase();
       if (result.captured || ['r', 'q', 'k'].includes(movedPiece)) {
         boardElement.classList.remove('board-ripple');
+        boardElement.classList.remove('camera-shake');
         void boardElement.offsetWidth; // trigger reflow
         boardElement.classList.add('board-ripple');
+        if (result.captured) boardElement.classList.add('camera-shake');
       }
 
       if (result.captured) {
         audio.capture();
-        vfx.triggerFromSquare('capture', result.to, 'white', boardElement);
         const capturedColor = result.color === 'w' ? 'b' : 'w';
         const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
+        vfx.triggerFromSquare('capture', result.to, 'white', boardElement, undefined, capturedType);
         setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor, capturedBy: result.color === 'w' ? 'white' : 'black' });
       } else if (!result.promotion) {
         audio.playThud();
@@ -517,7 +519,7 @@ export default function LocalGame() {
               targetSquare={captureAnim.square}
               pieceType={captureAnim.pieceType}
               pieceColor={captureAnim.pieceColor}
-              orientation="white"
+              orientation={boardOrientation}
               boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
               onComplete={() => { }}
             />
@@ -546,7 +548,7 @@ export default function LocalGame() {
           <CheckIndicator
             kingSquare={checkState.king}
             attackerSquare={checkState.attacker}
-            orientation="white"
+            orientation={boardOrientation}
             boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
           />
         )}

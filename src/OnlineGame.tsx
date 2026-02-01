@@ -166,16 +166,18 @@ export default function OnlineGame() {
           const movedPiece = result.piece.toLowerCase();
           if (result.captured || ['r', 'q', 'k'].includes(movedPiece)) {
             boardElement.classList.remove('board-ripple');
+            boardElement.classList.remove('camera-shake');
             void boardElement.offsetWidth;
             boardElement.classList.add('board-ripple');
+            if (result.captured) boardElement.classList.add('camera-shake');
           }
 
           const orientation = playerRoleRef.current?.toLowerCase() === 'black' ? 'black' : 'white';
           if (result.captured) {
             audio.capture();
-            vfx.triggerFromSquare('capture', result.to, orientation, boardElement);
             const capturedColor = result.color === 'w' ? 'b' : 'w';
             const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
+            vfx.triggerFromSquare('capture', result.to, orientation, boardElement, undefined, capturedType);
             setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor, capturedBy: result.color === 'w' ? 'white' : 'black' });
           } else if (!result.promotion) {
             audio.playThud();
@@ -261,16 +263,18 @@ export default function OnlineGame() {
       const movedPiece = result.piece.toLowerCase();
       if (result.captured || ['r', 'q', 'k'].includes(movedPiece)) {
         boardElement.classList.remove('board-ripple');
+        boardElement.classList.remove('camera-shake');
         void boardElement.offsetWidth;
         boardElement.classList.add('board-ripple');
+        if (result.captured) boardElement.classList.add('camera-shake');
       }
 
       const orientation = playerRole?.toLowerCase() === 'black' ? 'black' : 'white';
       if (result.captured) {
         audio.capture();
-        vfx.triggerFromSquare('capture', result.to, orientation, boardElement);
         const capturedColor = result.color === 'w' ? 'b' : 'w';
         const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
+        vfx.triggerFromSquare('capture', result.to, orientation, boardElement, undefined, capturedType);
         setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor, capturedBy: result.color === 'w' ? 'white' : 'black' });
       } else if (!result.promotion) {
         audio.playThud();

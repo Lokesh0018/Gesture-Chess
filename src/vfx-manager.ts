@@ -1,4 +1,4 @@
-type VFXListener = (type: 'capture' | 'promotion' | 'classicalDust' | 'trail', x: number, y: number, color?: string) => void;
+type VFXListener = (type: 'capture' | 'promotion' | 'classicalDust' | 'trail', x: number, y: number, color?: string, pieceType?: string) => void;
 
 class VFXManager {
   private listeners: VFXListener[] = [];
@@ -11,15 +11,15 @@ class VFXManager {
     };
   }
 
-  emit(type: 'capture' | 'promotion' | 'classicalDust' | 'trail', x: number, y: number, color?: string) {
+  emit(type: 'capture' | 'promotion' | 'classicalDust' | 'trail', x: number, y: number, color?: string, pieceType?: string) {
     if (!this.enabled) return;
     for (const listener of this.listeners) {
-      listener(type, x, y, color);
+      listener(type, x, y, color, pieceType);
     }
   }
 
   // Helper to calculate screen coordinates from a chess square (e.g. 'e4')
-  triggerFromSquare(type: 'capture' | 'promotion' | 'classicalDust' | 'trail', square: string, boardOrientation: 'white' | 'black', boardElement: HTMLElement | null, color?: string) {
+  triggerFromSquare(type: 'capture' | 'promotion' | 'classicalDust' | 'trail', square: string, boardOrientation: 'white' | 'black', boardElement: HTMLElement | null, color?: string, pieceType?: string) {
     if (!boardElement) return;
     
     const rect = boardElement.getBoundingClientRect();
@@ -39,7 +39,7 @@ class VFXManager {
     const x = rect.left + (xIndex * squareSize) + (squareSize / 2);
     const y = rect.top + (yIndex * squareSize) + (squareSize / 2);
     
-    this.emit(type, x, y, color);
+    this.emit(type, x, y, color, pieceType);
   }
 }
 

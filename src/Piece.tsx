@@ -118,10 +118,34 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
   // Delay calculation: center pieces fall first, outer fall later
   const delay = isFalling ? (8 - rowNum) * 0.1 : 0;
 
+  // FIX: react-chessboard sometimes passes the full board width instead of the square width to the drag layer!
+  let actualSquareWidth = squareWidth;
+  if (isDragging && squareWidth > 200) {
+    actualSquareWidth = squareWidth / 8;
+  }
+
+  if (isDragging) {
+    return (
+      <img
+        src={src}
+        style={{
+          width: actualSquareWidth * 1.3, // Scale up slightly to look like it's lifted
+          height: actualSquareWidth * 1.3,
+          objectFit: 'contain',
+          filter: filterDrag,
+          cursor: 'grabbing',
+          transform: `translate(-10%, -10%)`, // Center the scaled image on the cursor
+          pointerEvents: 'none'
+        }}
+        draggable={false}
+      />
+    );
+  }
+
   return (
     <div data-piece-square={square} className={isFalling ? "falling-piece" : ""} style={{ 
-      width: squareWidth, 
-      height: squareWidth, 
+      width: actualSquareWidth, 
+      height: actualSquareWidth, 
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'center',
@@ -155,8 +179,8 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
           }}
           initial={{ scale: 1, y: 0, filter: filterNormal, rotateX: 0, rotateY: 0 }}
           animate={{
-            scale: isDragging && !isDefeated ? 1.25 : 1,
-            y: isDragging && !isDefeated ? -15 : 0,
+            scale: isDragging && !isDefeated ? 1.1 : 1,
+            y: 0,
             rotateX: isDragging && !isDefeated ? tilt.x : 0,
             rotateY: isDragging && !isDefeated ? tilt.y : 0,
             filter: currentFilter
