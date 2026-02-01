@@ -41,10 +41,12 @@ function Lobby() {
 }
 
 import VFXLayer from './VFXLayer';
+import BackgroundLayer from './BackgroundLayer';
 
 function App() {
   return (
     <>
+      <BackgroundLayer />
       <VFXLayer />
       <Router>
         <Routes>

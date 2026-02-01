@@ -22,8 +22,14 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
   const [isDefeated, setIsDefeated] = useState(false);
   const [isWinner, setIsWinner] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isFalling, setIsFalling] = useState(false);
 
   useEffect(() => {
+    if ((window as any).gameJustStarted) {
+      setIsFalling(true);
+      setTimeout(() => setIsFalling(false), 2000);
+    }
+    
     const checkState = () => {
       const defColor = document.body.getAttribute('data-def-color');
       const winColor = document.body.getAttribute('data-win-color');
@@ -101,8 +107,13 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
 
   const currentFilter = isWinner ? filterWinner : isDefeated ? filterDefeated : (isDragging ? filterDrag : filterNormal);
 
+  const rowMatch = square ? square.match(/\d/) : null;
+  const rowNum = rowMatch ? parseInt(rowMatch[0]) : 1;
+  // Delay calculation: center pieces fall first, outer fall later
+  const delay = isFalling ? (8 - rowNum) * 0.1 : 0;
+
   return (
-    <div data-piece-square={square} style={{ 
+    <div data-piece-square={square} className={isFalling ? "falling-piece" : ""} style={{ 
       width: squareWidth, 
       height: squareWidth, 
       display: 'flex', 
@@ -110,7 +121,8 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
       alignItems: 'center',
       position: 'relative',
       zIndex: isDefeated ? 9999 : (isDragging ? 100 : 1),
-      perspective: '800px'
+      perspective: '800px',
+      animationDelay: `${delay}s`
     }}>
       <motion.div
         initial={false}

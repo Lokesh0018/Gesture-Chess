@@ -13,6 +13,7 @@ import PromotionCinematic from './PromotionCinematic';
 import CaptureAnimation from './CaptureAnimation';
 import PostGameModal from './PostGameModal';
 import GameStartSequence from './GameStartSequence';
+import FlyingPiece from './FlyingPiece';
 
 import Piece from './Piece';
 
@@ -49,7 +50,7 @@ export default function OnlineGame() {
   const [status, setStatus] = useState('Not connected');
   const [boardWidth, setBoardWidth] = useState(window.innerWidth > 850 ? 500 : window.innerWidth - 60);
   const [cinematic, setCinematic] = useState<{ square: string, color: 'w' | 'b', type: 'q' | 'r' | 'b' | 'n' } | null>(null);
-  const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b' } | null>(null);
+  const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b', capturedBy: 'white' | 'black' } | null>(null);
   const [checkState, setCheckState] = useState<{ king: string, attacker: string | null } | null>(null);
   const [checkmateState, setCheckmateState] = useState<{ color: 'w' | 'b', text: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
@@ -63,6 +64,7 @@ export default function OnlineGame() {
   const [promotionSquare, setPromotionSquare] = useState<string | null>(null);
   const moveFromRef = useRef<string | null>(null);
   const promoteToRef = useRef<string | null>(null);
+  const [previewFen, setPreviewFen] = useState<string | null>(null);
 
   const [chatMessages, setChatMessages] = useState<{ sender: string, text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -174,7 +176,7 @@ export default function OnlineGame() {
             vfx.triggerFromSquare('capture', result.to, orientation, boardElement);
             const capturedColor = result.color === 'w' ? 'b' : 'w';
             const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
-            setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
+            setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor, capturedBy: result.color === 'w' ? 'white' : 'black' });
           } else if (!result.promotion) {
             audio.playThud();
           }
@@ -253,7 +255,7 @@ export default function OnlineGame() {
         vfx.triggerFromSquare('capture', result.to, orientation, boardElement);
         const capturedColor = result.color === 'w' ? 'b' : 'w';
         const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
-        setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
+        setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor, capturedBy: result.color === 'w' ? 'white' : 'black' });
       } else if (!result.promotion) {
         audio.playThud();
       }
@@ -541,6 +543,15 @@ export default function OnlineGame() {
           sessionStorage.removeItem('chess_role');
           navigate('/lobby');
         }}
+        previewFen={previewFen}
+        onMoveHover={(index) => {
+          if (index === null) {
+            setPreviewFen(null);
+          } else {
+            const h = game.history({ verbose: true }) as any[];
+            if (h[index]) setPreviewFen(h[index].after);
+          }
+        }}
       >
         {cinematic && (
           <style>{`
@@ -563,14 +574,24 @@ export default function OnlineGame() {
           />
         )}
         {captureAnim && (
-          <CaptureAnimation
-            targetSquare={captureAnim.square}
-            pieceType={captureAnim.pieceType}
-            pieceColor={captureAnim.pieceColor}
-            orientation={playerRole === 'Black' ? 'black' : 'white'}
-            boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
-            onComplete={() => setCaptureAnim(null)}
-          />
+          <>
+            <CaptureAnimation
+              targetSquare={captureAnim.square}
+              pieceType={captureAnim.pieceType}
+              pieceColor={captureAnim.pieceColor}
+              orientation={playerRole === 'Black' ? 'black' : 'white'}
+              boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
+              onComplete={() => {}}
+            />
+            <FlyingPiece
+              startSquare={captureAnim.square}
+              pieceType={captureAnim.pieceType}
+              pieceColor={captureAnim.pieceColor}
+              orientation={playerRole === 'Black' ? 'black' : 'white'}
+              capturedBy={captureAnim.capturedBy}
+              onComplete={() => setCaptureAnim(null)}
+            />
+          </>
         )}
         {checkState && !checkmateState && (
           <CheckIndicator

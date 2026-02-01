@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [volume, setVolume] = useState(parseFloat(localStorage.getItem('chess_volume') || '1.0'));
   const [vfxEnabled, setVfxEnabled] = useState(localStorage.getItem('chess_vfx_enabled') !== 'false');
   const [drag3d, setDrag3d] = useState(localStorage.getItem('chess_3d_drag') !== 'false');
+  const [playerAvatar, setPlayerAvatar] = useState(localStorage.getItem('chess_player_avatar') || '/asserts/user.png');
 
   const themes = [
     { id: 'midnight', name: 'Midnight Glass', color: '#0f172a' },
@@ -66,6 +67,19 @@ export default function SettingsPage() {
     setDrag3d(val);
     localStorage.setItem('chess_3d_drag', String(val));
   };
+
+  const handleAvatarSelect = (avatar: string) => {
+    setPlayerAvatar(avatar);
+    localStorage.setItem('chess_player_avatar', avatar);
+  };
+
+  const availableAvatars = [
+    '/asserts/user.png',
+    '/asserts/user1.png',
+    '/asserts/user2.png',
+    '/asserts/user3.png',
+    '/asserts/user4.png'
+  ];
 
   return (
     <>
@@ -144,6 +158,26 @@ export default function SettingsPage() {
             {activeTab === 'prefs' && (
               <motion.div variants={itemVariants} style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
                 
+                <div>
+                  <h3 style={{ margin: '0 0 15px 0', color: 'white' }}>Player Avatar</h3>
+                  <div style={{ display: 'flex', gap: '15px' }}>
+                    {availableAvatars.map(av => (
+                      <img 
+                        key={av} 
+                        src={av} 
+                        onClick={() => handleAvatarSelect(av)}
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        style={{
+                          width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer',
+                          border: playerAvatar === av ? '3px solid var(--accent)' : '2px solid transparent',
+                          opacity: playerAvatar === av ? 1 : 0.6,
+                          transition: 'all 0.2s', backgroundColor: '#262522'
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <h3 style={{ margin: '0 0 15px 0', color: 'white' }}>Audio & VFX</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>

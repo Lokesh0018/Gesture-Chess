@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Chessboard } from 'react-chessboard';
 import Piece from './Piece';
 
 export type MoveHistory = {
@@ -27,6 +28,8 @@ type GameLayoutProps = {
   onPrev?: () => void;
   onNext?: () => void;
   onMoveClick?: (index: number) => void;
+  onMoveHover?: (index: number | null) => void;
+  previewFen?: string | null;
   prevLabel?: string;
   nextLabel?: string;
   moveScrubber?: React.ReactNode;
@@ -65,6 +68,8 @@ export default function GameLayout({
   onPrev,
   onNext,
   onMoveClick,
+  onMoveHover,
+  previewFen,
   prevLabel = "◀ Prev",
   nextLabel = "Next ▶",
   moveScrubber,
@@ -139,7 +144,7 @@ export default function GameLayout({
         
         <div className="player-info" style={{ width: '100%', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
-            <div className={`player-avatar ${activeTurn === 'top' ? 'active-avatar-ring' : ''}`} style={{ backgroundColor: '#7b4f3b', backgroundImage: "url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png')" }}>
+            <div className={`player-avatar ${activeTurn === 'top' ? 'avatar-breathe' : ''}`} style={{ backgroundColor: '#7b4f3b', backgroundImage: "url('/asserts/user1.png')", backgroundSize: 'cover' }}>
               <div className="live-dot" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -163,13 +168,25 @@ export default function GameLayout({
           
           <div className="react-board-wrapper" style={{ flex: 1, minWidth: '300px', aspectRatio: '1 / 1', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6)', borderRadius: '4px', position: 'relative' }}>
             {children}
+            {previewFen && (
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 50, opacity: 0.6, pointerEvents: 'none' }}>
+                {/* @ts-ignore */}
+                <Chessboard 
+                  position={previewFen} 
+                  boardWidth={document.querySelector('.react-board-wrapper')?.clientWidth || 500}
+                  arePiecesDraggable={false}
+                  customDarkSquareStyle={{ backgroundColor: 'var(--board-dark)' }}
+                  customLightSquareStyle={{ backgroundColor: 'var(--board-light)' }}
+                />
+              </div>
+            )}
           </div>
 
         </div>
 
         <div className="player-info" style={{ width: '100%', marginTop: '10px', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative' }}>
-            <div className={`player-avatar ${activeTurn === 'bottom' ? 'active-avatar-ring' : ''}`} style={{ backgroundColor: '#aaa', backgroundImage: "url('https://images.chesscomfiles.com/uploads/v1/user/103289066.b68ed511.50x50o.c6d040715cf4.png')" }}>
+            <div className={`player-avatar ${activeTurn === 'bottom' ? 'avatar-breathe' : ''}`} style={{ backgroundColor: '#aaa', backgroundImage: `url('${localStorage.getItem('chess_player_avatar') || '/asserts/user.png'}')`, backgroundSize: 'cover' }}>
               <div className="live-dot" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -240,12 +257,12 @@ export default function GameLayout({
             )}
           </div>
           
-          <div className="moves-container" style={{ display: activeTab === 'moves' ? 'flex' : 'none' }}>
+          <div className="moves-container" style={{ display: activeTab === 'moves' ? 'flex' : 'none' }} onMouseLeave={() => onMoveHover?.(null)}>
             {moveHistory.map((m, idx) => (
               <div key={idx} className="move-row">
                 <span className="move-number">{idx + 1}.</span>
-                <span className="move-white" style={{ flex: 1, padding: '6px 15px', color: '#fff', cursor: 'pointer' }} onClick={() => onMoveClick?.(idx * 2)}>{m.white}</span>
-                <span className="move-black" style={{ flex: 1, padding: '6px 15px', color: '#fff', cursor: 'pointer' }} onClick={() => onMoveClick?.(idx * 2 + 1)}>{m.black}</span>
+                <span className="move-white" style={{ flex: 1, padding: '6px 15px', color: '#fff', cursor: 'pointer' }} onClick={() => onMoveClick?.(idx * 2)} onMouseEnter={() => onMoveHover?.(idx * 2)}>{m.white}</span>
+                <span className="move-black" style={{ flex: 1, padding: '6px 15px', color: '#fff', cursor: 'pointer' }} onClick={() => onMoveClick?.(idx * 2 + 1)} onMouseEnter={() => onMoveHover?.(idx * 2 + 1)}>{m.black}</span>
               </div>
             ))}
           </div>

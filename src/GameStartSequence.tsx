@@ -7,6 +7,8 @@ export default function GameStartSequence() {
   const [showText, setShowText] = useState(false);
 
   useEffect(() => {
+    (window as any).gameJustStarted = true;
+
     // Initial delay before sequence starts
     const t1 = setTimeout(() => {
       setShowText(true);
@@ -22,11 +24,13 @@ export default function GameStartSequence() {
     // Fade out sequence
     const t2 = setTimeout(() => {
       setIsVisible(false);
+      (window as any).gameJustStarted = false;
     }, 2000);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
+      (window as any).gameJustStarted = false;
     };
   }, []);
 

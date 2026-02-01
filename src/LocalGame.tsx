@@ -11,6 +11,7 @@ import PromotionCinematic from './PromotionCinematic';
 import CaptureAnimation from './CaptureAnimation';
 import PostGameModal from './PostGameModal';
 import GameStartSequence from './GameStartSequence';
+import FlyingPiece from './FlyingPiece';
 
 import Piece from './Piece';
 
@@ -41,7 +42,7 @@ export default function LocalGame() {
   const [game, setGame] = useState(new Chess());
   const [boardWidth, setBoardWidth] = useState(window.innerWidth > 850 ? 500 : window.innerWidth - 60);
   const [cinematic, setCinematic] = useState<{ square: string, color: 'w' | 'b', type: 'q' | 'r' | 'b' | 'n' } | null>(null);
-  const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b' } | null>(null);
+  const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b', capturedBy: 'white' | 'black' } | null>(null);
   const [checkState, setCheckState] = useState<{ king: string, attacker: string | null } | null>(null);
   const [checkmateState, setCheckmateState] = useState<{ color: 'w' | 'b', text: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
@@ -52,12 +53,18 @@ export default function LocalGame() {
   const orientationSetting = localStorage.getItem('match_orientation') || 'auto';
   const boardOrientation = orientationSetting === 'auto' ? 'white' : orientationSetting as 'white' | 'black';
 
+  const [timeWhite, setTimeWhite] = useState(parseInt(timingSetting) * 60);
+  const [timeBlack, setTimeBlack] = useState(parseInt(timingSetting) * 60);
+
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
   const [redoStack, setRedoStack] = useState<any[]>([]);
+  const [previewFen, setPreviewFen] = useState<string | null>(null);
   const [promotionSquare, setPromotionSquare] = useState<string | null>(null);
   const moveFromRef = useRef<string | null>(null);
   const promoteToRef = useRef<string | null>(null);
+
+  const isGameOver = !!(gameOverMsg || checkmateState || game.isDraw());
 
   useEffect(() => {
     const handleResize = () => setBoardWidth(window.innerWidth > 850 ? 500 : window.innerWidth - 60);
@@ -110,6 +117,34 @@ export default function LocalGame() {
     }
   }, [game.fen()]);
 
+  useEffect(() => {
+    if (isGameOver || game.history().length === 0) return;
+    const interval = setInterval(() => {
+      if (game.turn() === 'w') {
+        setTimeWhite(t => {
+          if (t <= 1) setGameOverMsg('Black Wins on Time!');
+          return Math.max(0, t - 1);
+        });
+      } else {
+        setTimeBlack(t => {
+          if (t <= 1) setGameOverMsg('White Wins on Time!');
+          return Math.max(0, t - 1);
+        });
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [game.fen(), isGameOver]);
+
+  useEffect(() => {
+    if (timeWhite < 10 || timeBlack < 10) {
+      document.body.classList.add('critical-time');
+      audio.playThud(); // could be heartbeat
+    } else {
+      document.body.classList.remove('critical-time');
+    }
+    return () => document.body.classList.remove('critical-time');
+  }, [timeWhite, timeBlack]);
+
   function makeAMove(move: any) {
     if (gameOverMsg) return null;
     const gameCopy = new Chess();
@@ -133,7 +168,7 @@ export default function LocalGame() {
         vfx.triggerFromSquare('capture', result.to, 'white', boardElement);
         const capturedColor = result.color === 'w' ? 'b' : 'w';
         const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
-        setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor });
+        setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor, capturedBy: result.color === 'w' ? 'white' : 'black' });
       } else if (!result.promotion) {
         audio.playThud();
       }
@@ -355,7 +390,6 @@ export default function LocalGame() {
   const rawPercentage = 50 + (advantage / 15) * 50;
   const evalPercentage = Math.max(5, Math.min(95, rawPercentage));
 
-  const isGameOver = !!(gameOverMsg || checkmateState || game.isDraw());
   const activeTurn = isGameOver ? null : game.turn() === 'w' ? 'top' : 'bottom';
   const turnIndicator = gameOverMsg ? gameOverMsg : checkmateState ? `🏆 CHECKMATE • ${checkmateState.color === 'w' ? 'BLACK' : 'WHITE'} WINS` : game.isDraw() ? "🏆 DRAW" : `${game.turn() === 'w' ? 'White' : 'Black'}'s Turn`;
 
@@ -395,13 +429,19 @@ export default function LocalGame() {
     </div>
   );
 
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <GameLayout
         topPlayerName={boardOrientation === 'white' ? "Black" : "White"}
-        topPlayerClock={`${timingSetting}:00`}
+        topPlayerClock={boardOrientation === 'white' ? formatTime(timeBlack) : formatTime(timeWhite)}
         bottomPlayerName={boardOrientation === 'white' ? "White" : "Black"}
-        bottomPlayerClock={`${timingSetting}:00`}
+        bottomPlayerClock={boardOrientation === 'white' ? formatTime(timeWhite) : formatTime(timeBlack)}
         turnIndicator={turnIndicator}
         evalPercentage={evalPercentage}
         topCaptures={blackC}
@@ -417,6 +457,15 @@ export default function LocalGame() {
         activeTurn={activeTurn}
         isGameOver={isGameOver}
         onBack={() => navigate('/lobby')}
+        previewFen={previewFen}
+        onMoveHover={(index) => {
+          if (index === null) {
+            setPreviewFen(null);
+          } else {
+            const h = game.history({ verbose: true }) as any[];
+            if (h[index]) setPreviewFen(h[index].after);
+          }
+        }}
       >
         {cinematic && (
           <style>{`
@@ -439,14 +488,24 @@ export default function LocalGame() {
           />
         )}
         {captureAnim && (
-          <CaptureAnimation
-            targetSquare={captureAnim.square}
-            pieceType={captureAnim.pieceType}
-            pieceColor={captureAnim.pieceColor}
-            orientation="white"
-            boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
-            onComplete={() => setCaptureAnim(null)}
-          />
+          <>
+            <CaptureAnimation
+              targetSquare={captureAnim.square}
+              pieceType={captureAnim.pieceType}
+              pieceColor={captureAnim.pieceColor}
+              orientation="white"
+              boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
+              onComplete={() => {}}
+            />
+            <FlyingPiece
+              startSquare={captureAnim.square}
+              pieceType={captureAnim.pieceType}
+              pieceColor={captureAnim.pieceColor}
+              orientation={boardOrientation}
+              capturedBy={captureAnim.capturedBy}
+              onComplete={() => setCaptureAnim(null)}
+            />
+          </>
         )}
         {checkState && !checkmateState && (
           <CheckIndicator
