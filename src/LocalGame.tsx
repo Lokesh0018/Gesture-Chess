@@ -45,6 +45,7 @@ export default function LocalGame() {
   const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b', capturedBy: 'white' | 'black' } | null>(null);
   const [checkState, setCheckState] = useState<{ king: string, attacker: string | null } | null>(null);
   const [checkmateState, setCheckmateState] = useState<{ color: 'w' | 'b', text: string } | null>(null);
+  const [undoAnim, setUndoAnim] = useState<{ from: string, to: string, pieceType: string, pieceColor: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
   const [showActions, setShowActions] = useState(false);
   const navigate = useNavigate();
@@ -301,6 +302,12 @@ export default function LocalGame() {
     gameCopy.loadPgn(game.pgn());
     const undone = gameCopy.undo();
     if (undone) {
+      setUndoAnim({
+        from: undone.to,
+        to: undone.from,
+        pieceType: undone.piece.toUpperCase(),
+        pieceColor: undone.color
+      });
       setGame(gameCopy);
       setRedoStack(prev => [...prev, undone]);
       setMoveFrom('');
@@ -523,6 +530,17 @@ export default function LocalGame() {
               onComplete={() => setCaptureAnim(null)}
             />
           </>
+        )}
+        {undoAnim && (
+          <FlyingPiece
+            startSquare={undoAnim.from}
+            targetSquare={undoAnim.to}
+            pieceType={undoAnim.pieceType}
+            pieceColor={undoAnim.pieceColor}
+            orientation={boardOrientation}
+            isUndo={true}
+            onComplete={() => setUndoAnim(null)}
+          />
         )}
         {checkState && !checkmateState && (
           <CheckIndicator

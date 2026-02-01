@@ -15,7 +15,7 @@ type Particle = {
   life: number;
   maxLife: number;
   color: string;
-  type: 'shatter' | 'dust' | 'glow' | 'ember' | 'falling-dust';
+  type: 'shatter' | 'dust' | 'glow' | 'ember' | 'falling-dust' | 'trail';
 };
 
 function VFXLayer() {
@@ -62,6 +62,8 @@ function VFXLayer() {
         } else if (p.type === 'falling-dust') {
           p.vy += 50 * dt; // gentle gravity
           p.x += Math.sin(p.life * 5) * 10 * dt; // slight sway
+        } else if (p.type === 'trail') {
+          // Trail stays mostly still but shrinks rapidly
         }
 
         // Render
@@ -183,6 +185,23 @@ function VFXLayer() {
     particlesRef.current.push(...newParticles);
   };
 
+  const spawnTrail = (x: number, y: number, color?: string) => {
+    const computedStyle = getComputedStyle(document.body);
+    const accent = computedStyle.getPropertyValue('--accent').trim() || '#10b981';
+    
+    particlesRef.current.push({
+      x: x + (Math.random() - 0.5) * 10,
+      y: y + (Math.random() - 0.5) * 10,
+      vx: (Math.random() - 0.5) * 20,
+      vy: (Math.random() - 0.5) * 20,
+      size: Math.random() * 6 + 2,
+      life: 0.2 + Math.random() * 0.2,
+      maxLife: 0.4,
+      color: color || accent,
+      type: 'trail'
+    });
+  };
+
   useEffect(() => {
     return vfx.subscribe((type, x, y, color) => {
       if (type === 'capture') {
@@ -191,6 +210,8 @@ function VFXLayer() {
         spawnPromotionGlow(x, y);
       } else if (type === 'classicalDust') {
         spawnClassicalDust(x, y);
+      } else if (type === 'trail') {
+        spawnTrail(x, y, color);
       }
     });
   }, []);

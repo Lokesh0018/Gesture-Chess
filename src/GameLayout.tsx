@@ -87,7 +87,19 @@ export default function GameLayout({
 }: GameLayoutProps) {
   const [activeTab, setActiveTab] = useState<'moves' | 'chat'>('moves');
   const [showThemeDrawer, setShowThemeDrawer] = useState(false);
+  const [prevEval, setPrevEval] = useState(50);
+  const [isBlunder, setIsBlunder] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (Math.abs(evalPercentage - prevEval) > 15) {
+      setIsBlunder(true);
+      const t = setTimeout(() => setIsBlunder(false), 800);
+      setPrevEval(evalPercentage);
+      return () => clearTimeout(t);
+    }
+    setPrevEval(evalPercentage);
+  }, [evalPercentage, prevEval]);
 
   useEffect(() => {
     if (activeTab === 'chat' && setChatUnread) {
@@ -107,6 +119,39 @@ export default function GameLayout({
     { id: 'chesscom', name: 'Classic Green', color: '#312e2b' },
     { id: 'cyber', name: 'Cyber Neon', color: '#050014' },
   ];
+
+  const renderMoveNotation = (move: string, color: 'w' | 'b') => {
+    if (!move) return null;
+    
+    // Check if it's castling
+    if (move === 'O-O' || move === 'O-O-O') {
+      return (
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <img src="/asserts/BlackKing.png" style={{ width: '16px', height: '16px', filter: color === 'w' ? 'brightness(0) invert(1)' : 'none' }} />
+          <span style={{ fontFamily: 'monospace' }}>{move}</span>
+        </span>
+      );
+    }
+
+    const pieceMatch = move.match(/^[KQRBN]/);
+    const pieceLetter = pieceMatch ? pieceMatch[0] : 'P';
+    const isCapture = move.includes('x');
+    const isCheck = move.includes('+') || move.includes('#');
+    
+    const nameMap: Record<string, string> = { P: 'Pawn', N: 'Horse', B: 'Bishop', R: 'Rook', Q: 'Queen', K: 'King' };
+    const pieceName = nameMap[pieceLetter];
+    
+    const restOfMove = move.replace(/^[KQRBN]/, '').replace('x', '').replace('+', '').replace('#', '');
+    
+    return (
+      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <img src={`/asserts/Black${pieceName}.png`} style={{ width: '16px', height: '16px', filter: color === 'w' ? 'brightness(0) invert(1)' : 'none' }} />
+        {isCapture && <span style={{ color: '#ef4444', fontSize: '12px' }}>⚔</span>}
+        <span style={{ fontFamily: 'monospace' }}>{restOfMove}</span>
+        {isCheck && <span style={{ color: '#ef4444', fontWeight: 'bold' }}>+</span>}
+      </span>
+    );
+  };
 
   return (
     <div className="layout-wrapper" style={hideSidebar ? { gridTemplateColumns: '180px auto 180px' } : {}}>
@@ -162,11 +207,11 @@ export default function GameLayout({
 
         <div className="board-row" style={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch', gap: '10px', width: '100%', justifyContent: 'center' }}>
           
-          <div className="eval-bar-wrapper">
+          <div className={`eval-bar-wrapper ${isBlunder ? 'blunder-flash' : ''}`}>
             <div id="eval-fill" className={evalPercentage > 80 || evalPercentage < 20 ? 'eval-glow' : ''} style={{ height: `${evalPercentage}%`, transition: 'height 0.4s ease-in-out' }}></div>
           </div>
           
-          <div className="react-board-wrapper" style={{ flex: 1, minWidth: '300px', aspectRatio: '1 / 1', boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6)', borderRadius: '4px', position: 'relative' }}>
+          <div className="react-board-wrapper board-frame" style={{ flex: 1, minWidth: '300px', aspectRatio: '1 / 1', position: 'relative' }}>
             {children}
             {previewFen && (
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 50, opacity: 0.6, pointerEvents: 'none' }}>
@@ -261,8 +306,12 @@ export default function GameLayout({
             {moveHistory.map((m, idx) => (
               <div key={idx} className="move-row">
                 <span className="move-number">{idx + 1}.</span>
-                <span className="move-white" style={{ flex: 1, padding: '6px 15px', color: '#fff', cursor: 'pointer' }} onClick={() => onMoveClick?.(idx * 2)} onMouseEnter={() => onMoveHover?.(idx * 2)}>{m.white}</span>
-                <span className="move-black" style={{ flex: 1, padding: '6px 15px', color: '#fff', cursor: 'pointer' }} onClick={() => onMoveClick?.(idx * 2 + 1)} onMouseEnter={() => onMoveHover?.(idx * 2 + 1)}>{m.black}</span>
+                <span className="move-white" style={{ flex: 1, padding: '6px 15px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => onMoveClick?.(idx * 2)} onMouseEnter={() => onMoveHover?.(idx * 2)}>
+                  {renderMoveNotation(m.white, 'w')}
+                </span>
+                <span className="move-black" style={{ flex: 1, padding: '6px 15px', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center' }} onClick={() => onMoveClick?.(idx * 2 + 1)} onMouseEnter={() => onMoveHover?.(idx * 2 + 1)}>
+                  {renderMoveNotation(m.black, 'b')}
+                </span>
               </div>
             ))}
           </div>

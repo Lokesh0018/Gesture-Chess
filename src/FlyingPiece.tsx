@@ -6,7 +6,9 @@ type FlyingPieceProps = {
   pieceType: string;
   pieceColor: string;
   orientation: 'white' | 'black'; // Whose perspective is the board?
-  capturedBy: 'white' | 'black'; // Who captured it?
+  targetSquare?: string;
+  capturedBy?: 'white' | 'black'; // Who captured it? Optional for undo
+  isUndo?: boolean;
   onComplete: () => void;
 };
 
@@ -19,13 +21,26 @@ const pieceNames: Record<string, string> = {
   K: 'King'
 };
 
-export default function FlyingPiece({ startSquare, pieceType, pieceColor, orientation, capturedBy, onComplete }: FlyingPieceProps) {
+export default function FlyingPiece({ startSquare, targetSquare, pieceType, pieceColor, orientation, capturedBy, isUndo, onComplete }: FlyingPieceProps) {
   const [startPos, setStartPos] = useState<{ x: number, y: number, width: number } | null>(null);
   const [endPos, setEndPos] = useState<{ x: number, y: number } | null>(null);
 
   useEffect(() => {
     const squareEl = document.querySelector(`[data-square="${startSquare}"]`);
     
+    if (targetSquare) {
+      const tEl = document.querySelector(`[data-square="${targetSquare}"]`);
+      if (squareEl && tEl) {
+        const squareRect = squareEl.getBoundingClientRect();
+        const targetRect = tEl.getBoundingClientRect();
+        setStartPos({ x: squareRect.left, y: squareRect.top, width: squareRect.width });
+        setEndPos({ x: targetRect.left, y: targetRect.top });
+      } else {
+        onComplete();
+      }
+      return;
+    }
+
     // Determine the target panel based on who captured it and orientation
     const targetPanelSelector = (orientation === capturedBy) ? '.right-captured' : '.left-captured';
     const targetEl = document.querySelector(targetPanelSelector);
@@ -49,7 +64,7 @@ export default function FlyingPiece({ startSquare, pieceType, pieceColor, orient
       // If we can't find elements, just abort
       onComplete();
     }
-  }, [startSquare, orientation, capturedBy]);
+  }, [startSquare, targetSquare, orientation, capturedBy]);
 
   if (!startPos || !endPos) return null;
 
@@ -71,14 +86,15 @@ export default function FlyingPiece({ startSquare, pieceType, pieceColor, orient
         animate={{ 
           x: endPos.x, 
           y: endPos.y, 
-          scale: 0.6, 
-          opacity: 0.2,
-          rotate: capturedBy === 'white' ? 180 : -180,
+          scale: isUndo ? 1 : 0.6, 
+          opacity: isUndo ? 0 : 0.2,
+          rotate: isUndo ? 0 : (capturedBy === 'white' ? 180 : -180),
+          filter: isUndo ? 'sepia(100%) hue-rotate(90deg) saturate(300%) blur(2px)' : 'none'
         }}
         transition={{ 
-          duration: 0.6, 
-          ease: "easeInOut",
-          type: "spring",
+          duration: isUndo ? 0.2 : 0.6, 
+          ease: isUndo ? "easeIn" : "easeInOut",
+          type: isUndo ? "tween" : "spring",
           stiffness: 80,
           damping: 12
         }}

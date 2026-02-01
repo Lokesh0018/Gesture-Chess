@@ -9,6 +9,8 @@
     --text-muted: #94a3b8;
     --board-dark: #11261d;
     --board-light: #cbd5e1;
+    --board-border: 8px solid rgba(255, 255, 255, 0.1);
+    --board-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="wood"] {
@@ -18,6 +20,8 @@
     --accent-hover: #faedcd;
     --board-dark: #633f2e;
     --board-light: #e6ccb8;
+    --board-border: 12px solid #3e2723;
+    --board-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), inset 0 0 0 2px #e2b77a;
 }
 
 [data-theme="cyber"] {
@@ -27,6 +31,8 @@
     --accent-hover: #f472b6;
     --board-dark: #0f172a;
     --board-light: #38bdf8;
+    --board-border: 4px solid #ec4899;
+    --board-shadow: 0 0 20px rgba(236, 72, 153, 0.5), inset 0 0 10px rgba(56, 189, 248, 0.5);
 }
 
 [data-theme="chesscom"] {
@@ -36,6 +42,8 @@
     --accent-hover: #96cc5c;
     --board-dark: #739552;
     --board-light: #ebecd0;
+    --board-border: none;
+    --board-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
 
 body {
@@ -44,9 +52,17 @@ body {
     box-sizing: border-box;
     background: var(--bg-gradient);
     color: var(--text-main);
+    color: var(--text-main);
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     height: 100vh;
     overflow: auto;
+}
+
+.board-frame {
+    border: var(--board-border);
+    box-shadow: var(--board-shadow);
+    border-radius: 6px;
+    transition: all 0.3s ease;
 }
 
 .glass-panel {
@@ -414,6 +430,16 @@ body.critical-time .state-overlay {
     box-shadow: 0 -10px 20px rgba(255, 255, 255, 0.6);
 }
 
+.blunder-flash {
+    animation: drop-flash 0.8s ease-out;
+}
+
+@keyframes drop-flash {
+    0% { box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
+    20% { box-shadow: inset 0 0 20px 5px rgba(255,0,0,0.8), 0 0 15px rgba(255,0,0,0.6); }
+    100% { box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
+}
+
 .capture-panel {
     width: 100%;
     border-radius: 12px;
@@ -425,19 +451,16 @@ body.critical-time .state-overlay {
     box-sizing: border-box;
 }
 .side-captures {
-    display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 0;
+    display: grid;
+    grid-template-columns: repeat(2, max-content);
+    gap: 8px;
+    align-content: flex-start;
+    justify-content: center;
+    width: 100%;
 }
 
 .side-captures > div {
-  margin-left: -12px;
-  transition: transform 0.2s;
-}
-
-.side-captures > div:first-child {
-  margin-left: 0;
+    transition: transform 0.2s;
 }
 
 .side-captures > div:hover {

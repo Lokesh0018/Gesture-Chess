@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
+import { vfx } from './vfx-manager';
 
 type PieceProps = {
   type: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
@@ -84,6 +85,11 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
       const tiltY = Math.max(-maxTilt, Math.min(maxTilt, velocityX));
       
       setTilt({ x: tiltX, y: tiltY });
+      
+      // Emit trail
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+        vfx.emit('trail', e.clientX, e.clientY + 20); // offset slightly to bottom of piece
+      }
 
       lastX = e.clientX;
       lastY = e.clientY;
