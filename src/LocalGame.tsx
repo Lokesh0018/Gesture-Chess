@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { audio } from './audio-manager';
 import { vfx } from './vfx-manager';
 import CheckIndicator from './CheckIndicator';
@@ -10,6 +10,7 @@ import type { MoveHistory } from './GameLayout';
 import PromotionCinematic from './PromotionCinematic';
 import CaptureAnimation from './CaptureAnimation';
 import PostGameModal from './PostGameModal';
+import GameStartSequence from './GameStartSequence';
 
 import Piece from './Piece';
 
@@ -45,6 +46,11 @@ export default function LocalGame() {
   const [checkmateState, setCheckmateState] = useState<{ color: 'w' | 'b', text: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
   const [showActions, setShowActions] = useState(false);
+  const navigate = useNavigate();
+
+  const timingSetting = localStorage.getItem('match_timing') || '10';
+  const orientationSetting = localStorage.getItem('match_orientation') || 'auto';
+  const boardOrientation = orientationSetting === 'auto' ? 'white' : orientationSetting as 'white' | 'black';
 
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
@@ -114,6 +120,14 @@ export default function LocalGame() {
       setRedoStack([]);
 
       const boardElement = document.querySelector('.react-board-wrapper') as HTMLElement;
+      
+      const movedPiece = result.piece.toLowerCase();
+      if (result.captured || ['r', 'q', 'k'].includes(movedPiece)) {
+        boardElement.classList.remove('board-ripple');
+        void boardElement.offsetWidth; // trigger reflow
+        boardElement.classList.add('board-ripple');
+      }
+
       if (result.captured) {
         audio.capture();
         vfx.triggerFromSquare('capture', result.to, 'white', boardElement);
@@ -384,10 +398,10 @@ export default function LocalGame() {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <GameLayout
-        topPlayerName="Opponent"
-        topPlayerClock="10:00"
-        bottomPlayerName="Player 1"
-        bottomPlayerClock="10:00"
+        topPlayerName={boardOrientation === 'white' ? "Black" : "White"}
+        topPlayerClock={`${timingSetting}:00`}
+        bottomPlayerName={boardOrientation === 'white' ? "White" : "Black"}
+        bottomPlayerClock={`${timingSetting}:00`}
         turnIndicator={turnIndicator}
         evalPercentage={evalPercentage}
         topCaptures={blackC}
@@ -402,6 +416,7 @@ export default function LocalGame() {
         hideChat={true}
         activeTurn={activeTurn}
         isGameOver={isGameOver}
+        onBack={() => navigate('/lobby')}
       >
         {cinematic && (
           <style>{`
@@ -453,6 +468,7 @@ export default function LocalGame() {
           showPromotionDialog={!!promotionSquare}
           onPromotionPieceSelect={onPromotionPieceSelect}
           boardWidth={boardWidth}
+          boardOrientation={boardOrientation}
           customDarkSquareStyle={{ backgroundColor: 'var(--board-dark)' }}
           customLightSquareStyle={{ backgroundColor: 'var(--board-light)' }}
           arePremovesAllowed={true}
@@ -467,6 +483,7 @@ export default function LocalGame() {
         materialAdvantage={advantage}
         onRematch={() => window.location.reload()}
       />
+      <GameStartSequence />
     </div>
   );
 }

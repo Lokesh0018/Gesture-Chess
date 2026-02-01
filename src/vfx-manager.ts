@@ -2,6 +2,7 @@ type VFXListener = (type: 'capture' | 'promotion' | 'classicalDust', x: number, 
 
 class VFXManager {
   private listeners: VFXListener[] = [];
+  public enabled: boolean = localStorage.getItem('chess_vfx_enabled') !== 'false';
 
   subscribe(listener: VFXListener) {
     this.listeners.push(listener);
@@ -11,6 +12,7 @@ class VFXManager {
   }
 
   emit(type: 'capture' | 'promotion' | 'classicalDust', x: number, y: number, color?: string) {
+    if (!this.enabled) return;
     for (const listener of this.listeners) {
       listener(type, x, y, color);
     }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 
 type PieceProps = {
   type: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
@@ -21,6 +21,7 @@ const pieceNames = {
 export default function Piece({ type, color, squareWidth = 50, isDragging = false, square }: PieceProps) {
   const [isDefeated, setIsDefeated] = useState(false);
   const [isWinner, setIsWinner] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const checkState = () => {
@@ -40,15 +41,51 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
       }
     };
 
-    // Check immediately
     checkState();
-
-    // Observe body attributes for changes
     const observer = new MutationObserver(checkState);
     observer.observe(document.body, { attributes: true, attributeFilter: ['data-def-color', 'data-win-color'] });
-
     return () => observer.disconnect();
   }, [color, type]);
+
+  useEffect(() => {
+    if (!isDragging) {
+      setTilt({ x: 0, y: 0 });
+      return;
+    }
+    const is3dEnabled = localStorage.getItem('chess_3d_drag') !== 'false';
+    if (!is3dEnabled) return;
+
+    let lastX = 0;
+    let lastY = 0;
+    let velocityX = 0;
+    let velocityY = 0;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (lastX === 0 && lastY === 0) {
+        lastX = e.clientX;
+        lastY = e.clientY;
+        return;
+      }
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      
+      velocityX = dx * 1.5;
+      velocityY = dy * 1.5;
+      
+      // Clamp the tilt
+      const maxTilt = 45;
+      const tiltX = Math.max(-maxTilt, Math.min(maxTilt, -velocityY));
+      const tiltY = Math.max(-maxTilt, Math.min(maxTilt, velocityX));
+      
+      setTilt({ x: tiltX, y: tiltY });
+
+      lastX = e.clientX;
+      lastY = e.clientY;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [isDragging]);
 
   const pieceName = pieceNames[type];
   const src = `/asserts/Black${pieceName}.png`;
@@ -58,7 +95,7 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
   
   const baseFilter = color === 'w' ? whiteFilterBase : blackFilterBase;
   const filterNormal = `${baseFilter} drop-shadow(0px 2px 4px rgba(0,0,0,0.3))`;
-  const filterDrag = `${baseFilter} drop-shadow(0px 15px 15px rgba(0,0,0,0.6))`;
+  const filterDrag = `${baseFilter} drop-shadow(0px 25px 25px rgba(0,0,0,0.5))`;
   const filterWinner = `${baseFilter} drop-shadow(0 0 20px rgba(255, 215, 0, 0.8))`;
   const filterDefeated = `${baseFilter} drop-shadow(0px 15px 15px rgba(0,0,0,0.5))`;
 
@@ -72,7 +109,8 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
       justifyContent: 'center', 
       alignItems: 'center',
       position: 'relative',
-      zIndex: isDefeated ? 9999 : (isDragging ? 100 : 1)
+      zIndex: isDefeated ? 9999 : (isDragging ? 100 : 1),
+      perspective: '800px'
     }}>
       <motion.div
         initial={false}
@@ -80,7 +118,7 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
           rotateZ: 85,
           y: squareWidth * 0.15,
           scale: 1
-        } : { rotateZ: 0, rotateX: 0, y: 0, scale: 1 }}
+        } : { rotateZ: 0, y: 0, scale: 1 }}
         transition={isDefeated ? { duration: 1.0, ease: "easeIn" } : { duration: 0 }}
         style={{ 
           width: '100%', height: '100%', 
@@ -97,13 +135,17 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
             cursor: isDragging ? 'grabbing' : 'grab', 
             userSelect: 'none' 
           }}
-          initial={{ scale: 1, y: 0, filter: filterNormal }}
+          initial={{ scale: 1, y: 0, filter: filterNormal, rotateX: 0, rotateY: 0 }}
           animate={{
-            scale: isDragging && !isDefeated ? 1.15 : 1,
-            y: isDragging && !isDefeated ? -8 : 0,
+            scale: isDragging && !isDefeated ? 1.25 : 1,
+            y: isDragging && !isDefeated ? -15 : 0,
+            rotateX: isDragging && !isDefeated ? tilt.x : 0,
+            rotateY: isDragging && !isDefeated ? tilt.y : 0,
             filter: currentFilter
           }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          transition={{ 
+            type: 'spring', stiffness: isDragging ? 100 : 300, damping: isDragging ? 10 : 20 
+          }}
           draggable={false}
         />
       </motion.div>

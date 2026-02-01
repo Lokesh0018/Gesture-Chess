@@ -42,6 +42,7 @@ type GameLayoutProps = {
   chatUnread?: number;
   setChatUnread?: (v: number) => void;
   onSendChat?: () => void;
+  onBack?: () => void;
 };
 
 export default function GameLayout({
@@ -76,7 +77,8 @@ export default function GameLayout({
   setChatInput,
   chatUnread = 0,
   setChatUnread,
-  onSendChat
+  onSendChat,
+  onBack
 }: GameLayoutProps) {
   const [activeTab, setActiveTab] = useState<'moves' | 'chat'>('moves');
   const [showThemeDrawer, setShowThemeDrawer] = useState(false);
@@ -104,6 +106,23 @@ export default function GameLayout({
   return (
     <div className="layout-wrapper" style={hideSidebar ? { gridTemplateColumns: '180px auto 180px' } : {}}>
       
+      {/* Back Button */}
+      {onBack && (
+        <button 
+          onClick={onBack}
+          style={{
+            position: 'absolute', top: '15px', left: '15px',
+            background: 'var(--bg-glass)', border: '1px solid var(--glass-border)',
+            color: 'var(--text-main)', padding: '8px 16px', borderRadius: '8px',
+            cursor: 'pointer', zIndex: 10, backdropFilter: 'blur(10px)',
+            fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
+          }}
+        >
+          ◀ Quit
+        </button>
+      )}
+
       {/* Left Column: Top Player Captures */}
       <div className="capture-panel glass-panel left-captured" style={{ gridArea: 'leftCaptured', height: '100%', minHeight: '500px' }}>
         <div className="side-captures">
@@ -264,7 +283,7 @@ export default function GameLayout({
           </div>
           )}
 
-          {/* Theme Drawer */}
+          {/* Settings Drawer */}
           <AnimatePresence>
             {showThemeDrawer && (
               <motion.div 
@@ -280,26 +299,71 @@ export default function GameLayout({
                 }}
               >
                 <div style={{ padding: '20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Themes</h3>
+                  <h3 style={{ margin: 0, color: 'var(--text-main)' }}>Settings & Themes</h3>
                   <button onClick={() => setShowThemeDrawer(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
                 </div>
-                <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {themes.map(t => (
-                    <div 
-                      key={t.id} 
-                      onClick={() => document.body.setAttribute('data-theme', t.id)}
-                      style={{
-                        padding: '15px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '15px', transition: 'all 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                    >
-                      <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: t.color, border: '2px solid rgba(255,255,255,0.2)' }} />
-                      <div style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{t.name}</div>
+                <div style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  
+                  {/* Preferences */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-main)' }}>
+                      <span style={{ fontWeight: 'bold' }}>Sound Effects</span>
+                      <input type="checkbox" defaultChecked={localStorage.getItem('chess_sound_enabled') !== 'false'} onChange={(e) => {
+                        const val = e.target.checked;
+                        localStorage.setItem('chess_sound_enabled', String(val));
+                        import('./audio-manager').then(m => m.audio.enabled = val);
+                      }} />
                     </div>
-                  ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', color: 'var(--text-main)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: 'bold' }}>Volume</span>
+                      </div>
+                      <input type="range" min="0" max="1" step="0.1" defaultValue={localStorage.getItem('chess_volume') || '1.0'} onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        localStorage.setItem('chess_volume', String(val));
+                        import('./audio-manager').then(m => m.audio.volume = val);
+                      }} style={{ accentColor: 'var(--accent)' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-main)' }}>
+                      <span style={{ fontWeight: 'bold' }}>Particle Effects (VFX)</span>
+                      <input type="checkbox" defaultChecked={localStorage.getItem('chess_vfx_enabled') !== 'false'} onChange={(e) => {
+                        const val = e.target.checked;
+                        localStorage.setItem('chess_vfx_enabled', String(val));
+                        import('./vfx-manager').then(m => m.vfx.enabled = val);
+                      }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-main)' }}>
+                      <span style={{ fontWeight: 'bold' }}>3D Drag Physics</span>
+                      <input type="checkbox" defaultChecked={localStorage.getItem('chess_3d_drag') !== 'false'} onChange={(e) => {
+                        const val = e.target.checked;
+                        localStorage.setItem('chess_3d_drag', String(val));
+                        // No dynamic reload needed, Piece.tsx will read on render/effect
+                      }} />
+                    </div>
+                  </div>
+
+                  <hr style={{ borderColor: 'var(--glass-border)', width: '100%' }} />
+
+                  {/* Themes */}
+                  <div style={{ fontWeight: 'bold', color: 'var(--text-muted)' }}>THEMES</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {themes.map(t => (
+                      <div 
+                        key={t.id} 
+                        onClick={() => document.body.setAttribute('data-theme', t.id)}
+                        style={{
+                          padding: '15px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)',
+                          border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: '15px', transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                      >
+                        <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: t.color, border: '2px solid rgba(255,255,255,0.2)' }} />
+                        <div style={{ fontWeight: 'bold', color: 'var(--text-main)' }}>{t.name}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}

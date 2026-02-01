@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { io, Socket } from 'socket.io-client';
 import { audio } from './audio-manager';
 import { vfx } from './vfx-manager';
@@ -12,6 +12,7 @@ import type { MoveHistory } from './GameLayout';
 import PromotionCinematic from './PromotionCinematic';
 import CaptureAnimation from './CaptureAnimation';
 import PostGameModal from './PostGameModal';
+import GameStartSequence from './GameStartSequence';
 
 import Piece from './Piece';
 
@@ -53,6 +54,9 @@ export default function OnlineGame() {
   const [checkmateState, setCheckmateState] = useState<{ color: 'w' | 'b', text: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
   const [showActions, setShowActions] = useState(false);
+  const navigate = useNavigate();
+
+  const timingSetting = localStorage.getItem('match_timing') || '10';
 
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
@@ -156,6 +160,14 @@ export default function OnlineGame() {
         try {
           const result = newGame.move(move);
           const boardElement = document.querySelector('.react-board-wrapper') as HTMLElement;
+          
+          const movedPiece = result.piece.toLowerCase();
+          if (result.captured || ['r', 'q', 'k'].includes(movedPiece)) {
+            boardElement.classList.remove('board-ripple');
+            void boardElement.offsetWidth;
+            boardElement.classList.add('board-ripple');
+          }
+
           const orientation = playerRoleRef.current?.toLowerCase() === 'black' ? 'black' : 'white';
           if (result.captured) {
             audio.capture();
@@ -227,6 +239,14 @@ export default function OnlineGame() {
       setGame(gameCopy);
 
       const boardElement = document.querySelector('.react-board-wrapper') as HTMLElement;
+
+      const movedPiece = result.piece.toLowerCase();
+      if (result.captured || ['r', 'q', 'k'].includes(movedPiece)) {
+        boardElement.classList.remove('board-ripple');
+        void boardElement.offsetWidth;
+        boardElement.classList.add('board-ripple');
+      }
+
       const orientation = playerRole?.toLowerCase() === 'black' ? 'black' : 'white';
       if (result.captured) {
         audio.capture();
@@ -493,8 +513,8 @@ export default function OnlineGame() {
       <GameLayout
         topPlayerName={playerRole === 'White' ? "Opponent" : "Opponent"}
         bottomPlayerName={playerRole}
-        topPlayerClock="10:00"
-        bottomPlayerClock="10:00"
+        topPlayerClock={`${timingSetting}:00`}
+        bottomPlayerClock={`${timingSetting}:00`}
         turnIndicator={turnIndicator}
         evalPercentage={evalPercentage}
         topCaptures={playerRole === 'White' ? blackC : whiteC}
@@ -515,6 +535,12 @@ export default function OnlineGame() {
         }}
         activeTurn={activeTurn}
         isGameOver={!!(gameOverMsg || checkmateState || game.isDraw())}
+        onBack={() => {
+          if (socket) socket.close();
+          sessionStorage.removeItem('chess_room');
+          sessionStorage.removeItem('chess_role');
+          navigate('/lobby');
+        }}
       >
         {cinematic && (
           <style>{`
@@ -586,6 +612,7 @@ export default function OnlineGame() {
           window.location.reload();
         }}
       />
+      {status === 'Game Started!' && game.history().length === 0 && <GameStartSequence />}
     </div>
   );
 }

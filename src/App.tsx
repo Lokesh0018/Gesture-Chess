@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import LocalGame from './LocalGame';
 import OnlineGame from './OnlineGame';
 import Landing from './Landing';
+import SettingsPage from './SettingsPage';
 
 const containerVariants = {
   hidden: { opacity: 0, scale: 0.95 },
@@ -31,7 +32,7 @@ function Lobby() {
             <motion.div variants={itemVariants}><Link to="/local" className="menu-btn secondary" style={{ display: 'block' }}>Play Local Multiplayer</Link></motion.div>
             <motion.div variants={itemVariants}><button className="menu-btn secondary" style={{ width: '100%' }} onClick={() => alert('Puzzle Mode coming soon!')}>Daily Puzzle</button></motion.div>
             <motion.div variants={itemVariants}><button className="menu-btn secondary" style={{ width: '100%' }} onClick={() => alert('AI Mode coming soon!')}>Play vs AI</button></motion.div>
-            <motion.div variants={itemVariants}><button className="menu-btn secondary" style={{ width: '100%' }} onClick={() => alert('Settings coming soon!')}>Settings</button></motion.div>
+            <motion.div variants={itemVariants}><Link to="/settings" className="menu-btn secondary" style={{ display: 'block' }}>Settings</Link></motion.div>
           </div>
         </motion.div>
       </div>
@@ -51,6 +52,7 @@ function App() {
           <Route path="/lobby" element={<Lobby />} />
           <Route path="/local" element={<LocalGame />} />
           <Route path="/online" element={<OnlineGame />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </Router>
     </>

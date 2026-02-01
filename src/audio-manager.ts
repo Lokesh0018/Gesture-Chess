@@ -1,7 +1,10 @@
 class AudioManager {
   private ctx: AudioContext | null = null;
+  public enabled: boolean = localStorage.getItem('chess_sound_enabled') !== 'false';
+  public volume: number = parseFloat(localStorage.getItem('chess_volume') || '1.0');
 
   private initCtx() {
+    if (!this.enabled) return;
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
@@ -22,8 +25,8 @@ class AudioManager {
     osc.frequency.setValueAtTime(150, t);
     osc.frequency.exponentialRampToValueAtTime(40, t + 0.1);
     
-    gain.gain.setValueAtTime(0.5, t);
-    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    gain.gain.setValueAtTime(0.5 * this.volume, t);
+    gain.gain.exponentialRampToValueAtTime(0.01 * this.volume, t + 0.15);
     
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -44,8 +47,8 @@ class AudioManager {
     osc.frequency.setValueAtTime(400, t);
     osc.frequency.exponentialRampToValueAtTime(100, t + 0.1);
     
-    gain.gain.setValueAtTime(0.8, t);
-    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+    gain.gain.setValueAtTime(0.8 * this.volume, t);
+    gain.gain.exponentialRampToValueAtTime(0.01 * this.volume, t + 0.1);
     
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -65,9 +68,9 @@ class AudioManager {
     osc.frequency.setValueAtTime(200, t);
     osc.frequency.exponentialRampToValueAtTime(20, t + 2);
     
-    gain.gain.setValueAtTime(1, t);
-    gain.gain.linearRampToValueAtTime(0.8, t + 1);
-    gain.gain.exponentialRampToValueAtTime(0.01, t + 3);
+    gain.gain.setValueAtTime(1 * this.volume, t);
+    gain.gain.linearRampToValueAtTime(0.8 * this.volume, t + 1);
+    gain.gain.exponentialRampToValueAtTime(0.01 * this.volume, t + 3);
     
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -86,8 +89,8 @@ class AudioManager {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(800, t);
     
-    gain.gain.setValueAtTime(0.1, t);
-    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+    gain.gain.setValueAtTime(0.1 * this.volume, t);
+    gain.gain.exponentialRampToValueAtTime(0.01 * this.volume, t + 0.05);
     
     osc.connect(gain);
     gain.connect(this.ctx.destination);
@@ -108,8 +111,8 @@ class AudioManager {
     osc.frequency.setValueAtTime(400, t);
     osc.frequency.exponentialRampToValueAtTime(100, t + 1);
     
-    gain.gain.setValueAtTime(0.5, t);
-    gain.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
+    gain.gain.setValueAtTime(0.5 * this.volume, t);
+    gain.gain.exponentialRampToValueAtTime(0.01 * this.volume, t + 1.5);
     
     osc.connect(gain);
     gain.connect(this.ctx.destination);
