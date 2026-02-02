@@ -1,4 +1,4 @@
-import { FilesetResolver, GestureRecognizer, HandLandmarker } from '@mediapipe/tasks-vision';
+import { FilesetResolver, GestureRecognizer } from '@mediapipe/tasks-vision';
 import { useGestureStore } from '../store/useGestureStore';
 
 export class GestureService {

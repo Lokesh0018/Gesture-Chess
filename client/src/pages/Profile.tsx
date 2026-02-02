@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
-import { User, Shield, Target } from 'lucide-react';
+import { Shield, Target } from 'lucide-react';
 
 export const Profile = () => {
   const { user } = useAuthStore();

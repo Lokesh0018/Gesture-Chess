@@ -1,10 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useGestureStore } from '../store/useGestureStore';
 
 export const VirtualCursor = () => {
-  const { 
-    isActive, cursorX, cursorY, isPinching, gesture,
-    hoveredSquare, selectedSquare, setHoveredSquare, setSelectedSquare, draggedPiece 
+  const { isActive, cursorX, cursorY, isPinching, gesture, draggedPiece 
   } = useGestureStore();
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
   const prevPinching = useRef(false);

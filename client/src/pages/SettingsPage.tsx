@@ -1,4 +1,3 @@
-import React from 'react';
 import { useSettingsStore } from '../store/useSettingsStore';
 
 export const SettingsPage = () => {
