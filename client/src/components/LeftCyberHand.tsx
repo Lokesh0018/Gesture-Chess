@@ -10,173 +10,302 @@ interface CyberHandProps {
 }
 
 export const LeftCyberHand: React.FC<CyberHandProps> = ({ phase, mouseX, mouseY }) => {
-  // Parallax
   const xOffset = useTransform(mouseX, [-1, 1], [-20, 20]);
   const yOffset = useTransform(mouseY, [-1, 1], [-20, 20]);
   
-  // Phase mapping (Commander)
-  const armX = { idle: 0, point: 15 }[phase] || 0;
-  const armY = { idle: 0, point: 0 }[phase] || 0;
+  const springTransition = { type: "spring", stiffness: 40, damping: 12, mass: 1 };
+
+  // Base translation
+  const armX = { idle: 0, point: 10 }[phase] || 0;
+  const armY = { idle: 0, point: -5 }[phase] || 0;
   
-  // Angled toward the board by default (e.g. +10 degrees)
-  const palmRotation = { idle: 5, point: -5 }[phase] || 0;
+  // Dedicated Wrist Rotation
+  const wristRotation = { idle: 0, point: -15 }[phase] || 0;
+  // Palm Rotation relative to Wrist
+  const palmRotation = { idle: -5, point: -5 }[phase] || 0;
 
-  // 5 Fingers Rotations
-  const thumbBase = { idle: 15, point: -5 }[phase] || 0;
-  const thumbMid = { idle: 10, point: 5 }[phase] || 0;
+  // THUMB (Angled low)
+  const thumbCmc = { idle: -40, point: -45 }[phase] || 0;
+  const thumbMcp = { idle: 10, point: 5 }[phase] || 0;
+  const thumbIp = { idle: 5, point: 5 }[phase] || 0;
 
-  const indexBase = { idle: -5, point: -25 }[phase] || 0;
-  const indexMid = { idle: 0, point: -10 }[phase] || 0;
+  // INDEX (Pointing finger)
+  const indexMcp = { idle: 5, point: -5 }[phase] || 0;
+  const indexPip = { idle: 10, point: -2 }[phase] || 0;
+  const indexDip = { idle: 5, point: 0 }[phase] || 0;
 
-  const middleBase = { idle: 10, point: 60 }[phase] || 0;
-  const middleMid = { idle: 15, point: 80 }[phase] || 0;
+  // MIDDLE
+  const middleMcp = { idle: 10, point: 75 }[phase] || 0;
+  const middlePip = { idle: 15, point: 85 }[phase] || 0;
+  const middleDip = { idle: 10, point: 75 }[phase] || 0;
 
-  const ringBase = { idle: 20, point: 70 }[phase] || 0;
-  const ringMid = { idle: 25, point: 80 }[phase] || 0;
+  // RING
+  const ringMcp = { idle: 15, point: 85 }[phase] || 0;
+  const ringPip = { idle: 20, point: 95 }[phase] || 0;
+  const ringDip = { idle: 15, point: 85 }[phase] || 0;
 
-  const pinkyBase = { idle: 30, point: 80 }[phase] || 0;
-  const pinkyMid = { idle: 35, point: 90 }[phase] || 0;
+  // PINKY
+  const pinkyMcp = { idle: 25, point: 95 }[phase] || 0;
+  const pinkyPip = { idle: 30, point: 105 }[phase] || 0;
+  const pinkyDip = { idle: 25, point: 95 }[phase] || 0;
+
+  const breatheRotate = phase === 'idle' ? [-3, 3, -3] : wristRotation;
+  const breatheDuration = 5;
+
+  // SCULPTED PATH GENERATOR
+  // Creates a tapered trapezoid path
+  const getTaperedPath = (len: number, baseW: number, tipW: number) => {
+    return `M 0 ${-baseW} L ${len} ${-tipW} A ${tipW} ${tipW} 0 0 1 ${len} ${tipW} L 0 ${baseW} Z`;
+  };
+
+  const SculptedBone = ({ length, baseWidth, tipWidth }: { length: number, baseWidth: number, tipWidth: number }) => (
+    <>
+      {/* 1. Sculpted Titanium Core */}
+      <path d={getTaperedPath(length, baseWidth, tipWidth)} fill="url(#titanium)" stroke="#0F172A" strokeWidth="1" />
+      {/* Titanium Highlight */}
+      <path d={getTaperedPath(length, baseWidth - 0.5, tipWidth - 0.5)} fill="none" stroke="url(#titaniumHighlight)" strokeWidth="0.5" opacity="0.6" />
+      
+      {/* 2. Glassmorphic Refractive Shell (Slightly larger) */}
+      <path 
+        d={getTaperedPath(length, baseWidth + 3, tipWidth + 2)} 
+        fill="rgba(56,189,248, 0.08)" 
+        stroke="#38BDF8" 
+        strokeWidth="1" 
+        className="mix-blend-screen"
+      />
+      
+      {/* 3. Glowing Neural Circuit */}
+      <motion.path 
+        d={`M 0 0 L ${length} 0`} 
+        stroke="#FFFFFF" 
+        strokeWidth="1" 
+        strokeLinecap="round" 
+        strokeDasharray={`4 ${length * 2}`} 
+        filter="url(#glowStrong)"
+        animate={{ strokeDashoffset: [length * 2, -4] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        className="mix-blend-screen"
+      />
+    </>
+  );
+
+  const SculptedJoint = ({ radius }: { radius: number }) => (
+    <>
+      {/* Base Socket */}
+      <circle cx="0" cy="0" r={radius} fill="#0F172A" stroke="#334155" strokeWidth="1" />
+      
+      {/* Glowing Inner Servo */}
+      <circle cx="0" cy="0" r={radius * 0.6} fill="none" stroke="#38BDF8" strokeWidth="1.5" filter="url(#glowSoft)" />
+      
+      {/* Outer Holographic Bearing Ring */}
+      <circle cx="0" cy="0" r={radius + 3} fill="none" stroke="rgba(56,189,248,0.4)" strokeWidth="0.5" />
+      
+      {/* Emissive Center */}
+      <circle cx="0" cy="0" r="1.5" fill="#FFFFFF" filter="url(#glowStrong)" />
+    </>
+  );
 
   return (
-    <div className="relative w-[360px] h-[360px] flex items-center justify-center pointer-events-none">
-      
-      {/* Translucent HUD Chips */}
-      <motion.div 
-        style={{ x: useTransform(mouseX, [-1, 1], [-10, 10]), y: useTransform(mouseY, [-1, 1], [-10, 10]) }}
-        className="absolute top-12 -left-8 flex flex-col gap-3"
-      >
-        <div className="flex items-center gap-2 bg-[#0F172A]/80 backdrop-blur-md border border-[#38BDF8]/30 px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(56,189,248,0.2)]">
-          <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }} className="w-1.5 h-1.5 rounded-full bg-[#38BDF8] shadow-[0_0_5px_#38BDF8]" />
-          <span className="text-[10px] font-mono text-[#60A5FA] uppercase tracking-wider">Gesture Tracking</span>
-        </div>
-        <div className="flex items-center gap-2 bg-[#0F172A]/80 backdrop-blur-md border border-[#38BDF8]/30 px-3 py-1.5 rounded-full shadow-[0_0_15px_rgba(56,189,248,0.2)] self-end">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#38BDF8]/50" />
-          <span className="text-[10px] font-mono text-[#60A5FA]/80 uppercase tracking-wider">Camera Ready</span>
-        </div>
-      </motion.div>
-
+    <div className="relative w-[500px] h-[500px] flex items-center justify-center pointer-events-none">
       <motion.svg 
         style={{ x: xOffset, y: yOffset }}
-        viewBox="0 0 400 400" 
-        className="w-full h-full overflow-visible drop-shadow-[0_15px_30px_rgba(15,23,42,0.8)]"
+        viewBox="0 0 600 600" 
+        className="w-full h-full overflow-visible drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)]"
       >
         <defs>
-          <linearGradient id="metalSkeletonL" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#0B132B" stopOpacity="1" />
-            <stop offset="100%" stopColor="#1C2541" stopOpacity="1" />
-          </linearGradient>
-          <linearGradient id="energyShellL" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#38BDF8" stopOpacity="0.6" />
-          </linearGradient>
-          <filter id="neonGlowL">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-            <feMerge>
-              <feMergeNode in="coloredBlur"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
+          <filter id="glowSoft" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
+
+          <filter id="glowStrong" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur1" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2" />
+            <feMerge><feMergeNode in="blur2" /><feMergeNode in="blur1" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+
+          {/* Premium Titanium Shader */}
+          <linearGradient id="titanium" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#475569" />
+            <stop offset="20%" stopColor="#94A3B8" /> {/* Highlight */}
+            <stop offset="50%" stopColor="#1E293B" />
+            <stop offset="80%" stopColor="#0F172A" />
+            <stop offset="100%" stopColor="#334155" /> {/* Rim light */}
+          </linearGradient>
+
+          <linearGradient id="titaniumHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FFFFFF" />
+            <stop offset="100%" stopColor="transparent" />
+          </linearGradient>
+
+          {/* Holographic Palm Gradient */}
+          <linearGradient id="glassPalm" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(56,189,248, 0.15)" />
+            <stop offset="50%" stopColor="rgba(56,189,248, 0.05)" />
+            <stop offset="100%" stopColor="rgba(56,189,248, 0.1)" />
+          </linearGradient>
         </defs>
 
-        <motion.g animate={{ x: armX, y: armY }} transition={{ duration: 0.8, ease: "easeInOut" }}>
+        <motion.g animate={{ x: armX, y: armY }} transition={springTransition}>
           
-          {/* Base Forearm (Thicker, layered) */}
-          <path d="M 0 160 L 140 170 L 140 230 L 0 240 Z" fill="url(#metalSkeletonL)" stroke="#334155" strokeWidth="2.5" />
-          <path d="M 0 165 L 135 175 L 135 225 L 0 235 Z" fill="url(#energyShellL)" style={{ mixBlendMode: 'screen' }} />
-          <path d="M 20 190 L 120 195 M 20 210 L 120 205" stroke="#38BDF8" strokeWidth="1.5" strokeDasharray="4 4" opacity="0.4" />
-          
-          {/* Wrist Mechanical Joint */}
-          <g transform="translate(140, 200)">
-            <circle cx="0" cy="0" r="30" fill="#020617" stroke="#334155" strokeWidth="3" />
-            <circle cx="0" cy="0" r="22" fill="#0F172A" stroke="#3B82F6" strokeWidth="2" filter="url(#neonGlowL)" />
-            <circle cx="0" cy="0" r="10" fill="url(#metalSkeletonL)" />
-            <circle cx="0" cy="0" r="4" fill="#38BDF8" filter="url(#neonGlowL)" />
+          {/* ================= FOREARM ================= */}
+          <g transform="translate(60, 300)">
+            {/* Slim, elegant forearm connection */}
+            <path d="M -100 -12 L 25 -8 L 25 8 L -100 12 Z" fill="url(#titanium)" stroke="#0F172A" strokeWidth="1" />
+            <path d="M -100 -18 L 30 -14 L 30 14 L -100 18 Z" fill="rgba(56,189,248,0.05)" stroke="#38BDF8" strokeWidth="0.5" className="mix-blend-screen" />
             
-            {/* Palm & Fingers Rig */}
-            <motion.g animate={{ rotate: palmRotation }} transition={{ duration: 0.8, ease: "easeOut" }}>
-              <path d="M 0 -25 L 90 -30 L 100 40 L 0 25 Z" fill="url(#metalSkeletonL)" stroke="#475569" strokeWidth="2" />
-              <path d="M 0 -20 L 85 -25 L 95 35 L 0 20 Z" fill="url(#energyShellL)" style={{ mixBlendMode: 'screen' }} />
-              
-              {/* Palm Circuit Lines */}
-              <path d="M 20 -10 L 70 -15 M 20 10 L 80 15" stroke="#38BDF8" strokeWidth="2" strokeDasharray="2 6" opacity="0.6" filter="url(#neonGlowL)" />
+            {/* Forearm energy pulse */}
+            <motion.line 
+              x1="-80" y1="0" x2="20" y2="0" 
+              stroke="#38BDF8" strokeWidth="2" strokeDasharray="15 30" filter="url(#glowStrong)"
+              animate={{ strokeDashoffset: [45, 0] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            />
 
-              {/* Thumb */}
-              <g transform="translate(45, -28)">
-                <circle cx="0" cy="0" r="10" fill="#1E293B" stroke="#38BDF8" strokeWidth="1.5" />
-                <motion.g animate={{ rotate: thumbBase }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                  <path d="M 0 -8 L 30 -30 L 38 -22 L 0 8 Z" fill="url(#metalSkeletonL)" stroke="#38BDF8" strokeWidth="2" />
-                  <g transform="translate(34, -26)">
-                    <circle cx="0" cy="0" r="8" fill="#0F172A" stroke="#3B82F6" strokeWidth="2" />
-                    <motion.g animate={{ rotate: thumbMid }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                      <path d="M 0 -6 L 25 -15 L 30 -5 L 0 6 Z" fill="url(#metalSkeletonL)" stroke="#38BDF8" strokeWidth="2" />
-                    </motion.g>
-                  </g>
-                </motion.g>
-              </g>
+            {/* ================= WRIST JOINT (Independent Rotation) ================= */}
+            <motion.g 
+              transform="translate(35, 0)"
+              animate={{ rotate: breatheRotate }} 
+              transition={phase === 'idle' ? { duration: breatheDuration, ease: "easeInOut", repeat: Infinity } : springTransition}
+            >
+              {/* Circular Holographic Wrist Stabilizer Ring */}
+              <ellipse cx="0" cy="0" rx="12" ry="24" fill="none" stroke="#38BDF8" strokeWidth="2" filter="url(#glowSoft)" opacity="0.8" />
+              <ellipse cx="0" cy="0" rx="16" ry="28" fill="none" stroke="rgba(56,189,248,0.3)" strokeWidth="1" />
+              {/* Central Core */}
+              <circle cx="0" cy="0" r="8" fill="#1E293B" stroke="#38BDF8" strokeWidth="1.5" />
+              <circle cx="0" cy="0" r="3" fill="#FFFFFF" filter="url(#glowStrong)" />
 
-              {/* Index Finger */}
-              <g transform="translate(90, -25)">
-                <circle cx="0" cy="0" r="9" fill="#1E293B" stroke="#38BDF8" strokeWidth="2" filter="url(#neonGlowL)" />
-                <motion.g animate={{ rotate: indexBase }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                  <path d="M 0 -7 L 45 -5 L 45 7 L 0 7 Z" fill="url(#metalSkeletonL)" stroke="#38BDF8" strokeWidth="2" />
-                  <g transform="translate(45, 1)">
-                    <circle cx="0" cy="0" r="7" fill="#0F172A" stroke="#3B82F6" strokeWidth="2" />
-                    <motion.g animate={{ rotate: indexMid }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                      <path d="M 0 -5 L 40 -3 L 40 5 L 0 5 Z" fill="url(#metalSkeletonL)" stroke="#38BDF8" strokeWidth="2" />
-                      <circle cx="40" cy="1" r="5" fill="#38BDF8" filter="url(#neonGlowL)" />
-                      {/* Energy tip glow on point */}
-                      <motion.circle 
-                        cx="45" cy="1" r="10" fill="#FFFFFF" filter="url(#neonGlowL)"
-                        animate={{ opacity: phase === 'point' ? [0.6, 1, 0.6] : 0, scale: phase === 'point' ? [1, 1.8, 1] : 1 }}
-                        transition={{ duration: 0.5, repeat: Infinity }}
-                      />
-                    </motion.g>
-                  </g>
-                </motion.g>
-              </g>
+              {/* ================= PALM (Rotates relative to wrist) ================= */}
+              <motion.g 
+                transform="translate(15, 0)"
+                animate={{ rotate: palmRotation }}
+                transition={springTransition}
+              >
+                {/* Refined Palm Chassis - Smaller, curved, elegant */}
+                <path d="M 0 -25 C 40 -35, 80 -40, 110 -25 C 115 0, 115 20, 105 35 C 70 45, 30 40, 0 25 Z" fill="#0F172A" stroke="url(#titanium)" strokeWidth="2" />
+                <path d="M -5 -30 C 40 -40, 85 -45, 118 -30 C 122 -5, 122 25, 110 42 C 70 55, 25 48, -5 30 Z" fill="url(#glassPalm)" stroke="#38BDF8" strokeWidth="1.5" className="mix-blend-screen" filter="url(#glowSoft)" opacity="0.7" />
+                
+                {/* Palm Neural Network Lines */}
+                <path d="M 10 0 Q 50 -20 100 -20" fill="none" stroke="#38BDF8" strokeWidth="1" opacity="0.6" filter="url(#glowSoft)" />
+                <path d="M 10 0 Q 60 5 105 5" fill="none" stroke="#38BDF8" strokeWidth="1" opacity="0.6" filter="url(#glowSoft)" />
+                <path d="M 10 0 Q 50 25 95 28" fill="none" stroke="#38BDF8" strokeWidth="1" opacity="0.6" filter="url(#glowSoft)" />
 
-              {/* Middle Finger */}
-              <g transform="translate(98, 0)">
-                <circle cx="0" cy="0" r="8" fill="#1E293B" stroke="#60A5FA" strokeWidth="1.5" />
-                <motion.g animate={{ rotate: middleBase }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                  <path d="M 0 -6 L 50 -3 L 50 5 L 0 6 Z" fill="url(#metalSkeletonL)" stroke="#475569" strokeWidth="2" />
-                  <g transform="translate(50, 1)">
-                    <circle cx="0" cy="0" r="6" fill="#0F172A" stroke="#3B82F6" strokeWidth="1.5" />
-                    <motion.g animate={{ rotate: middleMid }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                      <path d="M 0 -5 L 42 -2 L 42 4 L 0 5 Z" fill="url(#metalSkeletonL)" stroke="#475569" strokeWidth="2" />
-                    </motion.g>
-                  </g>
-                </motion.g>
-              </g>
+                {/* ================= PINKY FINGER (75% Length) ================= */}
+                <g transform="translate(95, 30) rotate(12)">
+                  <SculptedJoint radius={6.5} />
+                  <motion.g animate={{ rotate: pinkyMcp }} transition={springTransition}>
+                    <SculptedBone length={28} baseWidth={4.5} tipWidth={3.5} />
+                    <g transform="translate(28, 0)">
+                      <SculptedJoint radius={5} />
+                      <motion.g animate={{ rotate: pinkyPip }} transition={springTransition}>
+                        <SculptedBone length={20} baseWidth={3.5} tipWidth={2.5} />
+                        <g transform="translate(20, 0)">
+                          <SculptedJoint radius={4} />
+                          <motion.g animate={{ rotate: pinkyDip }} transition={springTransition}>
+                            <SculptedBone length={16} baseWidth={2.5} tipWidth={1.5} />
+                          </motion.g>
+                        </g>
+                      </motion.g>
+                    </g>
+                  </motion.g>
+                </g>
 
-              {/* Ring Finger */}
-              <g transform="translate(95, 22)">
-                <circle cx="0" cy="0" r="7" fill="#1E293B" stroke="#60A5FA" strokeWidth="1.5" />
-                <motion.g animate={{ rotate: ringBase }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                  <path d="M 0 -5 L 45 -2 L 45 4 L 0 5 Z" fill="url(#metalSkeletonL)" stroke="#475569" strokeWidth="2" />
-                  <g transform="translate(45, 1)">
-                    <circle cx="0" cy="0" r="5" fill="#0F172A" stroke="#3B82F6" strokeWidth="1.5" />
-                    <motion.g animate={{ rotate: ringMid }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                      <path d="M 0 -4 L 38 -1 L 38 3 L 0 4 Z" fill="url(#metalSkeletonL)" stroke="#475569" strokeWidth="2" />
-                    </motion.g>
-                  </g>
-                </motion.g>
-              </g>
+                {/* ================= RING FINGER (95% Length) ================= */}
+                <g transform="translate(105, 12) rotate(4)">
+                  <SculptedJoint radius={7.5} />
+                  <motion.g animate={{ rotate: ringMcp }} transition={springTransition}>
+                    <SculptedBone length={40} baseWidth={5} tipWidth={4} />
+                    <g transform="translate(40, 0)">
+                      <SculptedJoint radius={6} />
+                      <motion.g animate={{ rotate: ringPip }} transition={springTransition}>
+                        <SculptedBone length={30} baseWidth={4} tipWidth={3} />
+                        <g transform="translate(30, 0)">
+                          <SculptedJoint radius={5} />
+                          <motion.g animate={{ rotate: ringDip }} transition={springTransition}>
+                            <SculptedBone length={24} baseWidth={3} tipWidth={2} />
+                          </motion.g>
+                        </g>
+                      </motion.g>
+                    </g>
+                  </motion.g>
+                </g>
 
-              {/* Pinky Finger */}
-              <g transform="translate(85, 40)">
-                <circle cx="0" cy="0" r="6" fill="#1E293B" stroke="#60A5FA" strokeWidth="1.5" />
-                <motion.g animate={{ rotate: pinkyBase }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                  <path d="M 0 -4 L 35 0 L 35 4 L 0 4 Z" fill="url(#metalSkeletonL)" stroke="#475569" strokeWidth="2" />
-                  <g transform="translate(35, 2)">
-                    <circle cx="0" cy="0" r="4" fill="#0F172A" stroke="#3B82F6" strokeWidth="1.5" />
-                    <motion.g animate={{ rotate: pinkyMid }} transition={{ duration: 0.8, ease: "easeOut" }}>
-                      <path d="M 0 -3 L 28 0 L 28 3 L 0 3 Z" fill="url(#metalSkeletonL)" stroke="#475569" strokeWidth="2" />
-                    </motion.g>
-                  </g>
-                </motion.g>
-              </g>
+                {/* ================= MIDDLE FINGER (100% Length) ================= */}
+                <g transform="translate(110, -8)">
+                  <SculptedJoint radius={8.5} />
+                  <motion.g animate={{ rotate: middleMcp }} transition={springTransition}>
+                    <SculptedBone length={46} baseWidth={5.5} tipWidth={4.5} />
+                    <g transform="translate(46, 0)">
+                      <SculptedJoint radius={7} />
+                      <motion.g animate={{ rotate: middlePip }} transition={springTransition}>
+                        <SculptedBone length={34} baseWidth={4.5} tipWidth={3.5} />
+                        <g transform="translate(34, 0)">
+                          <SculptedJoint radius={6} />
+                          <motion.g animate={{ rotate: middleDip }} transition={springTransition}>
+                            <SculptedBone length={28} baseWidth={3.5} tipWidth={2.5} />
+                          </motion.g>
+                        </g>
+                      </motion.g>
+                    </g>
+                  </motion.g>
+                </g>
 
+                {/* ================= INDEX FINGER (90% Length - Pointing) ================= */}
+                <g transform="translate(100, -28) rotate(-5)">
+                  {/* Highlight Index Joint as the Emitter Base */}
+                  <circle cx="0" cy="0" r="14" fill="none" stroke="#FFFFFF" strokeWidth="1" filter="url(#glowStrong)" opacity="0.3" />
+                  <SculptedJoint radius={8} />
+                  
+                  <motion.g animate={{ rotate: indexMcp }} transition={springTransition}>
+                    <SculptedBone length={40} baseWidth={5} tipWidth={4} />
+                    <g transform="translate(40, 0)">
+                      <SculptedJoint radius={6.5} />
+                      <motion.g animate={{ rotate: indexPip }} transition={springTransition}>
+                        <SculptedBone length={30} baseWidth={4} tipWidth={3} />
+                        <g transform="translate(30, 0)">
+                          <SculptedJoint radius={5.5} />
+                          <motion.g animate={{ rotate: indexDip }} transition={springTransition}>
+                            <SculptedBone length={24} baseWidth={3} tipWidth={2} />
+                            
+                            {/* Energy Emitter Tip */}
+                            <motion.g
+                              animate={{ 
+                                opacity: phase === 'point' ? 1 : 0, 
+                                scale: phase === 'point' ? [1, 1.5, 1] : 0 
+                              }}
+                              transition={{ duration: 0.8, repeat: Infinity }}
+                            >
+                              <circle cx="24" cy="0" r="8" fill="#FFFFFF" filter="url(#glowStrong)" />
+                              <circle cx="24" cy="0" r="16" fill="none" stroke="#38BDF8" strokeWidth="2" filter="url(#glowSoft)" />
+                            </motion.g>
+                          </motion.g>
+                        </g>
+                      </motion.g>
+                    </g>
+                  </motion.g>
+                </g>
+
+                {/* ================= THUMB (Properly mounted to palm base) ================= */}
+                <g transform="translate(25, 30) rotate(35)">
+                  <SculptedJoint radius={9} />
+                  <motion.g animate={{ rotate: thumbCmc }} transition={springTransition}>
+                    <SculptedBone length={36} baseWidth={6} tipWidth={5} />
+                    <g transform="translate(36, 0)">
+                      <SculptedJoint radius={8} />
+                      <motion.g animate={{ rotate: thumbMcp }} transition={springTransition}>
+                        <SculptedBone length={28} baseWidth={5} tipWidth={4} />
+                        <g transform="translate(28, 0)">
+                          <SculptedJoint radius={7} />
+                          <motion.g animate={{ rotate: thumbIp }} transition={springTransition}>
+                            <SculptedBone length={24} baseWidth={4} tipWidth={3} />
+                          </motion.g>
+                        </g>
+                      </motion.g>
+                    </g>
+                  </motion.g>
+                </g>
+
+              </motion.g>
             </motion.g>
           </g>
         </motion.g>
