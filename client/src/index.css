@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Roboto", "Outfit", sans-serif;
+  
+  /* Modern Chess Colors */
+  --color-board-light: #f0d9b5;
+  --color-board-dark: #b58863;
+  
+  --color-primary-500: #3b82f6; /* Blue 500 */
+  --color-primary-600: #2563eb;
+  
+  --color-success-500: #10b981; /* Emerald 500 */
+  --color-danger-500: #ef4444; /* Red 500 */
+}
+
+@layer base {
+  body {
+    @apply bg-gray-900 text-white font-sans antialiased overflow-hidden;
+  }
+}
