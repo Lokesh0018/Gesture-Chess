@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js';
-import { RotateCcw, RefreshCw, Flag, Trophy, User, Hourglass, Download, Handshake } from 'lucide-react';
+import { RotateCcw, RefreshCw, Flag, Trophy, User, Hourglass, Download, Handshake, Volume2, VolumeX, Palette, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CameraPanel } from '../components/CameraPanel';
@@ -35,7 +35,7 @@ function isPromotionCandidate(game: Chess, from: string, to: string): boolean {
   return isPromotionRank(to, piece.color);
 }
 
-function generateSquareStyles(game: Chess, selectedSquare: string): Record<string, React.CSSProperties> {
+function generateSquareStyles(game: Chess, selectedSquare: string, hoveredMove: {from: string, to: string} | null): Record<string, React.CSSProperties> {
   const styles: Record<string, React.CSSProperties> = {};
 
   const history = game.history({ verbose: true });
@@ -43,6 +43,11 @@ function generateSquareStyles(game: Chess, selectedSquare: string): Record<strin
     const last = history[history.length - 1];
     styles[last.from] = { backgroundColor: 'rgba(234, 179, 8, 0.3)' };
     styles[last.to] = { backgroundColor: 'rgba(234, 179, 8, 0.3)' };
+  }
+
+  if (hoveredMove) {
+    styles[hoveredMove.from] = { ...styles[hoveredMove.from], backgroundColor: 'rgba(59, 130, 246, 0.5)' };
+    styles[hoveredMove.to] = { ...styles[hoveredMove.to], backgroundColor: 'rgba(59, 130, 246, 0.5)' };
   }
 
   if (game.isCheck()) {
@@ -58,10 +63,11 @@ function generateSquareStyles(game: Chess, selectedSquare: string): Record<strin
   const moves = game.moves({ square: selectedSquare as Square, verbose: true });
   if (!moves.length) return styles;
 
-  styles[selectedSquare] = { background: 'var(--color-accent-bg)' };
+  styles[selectedSquare] = { ...styles[selectedSquare], background: 'var(--color-accent-bg)' };
   for (const move of moves) {
     const isCapture = Boolean(move.captured) || move.flags.includes('e');
     styles[move.to] = {
+      ...styles[move.to],
       background: isCapture
         ? 'radial-gradient(circle, rgba(239, 68, 68, 0.4) 65%, transparent 66%)'
         : 'radial-gradient(circle, rgba(0, 0, 0, 0.15) 25%, transparent 26%)',
@@ -143,11 +149,36 @@ export const LocalGame = () => {
   const [gameDuration, setGameDuration] = useState(0);
   const [manualResult, setManualResult] = useState<string | null>(null);
   const [boardShake, setBoardShake] = useState(false);
+  const [whiteTime, setWhiteTime] = useState(600);
+  const [blackTime, setBlackTime] = useState(600);
+  const [boardTheme, setBoardTheme] = useState<'classic' | 'wood' | 'neon'>('classic');
+  const [isMuted, setIsMuted] = useState(false);
+  const [hoveredMove, setHoveredMove] = useState<{from: string, to: string} | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem('tutorialSeen')) {
+      setShowTutorial(true);
+    }
+  }, []);
+
+  const closeTutorial = () => {
+    localStorage.setItem('tutorialSeen', 'true');
+    setShowTutorial(false);
+  };
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (!game.isGameOver()) {
-      interval = setInterval(() => setGameDuration(d => d + 1), 1000);
+      interval = setInterval(() => {
+        setGameDuration(d => d + 1);
+        if (game.turn() === 'w') {
+          setWhiteTime(t => Math.max(0, t - 1));
+        } else {
+          setBlackTime(t => Math.max(0, t - 1));
+        }
+      }, 1000);
     }
     return () => clearInterval(interval);
   }, [game]);
@@ -177,9 +208,17 @@ export const LocalGame = () => {
   };
 
   const optionSquares = useMemo(
-    () => generateSquareStyles(game, selectedSquare),
-    [game, selectedSquare],
+    () => generateSquareStyles(game, selectedSquare, hoveredMove),
+    [game, selectedSquare, hoveredMove],
   );
+
+  const getThemeStyles = () => {
+    switch (boardTheme) {
+      case 'wood': return { dark: '#b58863', light: '#f0d9b5' };
+      case 'neon': return { dark: '#0a0a0a', light: '#111827' };
+      default: return { dark: 'var(--color-board-dark, #7C8CA4)', light: 'var(--color-board-light, #DCE3EE)' };
+    }
+  };
 
   const gameStatus = useMemo(() => {
     if (game.isCheckmate()) return 'CHECKMATE';
@@ -269,9 +308,12 @@ export const LocalGame = () => {
         setGame(gameCopy);
         setSelectedSquare('');
         syncCapturedPieces(gameCopy);
-        if (gameCopy.isCheck()) playMoveSound('check');
-        else if (move.captured) playMoveSound('capture');
-        else playMoveSound('move');
+        if (navigator.vibrate) navigator.vibrate(50);
+        if (!isMuted) {
+          if (gameCopy.isCheck()) playMoveSound('check');
+          else if (move.captured) playMoveSound('capture');
+          else playMoveSound('move');
+        }
         return true;
       }
       return false;
@@ -308,7 +350,8 @@ export const LocalGame = () => {
     if (!sourcePiece || sourcePiece.color !== game.turn()) return false;
     const success = requestMove(sourceSquare, targetSquare);
     if (!success) {
-      playMoveSound('invalid');
+      if (!isMuted) playMoveSound('invalid');
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       setBoardShake(true);
       setTimeout(() => setBoardShake(false), 300);
     }
@@ -342,7 +385,8 @@ export const LocalGame = () => {
         setSelectedSquare(square);
       } else {
         setSelectedSquare('');
-        playMoveSound('invalid');
+        if (!isMuted) playMoveSound('invalid');
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         setBoardShake(true);
         setTimeout(() => setBoardShake(false), 300);
       }
@@ -433,8 +477,11 @@ export const LocalGame = () => {
           </div>
         </div>
       </div>
-      <div className={`player-clock ${game.turn() === 'b' && !game.isGameOver() ? 'active' : ''}`}>
-        09:30
+      <div 
+        className={`player-clock ${game.turn() === 'b' && !game.isGameOver() ? 'active' : ''}`}
+        style={blackTime <= 30 && game.turn() === 'b' ? { color: '#EF4444', borderColor: '#EF4444', boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)' } : {}}
+      >
+        {formatTime(blackTime)}
       </div>
     </div>
   );
@@ -454,8 +501,11 @@ export const LocalGame = () => {
           </div>
         </div>
       </div>
-      <div className={`player-clock ${game.turn() === 'w' && !game.isGameOver() ? 'active' : ''}`}>
-        09:45
+      <div 
+        className={`player-clock ${game.turn() === 'w' && !game.isGameOver() ? 'active' : ''}`}
+        style={whiteTime <= 30 && game.turn() === 'w' ? { color: '#EF4444', borderColor: '#EF4444', boxShadow: '0 0 15px rgba(239, 68, 68, 0.4)' } : {}}
+      >
+        {formatTime(whiteTime)}
       </div>
     </div>
   );
@@ -494,8 +544,20 @@ export const LocalGame = () => {
                     <div className={`history-dot ${isLastMove ? 'active' : ''}`}></div>
                     {i + 1}.
                   </div>
-                  <div className={`history-move ${isWhiteLast ? 'active' : ''}`}>{renderMove(pair.w, 'w')}</div>
-                  <div className={`history-move ${isBlackLast ? 'active' : ''}`}>{renderMove(pair.b, 'b')}</div>
+                  <div 
+                    className={`history-move ${isWhiteLast ? 'active' : ''}`}
+                    onMouseEnter={() => { const m = game.history({verbose:true})[i*2]; if(m) setHoveredMove({from: m.from, to: m.to}); }}
+                    onMouseLeave={() => setHoveredMove(null)}
+                  >
+                    {renderMove(pair.w, 'w')}
+                  </div>
+                  <div 
+                    className={`history-move ${isBlackLast ? 'active' : ''}`}
+                    onMouseEnter={() => { const m = game.history({verbose:true})[i*2+1]; if(m) setHoveredMove({from: m.from, to: m.to}); }}
+                    onMouseLeave={() => setHoveredMove(null)}
+                  >
+                    {renderMove(pair.b, 'b')}
+                  </div>
                 </motion.div>
               );
             })}
@@ -533,8 +595,8 @@ export const LocalGame = () => {
               allowDragging: true,
               allowDragOffBoard: true,
               animationDurationInMs: 180,
-              darkSquareStyle: { backgroundColor: 'var(--color-board-dark, #7C8CA4)' },
-              lightSquareStyle: { backgroundColor: 'var(--color-board-light, #DCE3EE)' },
+              darkSquareStyle: { backgroundColor: getThemeStyles().dark },
+              lightSquareStyle: { backgroundColor: getThemeStyles().light },
               squareStyles: optionSquares,
               boardStyle: { cursor: 'pointer' },
               draggingPieceStyle: { zIndex: 9999, cursor: 'grabbing', transform: 'scale(1.1)', filter: 'drop-shadow(0px 10px 15px rgba(0,0,0,0.5))' }
@@ -548,26 +610,96 @@ export const LocalGame = () => {
         {/* Bottom Controls */}
         <div className="controls-container">
           <div className="controls-row">
-            <button onClick={onUndo} disabled={!game.history().length} className="control-btn">
+            <button onClick={onUndo} disabled={!game.history().length} className="control-btn" aria-label="Undo Move" tabIndex={0}>
               <RotateCcw style={{ width: '16px', height: '16px' }} /> <span className="control-text">Undo</span>
             </button>
-            <button onClick={onRedo} disabled={!redoStack.length} className="control-btn">
+            <button onClick={onRedo} disabled={!redoStack.length} className="control-btn" aria-label="Redo Move" tabIndex={0}>
               <RefreshCw style={{ width: '16px', height: '16px', transform: 'scaleX(-1)' }} /> <span className="control-text">Redo</span>
             </button>
-            <button onClick={onFlip} className="control-btn">
-              <RefreshCw style={{ width: '16px', height: '16px' }} /> <span className="control-text">Flip Board</span>
+            <button onClick={onFlip} className="control-btn" aria-label="Flip Board" tabIndex={0}>
+              <RefreshCw style={{ width: '16px', height: '16px' }} /> <span className="control-text">Flip</span>
             </button>
           </div>
           <div className="controls-row">
-            <button onClick={() => { if (!game.isGameOver()) { toast.success('Draw agreed'); setManualResult('DRAW AGREED'); setShowEndModal(true); } }} className="control-btn">
-              <Handshake style={{ width: '16px', height: '16px' }} /> <span className="control-text">Offer Draw</span>
+            <button onClick={() => { if (!game.isGameOver()) { toast.success('Draw agreed'); setManualResult('DRAW AGREED'); setShowEndModal(true); } }} className="control-btn" aria-label="Offer Draw" tabIndex={0}>
+              <Handshake style={{ width: '16px', height: '16px' }} /> <span className="control-text">Draw</span>
             </button>
-            <button onClick={() => { if (!game.isGameOver()) { toast.error('You resigned'); setManualResult(game.turn() === 'w' ? 'WHITE RESIGNED' : 'BLACK RESIGNED'); setShowEndModal(true); } }} className="control-btn danger">
+            <button onClick={() => { if (!game.isGameOver()) { toast.error('You resigned'); setManualResult(game.turn() === 'w' ? 'WHITE RESIGNED' : 'BLACK RESIGNED'); setShowEndModal(true); } }} className="control-btn danger" aria-label="Resign" tabIndex={0}>
               <Flag style={{ width: '16px', height: '16px' }} /> <span className="control-text">Resign</span>
             </button>
-            <button onClick={onRestart} className="control-btn primary">
-              <RefreshCw style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>New Game</span>
+            <button onClick={onRestart} className="control-btn primary" aria-label="New Game" tabIndex={0}>
+              <RotateCcw style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>New Game</span>
             </button>
+          </div>
+          <div className="controls-row" style={{ marginTop: '4px' }}>
+            <button onClick={() => setIsMuted(!isMuted)} className="control-btn" aria-label="Toggle Sound" tabIndex={0}>
+              {isMuted ? <VolumeX style={{ width: '16px', height: '16px' }} /> : <Volume2 style={{ width: '16px', height: '16px' }} />}
+              <span className="control-text">{isMuted ? 'Muted' : 'Sound On'}</span>
+            </button>
+            <div className="control-btn" style={{ gridColumn: 'span 2', position: 'relative', cursor: 'pointer', display: 'flex', gap: '8px', padding: '0 16px', justifyContent: 'space-between' }} onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Palette style={{ width: '16px', height: '16px' }} /> 
+                <span className="control-text">Theme: <span style={{color: 'var(--color-accent)'}}>{boardTheme.charAt(0).toUpperCase() + boardTheme.slice(1)}</span></span>
+              </div>
+              
+              <AnimatePresence>
+                {themeDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 8px)',
+                      right: 0,
+                      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      minWidth: '140px',
+                      boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                      zIndex: 50,
+                      backdropFilter: 'blur(12px)'
+                    }}
+                  >
+                    {['classic', 'wood', 'neon'].map(theme => (
+                      <button 
+                        key={theme}
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setBoardTheme(theme as 'classic' | 'wood' | 'neon'); 
+                          setThemeDropdownOpen(false); 
+                        }}
+                        style={{
+                          background: boardTheme === theme ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                          color: boardTheme === theme ? '#60A5FA' : 'white',
+                          border: 'none',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          transition: 'background 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between'
+                        }}
+                        onMouseEnter={(e) => { if(boardTheme !== theme) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                        onMouseLeave={(e) => { if(boardTheme !== theme) e.currentTarget.style.background = 'transparent' }}
+                      >
+                        {theme.charAt(0).toUpperCase() + theme.slice(1)}
+                        {boardTheme === theme && <div style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#60A5FA'}} />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
@@ -761,6 +893,69 @@ export const LocalGame = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Interactive Mini-Tutorial */}
+      <AnimatePresence>
+        {showTutorial && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md text-center"
+            >
+              <h3 className="text-2xl font-bold text-white mb-4 flex justify-center items-center gap-2">
+                <Target className="text-blue-400" /> Welcome to GestureChess!
+              </h3>
+              <p className="text-slate-300 mb-6 leading-relaxed">
+                To make a move without a mouse: <br/><br/>
+                1. Allow <b>Camera Access</b>.<br/>
+                2. Hover your hand over the piece.<br/>
+                3. Make a <b>Pinch gesture</b> (bring thumb and index finger together) to "grab" it.<br/>
+                4. Drag your hand and release the pinch to drop.
+              </p>
+              
+              <div className="w-full h-32 bg-slate-800 rounded-lg mb-6 flex items-center justify-center relative overflow-hidden border border-slate-700">
+                 {/* CSS Animated Ghost Hand */}
+                 <div className="absolute w-12 h-12 flex items-center justify-center"
+                   style={{
+                     animation: 'tutorialHandDrag 3s infinite cubic-bezier(0.4, 0, 0.2, 1)'
+                   }}
+                 >
+                   <motion.div 
+                      animate={{ scale: [1, 0.8, 0.8, 1], opacity: [0.5, 1, 1, 0.5] }} 
+                      transition={{ duration: 3, repeat: Infinity, times: [0, 0.2, 0.8, 1] }}
+                   >
+                     <Target className="w-10 h-10 text-blue-400" />
+                   </motion.div>
+                 </div>
+                 <div className="w-8 h-8 bg-blue-500/20 border-2 border-blue-400 rounded-full" />
+              </div>
+
+              <style>{`
+                @keyframes tutorialHandDrag {
+                  0% { transform: translate(-60px, 20px); }
+                  20% { transform: translate(-60px, 0px); }
+                  80% { transform: translate(60px, 0px); }
+                  100% { transform: translate(60px, 20px); }
+                }
+              `}</style>
+
+              <button 
+                onClick={closeTutorial}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-colors"
+              >
+                Got it, let's play!
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

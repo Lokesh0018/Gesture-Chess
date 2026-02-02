@@ -238,18 +238,20 @@ button {
 .game-grid {
   width: 100%;
   max-width: 1500px;
-  height: calc(100vh - 72px);
+  min-height: calc(100vh - 72px);
   padding: 24px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: minmax(0, 1fr);
   gap: 24px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @media (min-width: 1280px) {
   .game-grid {
+    height: calc(100vh - 72px);
+    overflow: hidden;
     grid-template-columns: 320px minmax(560px, 620px) 340px;
     grid-template-rows: minmax(0, 1fr);
     justify-content: center;
