@@ -72,18 +72,47 @@ function generateSquareStyles(game: Chess, selectedSquare: string): Record<strin
   return styles;
 }
 
-function playMoveSound(isCapture: boolean): void {
+function playMoveSound(type: 'move' | 'capture' | 'check' | 'invalid'): void {
   try {
-    const ctx = new AudioContext();
+    const ctx = new window.AudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = isCapture ? 'square' : 'triangle';
-    osc.frequency.value = isCapture ? 240 : 430;
-    gain.gain.value = 0.05;
+    
+    if (type === 'invalid') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+      return;
+    }
+
+    if (type === 'check') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(400, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+      return;
+    }
+
+    osc.type = type === 'capture' ? 'square' : 'triangle';
+    osc.frequency.value = type === 'capture' ? 240 : 430;
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.08);
+    osc.stop(ctx.currentTime + 0.1);
   } catch {
     // No-op
   }
@@ -110,10 +139,10 @@ export const LocalGame = () => {
 
   const [capturedByWhite, setCapturedByWhite] = useState<PieceSymbol[]>([]);
   const [capturedByBlack, setCapturedByBlack] = useState<PieceSymbol[]>([]);
-
   const [showEndModal, setShowEndModal] = useState(false);
   const [gameDuration, setGameDuration] = useState(0);
   const [manualResult, setManualResult] = useState<string | null>(null);
+  const [boardShake, setBoardShake] = useState(false);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -240,7 +269,9 @@ export const LocalGame = () => {
         setGame(gameCopy);
         setSelectedSquare('');
         syncCapturedPieces(gameCopy);
-        playMoveSound(Boolean(move.captured));
+        if (gameCopy.isCheck()) playMoveSound('check');
+        else if (move.captured) playMoveSound('capture');
+        else playMoveSound('move');
         return true;
       }
       return false;
@@ -275,7 +306,13 @@ export const LocalGame = () => {
     if (!targetSquare) return false;
     const sourcePiece = game.get(sourceSquare as Square);
     if (!sourcePiece || sourcePiece.color !== game.turn()) return false;
-    return requestMove(sourceSquare, targetSquare);
+    const success = requestMove(sourceSquare, targetSquare);
+    if (!success) {
+      playMoveSound('invalid');
+      setBoardShake(true);
+      setTimeout(() => setBoardShake(false), 300);
+    }
+    return success;
   }
 
   function onSquareClick(args: { square: string | null }): void {
@@ -305,6 +342,9 @@ export const LocalGame = () => {
         setSelectedSquare(square);
       } else {
         setSelectedSquare('');
+        playMoveSound('invalid');
+        setBoardShake(true);
+        setTimeout(() => setBoardShake(false), 300);
       }
     }
   }
@@ -479,7 +519,7 @@ export const LocalGame = () => {
         {/* The Board */}
         <div
           ref={boardContainerRef}
-          className={`board-wrapper ${game.isCheck() ? 'check-alert' : game.turn() === 'w' ? 'turn-white' : 'turn-black'}`}
+          className={`board-wrapper ${boardShake ? 'shake-error' : ''} ${game.isCheck() ? 'check-alert' : game.turn() === 'w' ? 'turn-white' : 'turn-black'}`}
         >
           <Chessboard
             options={{
