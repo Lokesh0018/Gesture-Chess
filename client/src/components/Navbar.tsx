@@ -1,34 +1,52 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { Hand, User, LogOut } from 'lucide-react';
+import { Pointer , User, LogOut, Home, Sun } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuthStore();
+  const location = useLocation();
 
   return (
-    <nav className="h-16 border-b border-gray-800 bg-gray-900/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-50">
-      <div className="flex items-center space-x-2">
-        <Hand className="w-8 h-8 text-primary-500" />
-        <Link to="/" className="text-xl font-bold tracking-tight text-white">Gesture<span className="text-primary-500">Chess</span></Link>
+    <nav className="navbar">
+      {/* Left: Logo */}
+      <div className="nav-section">
+        <Pointer style={{ width: '32px', height: '32px', color: 'var(--color-accent)' }} />
+        <Link to="/" className="nav-logo">Gesture<span>Chess</span></Link>
       </div>
 
-      <div className="flex items-center space-x-4">
+      {/* Center: Navigation */}
+      <div className="nav-section center">
+        <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
+          <Home style={{ width: '16px', height: '16px' }} />
+          <span>Home</span>
+        </Link>
+        <div className="nav-divider"></div>
+        <Link to="/local" className={`nav-link ${location.pathname === '/local' ? 'active' : ''}`}>
+          Local Game
+        </Link>
+      </div>
+
+      {/* Right: Auth & Theme */}
+      <div className="nav-section right">
+        <button className="nav-btn-icon">
+          <Sun style={{ width: '20px', height: '20px' }} />
+        </button>
         {user ? (
-          <div className="flex items-center space-x-4">
-            <Link to="/profile" className="flex items-center space-x-2 hover:text-primary-400 transition">
-              <User className="w-5 h-5" />
+          <>
+            <Link to="/profile" className="nav-link">
+              <User style={{ width: '20px', height: '20px' }} />
               <span>{user.username}</span>
             </Link>
-            <button onClick={logout} className="p-2 hover:bg-gray-800 rounded-full transition">
-              <LogOut className="w-5 h-5 text-gray-400 hover:text-white" />
+            <button onClick={logout} className="nav-btn-icon">
+              <LogOut style={{ width: '20px', height: '20px' }} />
             </button>
-          </div>
+          </>
         ) : (
-          <div className="space-x-4">
-            <Link to="/login" className="text-gray-300 hover:text-white transition">Login</Link>
-            <Link to="/register" className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg transition">Sign Up</Link>
-          </div>
+          <>
+            <Link to="/login" className="nav-btn-login">Login</Link>
+            <Link to="/register" className="nav-btn-signup">Sign Up</Link>
+          </>
         )}
       </div>
     </nav>

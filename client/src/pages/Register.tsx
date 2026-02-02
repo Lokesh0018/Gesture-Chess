@@ -39,55 +39,55 @@ export const Register = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
-      <div className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center mb-6">Create Account</h2>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2 className="auth-title">Create Account</h2>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-field">
+            <label className="auth-label">Username</label>
             <input 
               type="text" 
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-primary-500" 
+              className="auth-input" 
               placeholder="chessmaster99" 
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+          <div className="auth-field">
+            <label className="auth-label">Email</label>
             <input 
               type="email" 
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-primary-500" 
+              className="auth-input" 
               placeholder="you@example.com" 
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
+          <div className="auth-field">
+            <label className="auth-label">Password</label>
             <input 
               type="password" 
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-primary-500" 
+              className="auth-input" 
               placeholder="••••••••" 
             />
           </div>
           <button 
             type="submit" 
             disabled={isLoading}
-            className="w-full bg-primary-600 hover:bg-primary-500 text-white font-bold py-3 px-4 rounded-lg transition disabled:opacity-50"
+            className="auth-button"
           >
             {isLoading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
         
-        <p className="mt-6 text-center text-gray-400 text-sm">
-          Already have an account? <Link to="/login" className="text-primary-400 hover:text-primary-300">Login</Link>
+        <p className="auth-footer">
+          Already have an account? <Link to="/login" className="auth-link">Login</Link>
         </p>
       </div>
     </div>

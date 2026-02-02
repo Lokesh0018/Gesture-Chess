@@ -38,44 +38,44 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center">
-      <div className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center mb-6">Welcome Back</h2>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2 className="auth-title">Welcome Back</h2>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-field">
+            <label className="auth-label">Email</label>
             <input 
               type="email" 
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-primary-500" 
+              className="auth-input" 
               placeholder="you@example.com" 
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
+          <div className="auth-field">
+            <label className="auth-label">Password</label>
             <input 
               type="password" 
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-primary-500" 
+              className="auth-input" 
               placeholder="••••••••" 
             />
           </div>
           <button 
             type="submit" 
             disabled={isLoading}
-            className="w-full bg-primary-600 hover:bg-primary-500 text-white font-bold py-3 px-4 rounded-lg transition disabled:opacity-50"
+            className="auth-button"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
         
-        <p className="mt-6 text-center text-gray-400 text-sm">
-          Don't have an account? <Link to="/register" className="text-primary-400 hover:text-primary-300">Sign up</Link>
+        <p className="auth-footer">
+          Don't have an account? <Link to="/register" className="auth-link">Sign up</Link>
         </p>
       </div>
     </div>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Swords, Users, Trophy, Settings } from 'lucide-react';
-import { CameraPanel } from './CameraPanel';
 
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -15,7 +14,7 @@ export const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <aside className="w-64 border-r border-gray-800 bg-gray-900/50 backdrop-blur-md hidden md:flex flex-col h-[calc(100vh-4rem)] p-4">
+    <aside className="w-[260px] border-r border-[rgba(255,255,255,0.06)] bg-[#111827] hidden md:flex flex-col h-full py-6 px-4 shrink-0">
       <div className="space-y-2 flex-1">
         {navItems.map((item) => {
           const isActive = location.pathname.startsWith(item.path);
@@ -24,20 +23,21 @@ export const Sidebar = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                  ? 'bg-primary-600/10 text-primary-500 border border-primary-500/20'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                }`}
+              className={`group flex items-center space-x-3 px-4 py-3 rounded-[12px] transition-all duration-150 ${
+                isActive
+                  ? 'bg-[rgba(59,130,246,0.1)] text-[#3B82F6] shadow-[inset_4px_0_0_0_#3B82F6]'
+                  : 'text-[#94A3B8] hover:bg-[rgba(255,255,255,0.03)] hover:text-white'
+              }`}
             >
-              <Icon className="w-5 h-5" />
-              <span className="font-medium">{item.name}</span>
+              <Icon className="w-[18px] h-[18px]" />
+              <span className="text-[15px] font-medium">{item.name}</span>
             </Link>
           );
         })}
       </div>
 
-      <div className="pt-4 border-t border-gray-800">
-        {/* <CameraPanel /> Disabled for STEP 10 */}
+      <div className="mt-auto pt-4 border-t border-[rgba(255,255,255,0.06)] text-[13px] text-[#94A3B8] text-center">
+        GestureChess v1.0.0<br/>© 2024 All rights reserved
       </div>
     </aside>
   );
