@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { MainLayout } from './layouts/MainLayout';
+import { LandingPage } from './pages/LandingPage';
 import { Home } from './pages/Home';
 import { LocalGame } from './pages/LocalGame';
 import { OnlineGame } from './pages/OnlineGame';
@@ -16,8 +17,11 @@ function App() {
     <>
       <Toaster position="top-right" />
       <Routes>
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Home />} />
+        {/* Landing Page without MainLayout */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Pages wrapped in MainLayout */}
+        <Route element={<MainLayout />}>
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
           <Route path="local" element={<LocalGame />} />
