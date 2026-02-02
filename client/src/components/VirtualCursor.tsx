@@ -80,7 +80,13 @@ export const VirtualCursor = () => {
       }}
     >
       <div 
-        style={{ width: 8, height: 8, backgroundColor: borderColor, borderRadius: '50%' }} 
+        style={{ 
+          width: isPinching ? 12 : 8, 
+          height: isPinching ? 12 : 8, 
+          backgroundColor: borderColor, 
+          borderRadius: '50%',
+          transition: 'width 0.1s, height 0.1s'
+        }} 
       />
       {isPinching && (
         <div style={{

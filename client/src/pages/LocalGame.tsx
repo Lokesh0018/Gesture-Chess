@@ -37,6 +37,14 @@ function isPromotionCandidate(game: Chess, from: string, to: string): boolean {
 
 function generateSquareStyles(game: Chess, selectedSquare: string): Record<string, React.CSSProperties> {
   const styles: Record<string, React.CSSProperties> = {};
+
+  const history = game.history({ verbose: true });
+  if (history.length > 0) {
+    const last = history[history.length - 1];
+    styles[last.from] = { backgroundColor: 'rgba(234, 179, 8, 0.3)' };
+    styles[last.to] = { backgroundColor: 'rgba(234, 179, 8, 0.3)' };
+  }
+
   if (game.isCheck()) {
     const kingSquare = getKingSquare(game);
     if (kingSquare) {
@@ -119,6 +127,24 @@ export const LocalGame = () => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
+  };
+
+  const renderMove = (move: string, color: 'w' | 'b') => {
+    if (!move) return null;
+    const match = move.match(/^[NBRQK]/);
+    if (!match) return <span>{move}</span>;
+    const map: Record<string, Record<string, string>> = {
+      'w': { N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔' },
+      'b': { N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚' }
+    };
+    return (
+      <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+        <span style={{ fontSize: '18px', lineHeight: 1, color: color === 'w' ? '#fff' : '#0F172A', textShadow: color === 'b' ? '0 0 2px rgba(255,255,255,0.5)' : 'none' }}>
+          {map[color][match[0]]}
+        </span>
+        {move.substring(1)}
+      </span>
+    );
   };
 
   const optionSquares = useMemo(
@@ -428,8 +454,8 @@ export const LocalGame = () => {
                     <div className={`history-dot ${isLastMove ? 'active' : ''}`}></div>
                     {i + 1}.
                   </div>
-                  <div className={`history-move ${isWhiteLast ? 'active' : ''}`}>{pair.w}</div>
-                  <div className={`history-move ${isBlackLast ? 'active' : ''}`}>{pair.b}</div>
+                  <div className={`history-move ${isWhiteLast ? 'active' : ''}`}>{renderMove(pair.w, 'w')}</div>
+                  <div className={`history-move ${isBlackLast ? 'active' : ''}`}>{renderMove(pair.b, 'b')}</div>
                 </motion.div>
               );
             })}
@@ -556,7 +582,13 @@ export const LocalGame = () => {
               <span className="captured-title">White Captured</span>
               <div className="captured-icons">
                 {capturedByWhite.length === 0 && <span className="captured-empty">-</span>}
-                {capturedByWhite.map((p, i) => <PieceIcon key={i} type={p} color="b" />)}
+                <AnimatePresence mode="popLayout">
+                  {capturedByWhite.map((p, i) => (
+                    <motion.div key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                      <PieceIcon type={p} color="b" />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
               <div className="captured-score-wrap">
                 {material.w > 0 && <span className="captured-score">+{material.w}</span>}
@@ -570,7 +602,13 @@ export const LocalGame = () => {
               <span className="captured-title">Black Captured</span>
               <div className="captured-icons">
                 {capturedByBlack.length === 0 && <span className="captured-empty">-</span>}
-                {capturedByBlack.map((p, i) => <PieceIcon key={i} type={p} color="w" />)}
+                <AnimatePresence mode="popLayout">
+                  {capturedByBlack.map((p, i) => (
+                    <motion.div key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                      <PieceIcon type={p} color="w" />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
               <div className="captured-score-wrap">
                 {material.b > 0 && <span className="captured-score">+{material.b}</span>}

@@ -52,7 +52,7 @@ export const CameraPanel = () => {
   }, [isActive]);
 
   return (
-    <div className="card camera-card">
+    <div className={`card camera-card ${isActive && (gesture !== 'None' || isPinching) ? 'active-tracking' : ''}`}>
       <div className="camera-header">
         <div className="camera-title">
           <Camera style={{ width: '20px', height: '20px', color: 'var(--color-accent)' }} />
