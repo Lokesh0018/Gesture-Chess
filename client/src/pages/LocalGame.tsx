@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js';
-import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers, Box } from 'lucide-react';
+import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CameraPanel } from '../components/CameraPanel';
@@ -13,7 +13,7 @@ const PROMOTION_PIECES: PieceSymbol[] = ['q', 'r', 'b', 'n'];
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const INITIAL_TIME = 600;
 
-type PieceStyleId = 'classic' | 'neon' | 'crystal' | 'royal' | 'character' | '3d';
+type PieceStyleId = 'classic' | 'character';
 
 // UI metadata for the dropdown (label, description, colour swatches)
 const PIECE_STYLES: {
@@ -23,67 +23,27 @@ const PIECE_STYLES: {
   previewColors: [string, string]; // [white swatch, black swatch]
   map: Record<string, Record<PieceSymbol, string>>;
 }[] = [
-  {
-    id: 'classic',
-    label: 'Classic',
-    description: 'Default',
-    previewColors: ['#F8FAFC', '#1E293B'],
-    map: {
-      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
-      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
+    {
+      id: 'classic',
+      label: 'Classic',
+      description: 'Default',
+      previewColors: ['#F8FAFC', '#1E293B'],
+      map: {
+        w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
+        b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
+      },
     },
-  },
-  {
-    id: 'neon',
-    label: 'Neon',
-    description: 'Electric glow',
-    previewColors: ['#00FFEA', '#FF2D78'],
-    map: {
-      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
-      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
+    {
+      id: 'character',
+      label: 'Character',
+      description: 'Cartoon Faces',
+      previewColors: ['#F8FAFC', '#1E293B'],
+      map: {
+        w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
+        b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
+      },
     },
-  },
-  {
-    id: 'crystal',
-    label: 'Crystal',
-    description: 'Ice glass',
-    previewColors: ['#B8E8FF', '#4B6EAF'],
-    map: {
-      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
-      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
-    },
-  },
-  {
-    id: 'royal',
-    label: 'Royal',
-    description: 'Gold & steel',
-    previewColors: ['#FFE066', '#8090A8'],
-    map: {
-      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
-      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
-    },
-  },
-  {
-    id: 'character',
-    label: 'Character',
-    description: 'Cartoon Faces',
-    previewColors: ['#F8FAFC', '#1E293B'],
-    map: {
-      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
-      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
-    },
-  },
-  {
-    id: '3d',
-    label: '3D Render',
-    description: 'Original Set',
-    previewColors: ['#D1D5DB', '#374151'],
-    map: {
-      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
-      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
-    },
-  },
-];
+  ];
 
 // ─── Standard SVG Chess Piece Paths (viewBox 0 0 45 45) ────────────────────
 // Standard chess silhouette shapes (public-domain "Cases" set)
@@ -97,20 +57,20 @@ const SVG_PATHS: Record<PieceSymbol, string> = {
 };
 
 const CHARACTER_SVG_PATHS: Record<PieceSymbol, string> = {
-  k: '<path d="M 8,18 L 10,8 L 17,14 L 22.5,6 L 28,14 L 35,8 L 37,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 10,18 Q 5,28 12,35 Q 22.5,45 33,35 Q 40,28 35,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 15,18 Q 12,24 15,28 Q 22.5,32 30,28 Q 33,24 30,18 Z" fill="FACE" stroke="none"/><circle cx="19" cy="23" r="1.5" fill="EYE" stroke="none"/><circle cx="26" cy="23" r="1.5" fill="EYE" stroke="none"/><path d="M 17,20.5 L 21,21" stroke="EYE" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M 28,20.5 L 24,21" stroke="EYE" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M 18,29 Q 22.5,27 27,29 Q 22.5,31 18,29" fill="EYE" stroke="none"/>',
-  q: '<path d="M 6,18 L 8,10 L 15,14 L 22.5,8 L 30,14 L 37,10 L 39,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 8,18 Q 2,28 8,40 L 37,40 Q 43,28 37,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,18 Q 10,26 14,32 Q 22.5,36 31,32 Q 35,26 31,18 Z" fill="FACE" stroke="none"/><circle cx="20" cy="23" r="1.5" fill="EYE" stroke="none"/><circle cx="25" cy="23" r="1.5" fill="EYE" stroke="none"/><path d="M 21.5,29 C 22,30 23,30 23.5,29" stroke="EYE" stroke-width="1.5" stroke-linecap="round" fill="none"/>',
-  b: '<path d="M 12,20 L 22.5,4 L 33,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 22.5,8 L 22.5,14 M 19.5,11 L 25.5,11" stroke="FACE" stroke-width="1.5" fill="none"/><path d="M 14,20 Q 9,28 14,35 Q 22.5,42 31,35 Q 36,28 31,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 16,20 Q 13,26 16,30 Q 22.5,33 29,30 Q 32,26 29,20 Z" fill="FACE" stroke="none"/><circle cx="20" cy="24" r="1.5" fill="EYE" stroke="none"/><circle cx="25" cy="24" r="1.5" fill="EYE" stroke="none"/><path d="M 14,36 L 31,36 L 35,42 L 10,42 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/>',
-  n: '<path d="M 28,10 Q 35,15 32,28 Q 28,40 18,40 L 10,40 Q 12,30 15,25 L 10,20 Q 12,12 20,8 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 24,12 Q 30,15 28,26 Q 24,35 18,36 L 14,36 Q 16,30 18,25 L 14,21 Q 16,14 22,12 Z" fill="FACE" stroke="none"/><circle cx="21" cy="18" r="1.5" fill="EYE" stroke="none"/><circle cx="16" cy="23" r="1" fill="EYE" stroke="none"/><path d="M 30,10 L 26,4 L 23,9 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/>',
-  r: '<path d="M 12,8 H 33 V 15 H 12 Z M 10,15 H 35 V 40 H 10 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 10,8 H 15 V 4 H 10 Z M 20,8 H 25 V 4 H 20 Z M 30,8 H 35 V 4 H 30 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,18 H 31 V 32 H 14 Z" fill="FACE" stroke="none"/><rect x="18" y="22" width="3" height="3" fill="EYE" stroke="none"/><rect x="24" y="22" width="3" height="3" fill="EYE" stroke="none"/><path d="M 19,29 H 26" stroke="EYE" stroke-width="2" fill="none"/>',
-  p: '<circle cx="22.5" cy="14" r="8" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,20 Q 10,32 15,38 L 30,38 Q 35,32 31,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 16,20 Q 14,28 17,32 Q 22.5,35 28,32 Q 31,28 29,20 Z" fill="FACE" stroke="none"/><circle cx="20" cy="24" r="1.5" fill="EYE" stroke="none"/><circle cx="25" cy="24" r="1.5" fill="EYE" stroke="none"/>',
+  k: '<path d="M 8,18 L 10,8 L 17,14 L 22.5,6 L 28,14 L 35,8 L 37,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 10,18 Q 5,28 12,35 Q 22.5,45 33,35 Q 40,28 35,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 15,18 Q 12,24 15,28 Q 22.5,32 30,28 Q 33,24 30,18 Z" fill="FACE" stroke="none"/><circle cx="19" cy="23" r="1.5" fill="EYE" class="eye-blink" stroke="none"/><circle cx="26" cy="23" r="1.5" fill="EYE" class="eye-blink" stroke="none"/><path d="M 17,20.5 L 21,21" stroke="EYE" class="eye-blink" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M 28,20.5 L 24,21" stroke="EYE" class="eye-blink" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M 18,29 Q 22.5,27 27,29 Q 22.5,31 18,29" fill="EYE" stroke="none"/>',
+  q: '<path d="M 6,18 L 8,10 L 15,14 L 22.5,8 L 30,14 L 37,10 L 39,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 8,18 Q 2,28 8,40 L 37,40 Q 43,28 37,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,18 Q 10,26 14,32 Q 22.5,36 31,32 Q 35,26 31,18 Z" fill="FACE" stroke="none"/><circle cx="20" cy="23" r="1.5" fill="EYE" class="eye-blink" stroke="none"/><circle cx="25" cy="23" r="1.5" fill="EYE" class="eye-blink" stroke="none"/><path d="M 21.5,29 C 22,30 23,30 23.5,29" stroke="EYE" class="eye-blink" stroke-width="1.5" stroke-linecap="round" fill="none"/>',
+  b: '<path d="M 12,20 L 22.5,4 L 33,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 22.5,8 L 22.5,14 M 19.5,11 L 25.5,11" fill="FACE" stroke-width="1.5" stroke="none"/><path d="M 14,20 Q 9,28 14,35 Q 22.5,42 31,35 Q 36,28 31,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 16,20 Q 13,26 16,30 Q 22.5,33 29,30 Q 32,26 29,20 Z" fill="FACE" stroke="none"/><circle cx="20" cy="24" r="1.5" fill="EYE" class="eye-blink" stroke="none"/><circle cx="25" cy="24" r="1.5" fill="EYE" class="eye-blink" stroke="none"/><path d="M 14,36 L 31,36 L 35,42 L 10,42 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/>',
+  n: '<path d="M 28,10 Q 35,15 32,28 Q 28,40 18,40 L 10,40 Q 12,30 15,25 L 10,20 Q 12,12 20,8 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 24,12 Q 30,15 28,26 Q 24,35 18,36 L 14,36 Q 16,30 18,25 L 14,21 Q 16,14 22,12 Z" fill="FACE" stroke="none"/><circle cx="21" cy="18" r="1.5" fill="EYE" class="eye-blink" stroke="none"/><circle cx="16" cy="23" r="1" fill="EYE" class="eye-blink" stroke="none"/><path d="M 30,10 L 26,4 L 23,9 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/>',
+  r: '<path d="M 12,8 H 33 V 15 H 12 Z M 10,15 H 35 V 40 H 10 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 10,8 H 15 V 4 H 10 Z M 20,8 H 25 V 4 H 20 Z M 30,8 H 35 V 4 H 30 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,18 H 31 V 32 H 14 Z" fill="FACE" stroke="none"/><rect x="18" y="22" width="3" height="3" fill="EYE" class="eye-blink" stroke="none"/><rect x="24" y="22" width="3" height="3" fill="EYE" class="eye-blink" stroke="none"/><path d="M 19,29 H 26" stroke="EYE" class="eye-blink" stroke-width="2" fill="none"/>',
+  p: '<circle cx="22.5" cy="14" r="8" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,20 Q 10,32 15,38 L 30,38 Q 35,32 31,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 16,20 Q 14,28 17,32 Q 22.5,35 28,32 Q 31,28 29,20 Z" fill="FACE" stroke="none"/><circle cx="20" cy="24" r="1.5" fill="EYE" class="eye-blink" stroke="none"/><circle cx="25" cy="24" r="1.5" fill="EYE" class="eye-blink" stroke="none"/>',
 };
 
 type PieceRenderObject = Record<string, (props?: { fill?: string; square?: string; svgStyle?: React.CSSProperties }) => React.JSX.Element>;
 
 const PIECE_CODE_META: Record<string, { type: PieceSymbol; isWhite: boolean }> = {
-  wK: { type: 'k', isWhite: true },  wQ: { type: 'q', isWhite: true },
-  wR: { type: 'r', isWhite: true },  wB: { type: 'b', isWhite: true },
-  wN: { type: 'n', isWhite: true },  wP: { type: 'p', isWhite: true },
+  wK: { type: 'k', isWhite: true }, wQ: { type: 'q', isWhite: true },
+  wR: { type: 'r', isWhite: true }, wB: { type: 'b', isWhite: true },
+  wN: { type: 'n', isWhite: true }, wP: { type: 'p', isWhite: true },
   bK: { type: 'k', isWhite: false }, bQ: { type: 'q', isWhite: false },
   bR: { type: 'r', isWhite: false }, bB: { type: 'b', isWhite: false },
   bN: { type: 'n', isWhite: false }, bP: { type: 'p', isWhite: false },
@@ -119,135 +79,11 @@ const PIECE_CODE_META: Record<string, { type: PieceSymbol; isWhite: boolean }> =
 function ChessPieceSVG({ code, styleId }: { code: string; styleId: PieceStyleId }): React.JSX.Element {
   const { type, isWhite } = PIECE_CODE_META[code];
   const d = SVG_PATHS[type];
-  const uid = `${styleId}-${code}`;
 
-  if (styleId === '3d') {
-    const isWhitePiece = isWhite;
-    const baseColor = isWhitePiece ? '#f9f9f9' : '#333333';
-    const highlight = isWhitePiece ? '#ffffff' : '#5a5a5a';
-    const shadow = isWhitePiece ? '#a0b0c0' : '#1a1a1a';
-    
-    const gradId = `grad-${uid}`;
-    const filterId = `filter-${uid}`;
-    
+  if (styleId === 'classic') {
     return (
-      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-        <defs>
-          <radialGradient id={gradId} cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stopColor={highlight} />
-            <stop offset="50%" stopColor={baseColor} />
-            <stop offset="100%" stopColor={shadow} />
-          </radialGradient>
-          
-          <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
-            {/* Inner highlight (top-left) */}
-            <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur1" />
-            <feOffset dx="-2" dy="-2" result="offsetBlur1" />
-            <feComposite in="SourceAlpha" in2="offsetBlur1" operator="out" result="inv1" />
-            <feFlood floodColor="#ffffff" floodOpacity={isWhitePiece ? "0.9" : "0.3"} result="color1" />
-            <feComposite in="color1" in2="inv1" operator="in" result="highlight" />
-
-            {/* Inner shadow (bottom-right) */}
-            <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur2" />
-            <feOffset dx="2" dy="2" result="offsetBlur2" />
-            <feComposite in="SourceAlpha" in2="offsetBlur2" operator="out" result="inv2" />
-            <feFlood floodColor="#000000" floodOpacity={isWhitePiece ? "0.4" : "0.9"} result="color2" />
-            <feComposite in="color2" in2="inv2" operator="in" result="innerShadow" />
-
-            <feMerge result="mergedInner">
-               <feMergeNode in="SourceGraphic" />
-               <feMergeNode in="highlight" />
-               <feMergeNode in="innerShadow" />
-            </feMerge>
-            <feDropShadow dx="1" dy="4" stdDeviation="2.5" floodColor="#000" floodOpacity="0.5" />
-          </filter>
-        </defs>
-        
-        <path d={d} fill={`url(#${gradId})`} filter={`url(#${filterId})`} stroke={isWhitePiece ? '#888' : '#000'} strokeWidth="0.5" />
-      </svg>
-    );
-  }
-
-  if (styleId === 'neon') {
-    const color = isWhite ? '#00FFEA' : '#FF2D78';
-    const fid = `nf-${uid}`;
-    return (
-      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
-        style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-        <defs>
-          <filter id={fid} x="-40%" y="-40%" width="180%" height="180%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-        </defs>
-        <path d={d} fill="none" stroke={color} strokeWidth="3.5"
-          filter={`url(#${fid})`} opacity="0.65" />
-        <path d={d} fill={isWhite ? 'rgba(0,255,234,0.1)' : 'rgba(255,45,120,0.1)'}
-          stroke={color} strokeWidth="1" strokeLinejoin="round" />
-        <path d={d} fill="none"
-          stroke={isWhite ? '#AAFFF8' : '#FF9EC2'} strokeWidth="0.4" opacity="0.9" />
-      </svg>
-    );
-  }
-
-  if (styleId === 'crystal') {
-    const base = isWhite ? '#C8EEFF' : '#4464A8';
-    const shine = isWhite ? '#FFFFFF' : '#8AB0FF';
-    const border = isWhite ? '#50AADD' : '#1E3670';
-    return (
-      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
-        style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-        <defs>
-          <linearGradient id={`cg-${uid}`} x1="15%" y1="0%" x2="85%" y2="100%">
-            <stop offset="0%"   stopColor={shine} stopOpacity="0.98" />
-            <stop offset="38%"  stopColor={base}  stopOpacity="0.88" />
-            <stop offset="100%" stopColor={border} stopOpacity="0.95" />
-          </linearGradient>
-          <linearGradient id={`cs-${uid}`} x1="0%" y1="0%" x2="55%" y2="65%">
-            <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.62" />
-            <stop offset="55%"  stopColor="#FFFFFF" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-          </linearGradient>
-          <filter id={`cf-${uid}`} x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0.5" dy="1.5" stdDeviation="2"
-              floodColor={isWhite ? '#2090CC' : '#0A1A60'} floodOpacity="0.55" />
-          </filter>
-        </defs>
-        <path d={d} fill={border} opacity="0.18" transform="translate(1.2,1.8)" />
-        <path d={d} fill={`url(#cg-${uid})`} stroke={border} strokeWidth="0.7"
-          strokeLinejoin="round" filter={`url(#cf-${uid})`} />
-        <path d={d} fill={`url(#cs-${uid})`} />
-      </svg>
-    );
-  }
-
-  if (styleId === 'royal') {
-    const g0 = isWhite ? '#FFF5C0' : '#D8E8F8';
-    const g1 = isWhite ? '#D4A017' : '#8090A8';
-    const g2 = isWhite ? '#6B3A00' : '#202838';
-    const stroke = isWhite ? '#9A6800' : '#101820';
-    return (
-      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
-        style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-        <defs>
-          <linearGradient id={`rg-${uid}`} x1="15%" y1="0%" x2="85%" y2="100%">
-            <stop offset="0%"   stopColor={g0} />
-            <stop offset="42%"  stopColor={g1} />
-            <stop offset="100%" stopColor={g2} />
-          </linearGradient>
-          <linearGradient id={`rs-${uid}`} x1="0%" y1="0%" x2="45%" y2="55%">
-            <stop offset="0%"   stopColor="#FFFFFF" stopOpacity={isWhite ? '0.5' : '0.28'} />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-          </linearGradient>
-          <filter id={`rf-${uid}`} x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="1" dy="2" stdDeviation="2"
-              floodColor={isWhite ? 'rgba(160,100,0,0.55)' : 'rgba(0,0,0,0.65)'} />
-          </filter>
-        </defs>
-        <path d={d} fill={g2} opacity="0.28" transform="translate(1.2,1.6)" />
-        <path d={d} fill={`url(#rg-${uid})`} stroke={stroke} strokeWidth="0.75"
-          strokeLinejoin="round" filter={`url(#rf-${uid})`} />
-        <path d={d} fill={`url(#rs-${uid})`} />
+      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))' }}>
+        <path d={d} fill={isWhite ? '#ffffff' : '#000000'} stroke={isWhite ? '#000000' : '#ffffff'} strokeWidth="1.5" strokeLinejoin="round" />
       </svg>
     );
   }
@@ -262,7 +98,7 @@ function ChessPieceSVG({ code, styleId }: { code: string; styleId: PieceStyleId 
       .replace(/OUTLINE/g, outlineColor);
 
     return (
-      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
+      <svg className="piece-breathe" viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
         style={{ width: '100%', height: '100%', overflow: 'visible', filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.4))' }}>
         <g dangerouslySetInnerHTML={{ __html: rawSvg }} />
       </svg>
@@ -272,9 +108,14 @@ function ChessPieceSVG({ code, styleId }: { code: string; styleId: PieceStyleId 
   return <svg viewBox="0 0 45 45" />;
 }
 
-const ALL_PIECE_CODES = ['wK','wQ','wR','wB','wN','wP','bK','bQ','bR','bB','bN','bP'];
+const ALL_PIECE_CODES = ['wK', 'wQ', 'wR', 'wB', 'wN', 'wP', 'bK', 'bQ', 'bR', 'bB', 'bN', 'bP'];
 
-function buildCustomPieces(styleId: PieceStyleId): PieceRenderObject | undefined {
+function buildCustomPieces(styleId: PieceStyleId, blindfold: boolean): PieceRenderObject | undefined {
+  if (blindfold) {
+    const obj: Record<string, any> = {};
+    for (const code of ALL_PIECE_CODES) obj[code] = () => <svg viewBox="0 0 45 45" />;
+    return obj as PieceRenderObject;
+  }
   if (styleId === 'classic') return undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const obj: Record<string, any> = {};
@@ -319,8 +160,8 @@ function generateSquareStyles(game: Chess, selectedSquare: string, hoveredMove: 
   const history = game.history({ verbose: true });
   if (history.length > 0) {
     const last = history[history.length - 1];
-    styles[last.from] = { backgroundColor: 'rgba(234, 179, 8, 0.3)' };
-    styles[last.to] = { backgroundColor: 'rgba(234, 179, 8, 0.3)' };
+    styles[last.from] = { backgroundColor: 'rgba(234, 179, 8, 0.4)', transition: 'background-color 0.4s ease-out' };
+    styles[last.to] = { backgroundColor: 'rgba(234, 179, 8, 0.6)', transition: 'background-color 0.4s ease-out' };
   }
 
   if (hoveredMove) {
@@ -408,12 +249,19 @@ export const LocalGame = () => {
   const [blackTime, setBlackTime] = useState(INITIAL_TIME);
   const [boardTheme, setBoardTheme] = useState<'classic' | 'wood' | 'neon'>('classic');
   const [pieceStyle, setPieceStyle] = useState<PieceStyleId>('classic');
-  const [is3D, setIs3D] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [hoveredMove, setHoveredMove] = useState<{ from: string, to: string } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
   const [pieceStyleDropdownOpen, setPieceStyleDropdownOpen] = useState(false);
+
+  // Advanced features state
+  const [flipState, setFlipState] = useState<'normal' | 'flipping-out' | 'flipping-in'>('normal');
+  const [confirmAction, setConfirmAction] = useState<'resign' | 'draw' | null>(null);
+  const [blindfoldMode, setBlindfoldMode] = useState(false);
+  const [setupMode, setSetupMode] = useState(false);
+  const [emoteW, setEmoteW] = useState<string | null>(null);
+  const [emoteB, setEmoteB] = useState<string | null>(null);
 
   const turnRef = useRef(game.turn());
   const timeoutHandledRef = useRef(false);
@@ -530,9 +378,9 @@ export const LocalGame = () => {
     [game, selectedSquare, hoveredMove],
   );
 
-  // Recompute custom board pieces whenever piece style changes
+  // Recompute custom board pieces whenever piece style or blindfold changes
   // undefined = use default react-chessboard SVG (classic)
-  const customPieces = useMemo<PieceRenderObject | undefined>(() => buildCustomPieces(pieceStyle), [pieceStyle]);
+  const customPieces = useMemo<PieceRenderObject | undefined>(() => buildCustomPieces(pieceStyle, blindfoldMode), [pieceStyle, blindfoldMode]);
 
 
   const getThemeStyles = () => {
@@ -666,8 +514,41 @@ export const LocalGame = () => {
     setPendingPromotion(null);
   }
 
-  function onPieceDrop(args: { sourceSquare: string; targetSquare: string | null }): boolean {
-    const { sourceSquare, targetSquare } = args;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function onPieceDrop(sourceOrArgs: any, target?: string | null, pieceStr?: string): boolean {
+    let sourceSquare: string;
+    let targetSquare: string | null;
+    let piece: string | undefined;
+    if (typeof sourceOrArgs === 'object') {
+      sourceSquare = sourceOrArgs.sourceSquare;
+      targetSquare = sourceOrArgs.targetSquare;
+      piece = sourceOrArgs.piece;
+    } else {
+      sourceSquare = sourceOrArgs;
+      targetSquare = target || null;
+      piece = pieceStr;
+    }
+
+    if (setupMode) {
+      if (!targetSquare && sourceSquare !== 'spare') {
+        game.remove(sourceSquare as Square);
+        setGame(new Chess(game.fen()));
+        return true;
+      }
+      if (targetSquare === 'spare') return true;
+      if (sourceSquare !== 'spare') game.remove(sourceSquare as Square);
+      if (piece) {
+        const color = piece[0] as 'w' | 'b';
+        const type = piece[1].toLowerCase() as PieceSymbol;
+        try {
+          game.put({ type, color }, targetSquare as Square);
+          setGame(new Chess(game.fen()));
+          return true;
+        } catch { return false; }
+      }
+      return false;
+    }
+
     if (!targetSquare) return false;
     const sourcePiece = game.get(sourceSquare as Square);
     if (!sourcePiece || sourcePiece.color !== game.turn()) return false;
@@ -760,7 +641,13 @@ export const LocalGame = () => {
   }
 
   function onFlip(): void {
-    setBoardOrientation(prev => prev === 'white' ? 'black' : 'white');
+    if (flipState !== 'normal') return;
+    setFlipState('flipping-out');
+    setTimeout(() => {
+      setBoardOrientation(prev => prev === 'white' ? 'black' : 'white');
+      setFlipState('flipping-in');
+      setTimeout(() => setFlipState('normal'), 50);
+    }, 400);
   }
 
   function downloadPGN(): void {
@@ -790,13 +677,23 @@ export const LocalGame = () => {
   };
   const material = getMaterialAdvantage();
 
+  const handleEmote = (playerColor: 'w' | 'b') => {
+    const emojis = ['😅', '🏆', '👏', '🤔', '🔥', '💀'];
+    const random = emojis[Math.floor(Math.random() * emojis.length)];
+    if (playerColor === 'w') {
+      setEmoteW(random);
+      setTimeout(() => setEmoteW(null), 2000);
+    } else {
+      setEmoteB(random);
+      setTimeout(() => setEmoteB(null), 2000);
+    }
+  };
+
   const currentStyle = PIECE_STYLES.find(s => s.id === pieceStyle) || PIECE_STYLES[0];
 
   const makePlayerCard = (color: 'w' | 'b') => {
     const isActive = game.turn() === color && !game.isGameOver() && !manualResult;
     const timeLeft = color === 'w' ? whiteTime : blackTime;
-    const captured = color === 'w' ? capturedByWhite : capturedByBlack;
-    const matAdv = color === 'w' ? material.w : material.b;
     const label = color === 'w' ? 'White' : 'Black';
     const kingSymbol = <div style={{ width: 28, height: 28 }}><ChessPieceSVG code={color === 'w' ? 'wK' : 'bK'} styleId={pieceStyle} /></div>;
     const isLowTime = timeLeft <= 30 && isActive;
@@ -808,9 +705,11 @@ export const LocalGame = () => {
 
         <div className="player-info">
           {/* King avatar */}
-          <div className={`player-avatar player-avatar-${color}`}>
+          <div className={`player-avatar player-avatar-${color}`} onClick={() => handleEmote(color)} style={{ cursor: 'pointer' }} title="Click to emote!">
             <span className="player-king-icon">{kingSymbol}</span>
             <div className="player-status-dot" />
+            {color === 'w' && emoteW && <div className="emote-popup">{emoteW}</div>}
+            {color === 'b' && emoteB && <div className="emote-popup">{emoteB}</div>}
           </div>
 
           {/* Name + captured */}
@@ -820,14 +719,21 @@ export const LocalGame = () => {
               {isActive && <span className="player-turn-badge">Your Turn</span>}
             </div>
             <div className="player-captured-row">
-              {captured.slice(0, 8).map((p, i) => (
-                <span key={i} style={{ width: '18px', height: '18px', display: 'inline-block' }}>
-                  <ChessPieceSVG code={`${color === 'w' ? 'b' : 'w'}${p.toUpperCase()}`} styleId={pieceStyle} />
-                </span>
-              ))}
-              {captured.length > 8 && <span className="player-cap-more">+{captured.length - 8}</span>}
-              {captured.length === 0 && <span className="player-cap-empty">ÔÇö</span>}
-              {matAdv > 0 && <span className="player-material">+{matAdv}</span>}
+              {color === 'w' ? (
+                <>
+                  {capturedByWhite.sort((a, b) => { const v: Record<string, number> = { q: 9, r: 5, b: 3, n: 3, p: 1, k: 0 }; return v[b] - v[a]; }).map((p, i) => (
+                    <span key={i} style={{ width: '16px', height: '16px', display: 'inline-block' }}><ChessPieceSVG code={`b${p.toUpperCase()}`} styleId={pieceStyle} /></span>
+                  ))}
+                  {material.w > 0 && <span className="player-material">+{material.w}</span>}
+                </>
+              ) : (
+                <>
+                  {capturedByBlack.sort((a, b) => { const v: Record<string, number> = { q: 9, r: 5, b: 3, n: 3, p: 1, k: 0 }; return v[b] - v[a]; }).map((p, i) => (
+                    <span key={i} style={{ width: '16px', height: '16px', display: 'inline-block' }}><ChessPieceSVG code={`w${p.toUpperCase()}`} styleId={pieceStyle} /></span>
+                  ))}
+                  {material.b > 0 && <span className="player-material">+{material.b}</span>}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -846,7 +752,7 @@ export const LocalGame = () => {
   const whitePlayerCard = makePlayerCard('w');
 
   return (
-    <div className="game-grid">
+    <div className="game-page game-grid" data-theme={boardTheme}>
 
       {/* Left Column: Move History */}
       <div className="column-left">
@@ -915,10 +821,15 @@ export const LocalGame = () => {
 
         {/* The Board Area */}
         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%', maxWidth: '800px', margin: '0 auto', gap: '16px', flex: 1, minHeight: 0 }}>
-          
+
+          {/* Eval Bar */}
+          <div className={`eval-bar-container ${boardOrientation === 'black' ? 'black-oriented' : ''}`}>
+            <div className="eval-bar-fill" style={{ height: `${Math.max(5, Math.min(95, 50 + (material.w - material.b) * 4))}%` }} />
+          </div>
+
           {/* White pieces killed by black (Black's captures) */}
           <div className="captured-sidebar">
-            <span className="captured-sidebar-label">White<br/>Captured</span>
+            <span className="captured-sidebar-label">White<br />Captured</span>
             {material.b > 0 && <span className="captured-sidebar-advantage">+{material.b}</span>}
             <div className="captured-sidebar-grid">
               {capturedByBlack.map((p, i) => <div key={`w-${i}`} className="captured-sidebar-piece"><PieceIcon type={p} color="w" styleId={pieceStyle} /></div>)}
@@ -927,7 +838,7 @@ export const LocalGame = () => {
 
           <div
             ref={boardContainerRef}
-            className={`board-wrapper ${is3D ? 'is-3d' : ''} ${boardShake ? 'shake-error' : ''} ${game.isCheck() ? 'check-alert' : game.turn() === 'w' ? 'turn-white' : 'turn-black'}`}
+            className={`board-wrapper board-flip-wrapper ${flipState === 'flipping-out' ? 'board-flip-out' : flipState === 'flipping-in' ? 'board-flip-in' : ''} ${boardShake ? 'shake-error' : ''} ${game.isCheck() ? 'check-alert' : game.turn() === 'w' ? 'turn-white' : 'turn-black'}`}
             style={{ height: '100%', maxHeight: '100%', flexShrink: 1, minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center' }}
           >
             <Chessboard
@@ -941,9 +852,15 @@ export const LocalGame = () => {
                 boardOrientation,
                 allowDragging: true,
                 allowDragOffBoard: true,
-                animationDurationInMs: 180,
-                darkSquareStyle: { backgroundColor: getThemeStyles().dark },
-                lightSquareStyle: { backgroundColor: getThemeStyles().light },
+                // @ts-expect-error - Custom options extension
+                sparePieces: setupMode,
+                // @ts-expect-error - Custom options extension
+                dropOffBoardAction: setupMode ? 'trash' : 'snapback',
+                animationDurationInMs: 300,
+                showBoardNotation: true,
+                customNotationStyle: { fontWeight: 'bold', fontSize: '14px', opacity: 0.8 },
+                darkSquareStyle: { backgroundColor: getThemeStyles().dark, transition: 'background-color 0.4s ease' },
+                lightSquareStyle: { backgroundColor: getThemeStyles().light, transition: 'background-color 0.4s ease' },
                 squareStyles: optionSquares,
                 boardStyle: { cursor: 'pointer' },
                 draggingPieceStyle: { zIndex: 9999, cursor: 'grabbing', transform: 'scale(1.1)', filter: 'drop-shadow(0px 10px 15px rgba(0,0,0,0.5))' },
@@ -954,7 +871,7 @@ export const LocalGame = () => {
 
           {/* Black pieces killed by white (White's captures) */}
           <div className="captured-sidebar">
-            <span className="captured-sidebar-label">Black<br/>Captured</span>
+            <span className="captured-sidebar-label">Black<br />Captured</span>
             {material.w > 0 && <span className="captured-sidebar-advantage">+{material.w}</span>}
             <div className="captured-sidebar-grid">
               {capturedByWhite.map((p, i) => <div key={`b-${i}`} className="captured-sidebar-piece"><PieceIcon type={p} color="b" styleId={pieceStyle} /></div>)}
@@ -1025,22 +942,30 @@ export const LocalGame = () => {
                 </button>
               </div>
               <div className="controls-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-                <button onClick={() => { if (!game.isGameOver()) { toast.success('Draw agreed'); setManualResult('DRAW AGREED'); setShowEndModal(true); } }} className="control-btn" aria-label="Offer Draw" tabIndex={0}>
+                <button onClick={() => { if (!game.isGameOver()) setConfirmAction('draw'); }} className="control-btn" aria-label="Offer Draw" tabIndex={0}>
                   <Handshake style={{ width: '16px', height: '16px' }} /> <span className="control-text">Draw</span>
                 </button>
-                <button onClick={() => { if (!game.isGameOver()) { toast.error('You resigned'); setManualResult(game.turn() === 'w' ? 'WHITE RESIGNED' : 'BLACK RESIGNED'); setShowEndModal(true); } }} className="control-btn danger" aria-label="Resign" tabIndex={0}>
+                <button onClick={() => { if (!game.isGameOver()) setConfirmAction('resign'); }} className="control-btn danger" aria-label="Resign" tabIndex={0}>
                   <Flag style={{ width: '16px', height: '16px' }} /> <span className="control-text">Resign</span>
                 </button>
               </div>
-              <div className="controls-row" style={{ gridTemplateColumns: '1fr' }}>
+              <div className="controls-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+                <button onClick={() => setBlindfoldMode(!blindfoldMode)} className={`control-btn ${blindfoldMode ? 'active' : ''}`} aria-label="Blindfold Mode">
+                  <span className="control-text">{blindfoldMode ? 'Disable Blindfold' : 'Blindfold'}</span>
+                </button>
+                <button onClick={() => setSetupMode(!setupMode)} className={`control-btn ${setupMode ? 'active' : ''}`} aria-label="Setup Mode">
+                  <span className="control-text">Setup Mode</span>
+                </button>
+              </div>
+              <div className="controls-row" style={{ gridTemplateColumns: setupMode ? 'repeat(2, 1fr)' : '1fr' }}>
                 <button onClick={onRestart} className="control-btn primary" aria-label="New Game" tabIndex={0}>
                   <RotateCcw style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>New Game</span>
                 </button>
-              </div>
-              <div className="controls-row" style={{ gridTemplateColumns: '1fr' }}>
-                <button onClick={() => setIs3D(!is3D)} className={`control-btn ${is3D ? 'active' : ''}`} aria-label="Toggle 3D View" tabIndex={0}>
-                  <Box style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>3D View: {is3D ? 'ON' : 'OFF'}</span>
-                </button>
+                {setupMode && (
+                  <button onClick={() => { game.clear(); setGame(new Chess(game.fen())); }} className="control-btn danger" aria-label="Clear Board">
+                    <span className="control-text">Clear</span>
+                  </button>
+                )}
               </div>
               <div className="controls-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
                 {/* Board Theme Dropdown */}
@@ -1065,7 +990,7 @@ export const LocalGame = () => {
                         className="dropdown-menu"
                         style={{ bottom: 'calc(100% + 6px)', left: 0, right: 'auto', minWidth: '140px' }}
                       >
-                        {[{ id: 'classic', label: 'Classic', icon: 'Ô¼£' }, { id: 'wood', label: 'Wood', icon: '­ƒ¬Á' }, { id: 'neon', label: 'Neon', icon: '­ƒÆí' }].map(t => (
+                        {[{ id: 'classic', label: 'Classic', icon: '♟️' }, { id: 'wood', label: 'Wood', icon: '🪵' }, { id: 'neon', label: 'Neon', icon: '⚡' }].map(t => (
                           <button
                             key={t.id}
                             onClick={(e) => { e.stopPropagation(); setBoardTheme(t.id as 'classic' | 'wood' | 'neon'); setThemeDropdownOpen(false); }}
@@ -1093,7 +1018,7 @@ export const LocalGame = () => {
                 <div ref={pieceStyleDropdownRef} style={{ position: 'relative' }}>
                   <button
                     className="control-btn"
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', padding: '6px 12px' }}
                     onClick={() => { setPieceStyleDropdownOpen(v => !v); setThemeDropdownOpen(false); }}
                   >
                     <Layers style={{ width: '15px', height: '15px', flexShrink: 0 }} />
@@ -1297,8 +1222,34 @@ export const LocalGame = () => {
             </motion.div>
           </motion.div>
         )}
+        {/* Confirm Action Modal */}
+        {confirmAction && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <motion.div className="modal-box center relative z-10" initial={{ scale: 0.8, y: 50, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}>
+              <h2 className="modal-title" style={{ fontSize: '32px' }}>Are you sure?</h2>
+              <p className="modal-subtitle" style={{ fontSize: '18px', color: '#94A3B8' }}>
+                Do you really want to {confirmAction}?
+              </p>
+              <div style={{ width: '100%', marginTop: '24px', display: 'flex', gap: '12px' }}>
+                <button onClick={() => {
+                  if (confirmAction === 'resign') {
+                    setManualResult(game.turn() === 'w' ? 'WHITE RESIGNED' : 'BLACK RESIGNED');
+                  } else {
+                    setManualResult('DRAW AGREED');
+                  }
+                  setShowEndModal(true);
+                  setConfirmAction(null);
+                }} className="modal-btn-primary" style={{ padding: '16px', flex: 1, background: confirmAction === 'resign' ? 'var(--color-danger)' : undefined }}>
+                  Yes, {confirmAction}
+                </button>
+                <button onClick={() => setConfirmAction(null)} className="modal-btn-secondary" style={{ padding: '16px', flex: 1 }}>
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
-
     </div>
   );
 };
