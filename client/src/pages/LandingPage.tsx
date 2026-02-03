@@ -124,7 +124,7 @@ function Preloader({ onComplete }: { onComplete: () => void }) {
 
 // ─── Navigation ─────────────────────────────────────────
 
-function Navigation({ scrollContainerRef }: { scrollContainerRef?: React.RefObject<HTMLDivElement> }) {
+function Navigation({ scrollContainerRef }: { scrollContainerRef?: React.RefObject<HTMLDivElement | null> }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
 
@@ -828,7 +828,7 @@ function Contact() {
 
 const FRAME_COUNT = 210;
 
-function BackgroundSequence({ scrollContainerRef }: { scrollContainerRef: React.RefObject<HTMLDivElement> }) {
+function BackgroundSequence({ scrollContainerRef }: { scrollContainerRef: React.RefObject<HTMLDivElement | null> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
 
