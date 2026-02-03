@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RoundedBox } from '@react-three/drei';
@@ -60,7 +60,7 @@ function BoardSquares() {
     return [light, dark];
   }, []);
 
-  useMemo(() => {
+  useEffect(() => {
     if (lightRef.current) {
       lightMatrices.forEach((m, i) => lightRef.current!.setMatrixAt(i, m));
       lightRef.current.instanceMatrix.needsUpdate = true;
@@ -69,7 +69,7 @@ function BoardSquares() {
       darkMatrices.forEach((m, i) => darkRef.current!.setMatrixAt(i, m));
       darkRef.current.instanceMatrix.needsUpdate = true;
     }
-  });
+  }, [lightMatrices, darkMatrices]);
 
   return (
     <group>

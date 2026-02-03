@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Camera, CameraOff } from 'lucide-react';
 import { GestureService } from '../services/GestureService';
 import { useGestureStore } from '../store/useGestureStore';
@@ -6,7 +6,6 @@ import { useGestureStore } from '../store/useGestureStore';
 export const CameraPanel = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isReady, setIsReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const { isActive, setIsActive, gesture, isPinching } = useGestureStore();
 
   useEffect(() => {
@@ -31,10 +30,9 @@ export const CameraPanel = () => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           setIsActive(true);
-          setError(null);
         }
       } catch (err) {
-        setError('Camera permission denied or unavailable.');
+        console.error('Camera permission denied or unavailable.', err);
       }
     }
   };

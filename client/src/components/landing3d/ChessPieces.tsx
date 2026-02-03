@@ -1,5 +1,4 @@
-import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useMemo } from 'react';
 import * as THREE from 'three';
 import { SQUARE_SIZE, BOARD_EXTENT, BOARD_THICKNESS } from './ChessBoard';
 
@@ -245,30 +244,6 @@ export const INITIAL_PIECES: PieceData[] = [
   { id:'bN2', type:'knight', color:'black', row:7, col:6 },
   { id:'bR2', type:'rook',   color:'black', row:7, col:7 },
 ];
-
-// ─── Animated piece (handles the "in-flight" lift) ─────────
-interface AnimatedPieceProps {
-  piece: PieceData;
-  liftY?: number;
-}
-
-function AnimatedPiece({ piece, liftY = 0 }: AnimatedPieceProps) {
-  const ref = useRef<THREE.Mesh>(null);
-  const pos = piecePos(piece.row, piece.col);
-  const mat = piece.color === 'white' ? WHITE_MAT : BLACK_MAT;
-  const geo = useMemo(() => getGeo(piece.type), [piece.type]);
-
-  useFrame(() => {
-    if (ref.current) {
-      ref.current.position.y = pos[1] + liftY;
-    }
-  });
-
-  return (
-    <mesh ref={ref} geometry={geo} material={mat}
-      position={[pos[0], pos[1] + liftY, pos[2]]} castShadow />
-  );
-}
 
 export function ChessPieces() {
   return (
