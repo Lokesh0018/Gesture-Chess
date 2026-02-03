@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js';
-import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers } from 'lucide-react';
+import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import { CameraPanel } from '../components/CameraPanel';
 import './Game.css';
 
@@ -126,10 +127,51 @@ function buildCustomPieces(styleId: PieceStyleId, blindfold: boolean): PieceRend
   return obj as PieceRenderObject;
 }
 
+const AdvantageGraph = ({ gameHistory }: { gameHistory: string[] }) => {
+  const data = [0]; 
+  const values = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+  const tempGame = new Chess();
+  
+  gameHistory.forEach(move => {
+    tempGame.move(move);
+    let wScore = 0;
+    let bScore = 0;
+    tempGame.board().forEach(row => row.forEach(piece => {
+      if (piece) {
+        if (piece.color === 'w') wScore += values[piece.type as keyof typeof values];
+        else bScore += values[piece.type as keyof typeof values];
+      }
+    }));
+    data.push(wScore - bScore);
+  });
 
+  const max = Math.max(...data, 5);
+  const min = Math.min(...data, -5);
+  const range = max - min;
+  const width = 300;
+  const height = 100;
+  
+  const points = data.map((d, i) => {
+    const x = (i / Math.max(1, data.length - 1)) * width;
+    const y = height - ((d - min) / range) * height;
+    return `${x},${y}`;
+  }).join(' L ');
+  
+  const zeroY = height - ((0 - min) / range) * height;
 
-
-
+  return (
+    <div style={{ width: '100%', marginTop: '16px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px' }}>
+      <div style={{ fontSize: '12px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', textAlign: 'center' }}>Advantage Over Time</div>
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+        <line x1="0" y1={zeroY} x2={width} y2={zeroY} stroke="#94A3B8" strokeWidth="1" strokeDasharray="4" />
+        <path d={`M ${points}`} fill="none" stroke="var(--color-accent)" strokeWidth="2" />
+        {data.length > 0 && (
+          <circle cx={width} cy={height - ((data[data.length - 1] - min) / range) * height} r="4" fill="var(--color-accent)" />
+        )}
+      </svg>
+    </div>
+  );
+};
 
 function getKingSquare(game: Chess): string | null {
   const board = game.board();
@@ -262,6 +304,12 @@ export const LocalGame = () => {
   const [setupMode, setSetupMode] = useState(false);
   const [emoteW, setEmoteW] = useState<string | null>(null);
   const [emoteB, setEmoteB] = useState<string | null>(null);
+  
+  // Batch 2 features
+  const [whiteName, setWhiteName] = useState('White');
+  const [blackName, setBlackName] = useState('Black');
+  const [editingName, setEditingName] = useState<'w' | 'b' | null>(null);
+  const [reviewFen, setReviewFen] = useState<string | null>(null);
 
   const turnRef = useRef(game.turn());
   const timeoutHandledRef = useRef(false);
@@ -421,9 +469,17 @@ export const LocalGame = () => {
   useEffect(() => {
     if (game.isGameOver()) {
       setShowEndModal(true);
+      if (game.isCheckmate()) {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#ef4444', '#3b82f6', '#f59e0b', '#10b981']
+        });
+      }
     } else if (game.isCheck()) {
       toast('Check!', {
-        icon: 'ÔÜá´©Å',
+        icon: '⚠️',
         style: { borderRadius: '12px', background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-color)' }
       });
     }
@@ -662,6 +718,47 @@ export const LocalGame = () => {
     URL.revokeObjectURL(url);
   }
 
+  function handleReviewMove(moveIndex: number, isWhite: boolean) {
+    if (moveIndex === -1) {
+      setReviewFen(null); // Return to live game
+      return;
+    }
+    const tempGame = new Chess();
+    const history = game.history();
+    const limit = moveIndex * 2 + (isWhite ? 0 : 1);
+    for (let i = 0; i <= limit && i < history.length; i++) {
+      tempGame.move(history[i]);
+    }
+    setReviewFen(tempGame.fen());
+  }
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          onUndo();
+          break;
+        case 'ArrowRight':
+          onRedo();
+          break;
+        case 'f':
+        case 'F':
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen().catch(() => {});
+          }
+          break;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [game, redoStack]);
+
   const getMaterialAdvantage = () => {
     const values = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
     let wScore = 0;
@@ -694,7 +791,7 @@ export const LocalGame = () => {
   const makePlayerCard = (color: 'w' | 'b') => {
     const isActive = game.turn() === color && !game.isGameOver() && !manualResult;
     const timeLeft = color === 'w' ? whiteTime : blackTime;
-    const label = color === 'w' ? 'White' : 'Black';
+    const label = color === 'w' ? whiteName : blackName;
     const kingSymbol = <div style={{ width: 28, height: 28 }}><ChessPieceSVG code={color === 'w' ? 'wK' : 'bK'} styleId={pieceStyle} /></div>;
     const isLowTime = timeLeft <= 30 && isActive;
 
@@ -715,7 +812,23 @@ export const LocalGame = () => {
           {/* Name + captured */}
           <div className="player-details">
             <div className="player-name-row">
-              <span className="player-name">{label}</span>
+              {editingName === color ? (
+                <input
+                  type="text"
+                  autoFocus
+                  value={color === 'w' ? whiteName : blackName}
+                  onChange={(e) => color === 'w' ? setWhiteName(e.target.value) : setBlackName(e.target.value)}
+                  onBlur={() => setEditingName(null)}
+                  onKeyDown={(e) => e.key === 'Enter' && setEditingName(null)}
+                  className="player-name-input"
+                  style={{
+                    background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-color)',
+                    padding: '2px 4px', borderRadius: '4px', outline: 'none', width: '100px', fontSize: '15px'
+                  }}
+                />
+              ) : (
+                <span className="player-name" onClick={() => setEditingName(color)} style={{ cursor: 'pointer' }} title="Click to edit name">{label}</span>
+              )}
               {isActive && <span className="player-turn-badge">Your Turn</span>}
             </div>
             <div className="player-captured-row">
@@ -759,9 +872,17 @@ export const LocalGame = () => {
         <div className="card history-card">
           <div className="card-header">
             <div className="card-header-title">Move History</div>
-            <button onClick={downloadPGN} className="nav-btn-icon" title="Download PGN" style={{ padding: '0', width: '20px', height: '20px' }}>
-              <Download style={{ width: '20px', height: '20px' }} />
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => {
+                navigator.clipboard.writeText(game.fen());
+                toast.success('FEN copied to clipboard!');
+              }} className="nav-btn-icon" title="Copy FEN" style={{ padding: '0', width: '20px', height: '20px' }}>
+                <Copy style={{ width: '20px', height: '20px' }} />
+              </button>
+              <button onClick={downloadPGN} className="nav-btn-icon" title="Download PGN" style={{ padding: '0', width: '20px', height: '20px' }}>
+                <Download style={{ width: '20px', height: '20px' }} />
+              </button>
+            </div>
           </div>
           <div className="history-table-header">
             <div>Move</div>
@@ -787,15 +908,19 @@ export const LocalGame = () => {
                   </div>
                   <div
                     className={`history-move ${isWhiteLast ? 'active' : ''}`}
+                    onClick={() => handleReviewMove(i, true)}
                     onMouseEnter={() => { const m = game.history({ verbose: true })[i * 2]; if (m) setHoveredMove({ from: m.from, to: m.to }); }}
                     onMouseLeave={() => setHoveredMove(null)}
+                    style={{ cursor: 'pointer' }}
                   >
                     {renderMove(pair.w, 'w')}
                   </div>
                   <div
                     className={`history-move ${isBlackLast ? 'active' : ''}`}
+                    onClick={() => pair.b && handleReviewMove(i, false)}
                     onMouseEnter={() => { const m = game.history({ verbose: true })[i * 2 + 1]; if (m) setHoveredMove({ from: m.from, to: m.to }); }}
                     onMouseLeave={() => setHoveredMove(null)}
+                    style={{ cursor: pair.b ? 'pointer' : 'default' }}
                   >
                     {renderMove(pair.b, 'b')}
                   </div>
@@ -839,22 +964,38 @@ export const LocalGame = () => {
           <div
             ref={boardContainerRef}
             className={`board-wrapper board-flip-wrapper ${flipState === 'flipping-out' ? 'board-flip-out' : flipState === 'flipping-in' ? 'board-flip-in' : ''} ${boardShake ? 'shake-error' : ''} ${game.isCheck() ? 'check-alert' : game.turn() === 'w' ? 'turn-white' : 'turn-black'}`}
-            style={{ height: '100%', maxHeight: '100%', flexShrink: 1, minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center' }}
+            style={{ height: '100%', maxHeight: '100%', flexShrink: 1, minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center', position: 'relative' }}
           >
             <Chessboard
               options={{
                 id: 'LocalBoard',
-                position: game.fen(),
-                onPieceDrop,
-                onPieceClick,
-                onSquareClick,
-                onSquareRightClick: () => setSelectedSquare(''),
-                boardOrientation,
+                position: reviewFen || game.fen(),
+                onPieceDrop: (args: any, arg2?: any, arg3?: any) => {
+                  if (reviewFen) {
+                    setReviewFen(null);
+                    // Let the live game handle the move attempt
+                    setTimeout(() => onPieceDrop(args, arg2, arg3), 0);
+                    return false; // Reject the drop on the historical board
+                  }
+                  return onPieceDrop(args, arg2, arg3);
+                },
+                onPieceClick: (args) => {
+                  if (reviewFen) setReviewFen(null);
+                  else onPieceClick(args);
+                },
+                onSquareClick: (sq) => {
+                  if (reviewFen) setReviewFen(null);
+                  else onSquareClick(sq);
+                },
+                onSquareRightClick: () => {
+                  if (reviewFen) setReviewFen(null);
+                  else setSelectedSquare('');
+                },
                 allowDragging: true,
+                boardOrientation,
                 allowDragOffBoard: true,
                 // @ts-expect-error - Custom options extension
                 sparePieces: setupMode,
-                // @ts-expect-error - Custom options extension
                 dropOffBoardAction: setupMode ? 'trash' : 'snapback',
                 animationDurationInMs: 300,
                 showBoardNotation: true,
@@ -949,12 +1090,21 @@ export const LocalGame = () => {
                   <Flag style={{ width: '16px', height: '16px' }} /> <span className="control-text">Resign</span>
                 </button>
               </div>
-              <div className="controls-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
+              <div className="controls-row" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
                 <button onClick={() => setBlindfoldMode(!blindfoldMode)} className={`control-btn ${blindfoldMode ? 'active' : ''}`} aria-label="Blindfold Mode">
                   <span className="control-text">{blindfoldMode ? 'Disable Blindfold' : 'Blindfold'}</span>
                 </button>
                 <button onClick={() => setSetupMode(!setupMode)} className={`control-btn ${setupMode ? 'active' : ''}`} aria-label="Setup Mode">
                   <span className="control-text">Setup Mode</span>
+                </button>
+                <button onClick={() => {
+                  if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                  } else {
+                    document.exitFullscreen().catch(() => {});
+                  }
+                }} className="control-btn" aria-label="Fullscreen">
+                  <span className="control-text">Fullscreen</span>
                 </button>
               </div>
               <div className="controls-row" style={{ gridTemplateColumns: setupMode ? 'repeat(2, 1fr)' : '1fr' }}>
@@ -967,6 +1117,18 @@ export const LocalGame = () => {
                   </button>
                 )}
               </div>
+              {setupMode && (
+                <div className="controls-row" style={{ gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '8px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>White Time (s)</label>
+                    <input type="number" value={whiteTime} onChange={(e) => setWhiteTime(Math.max(0, parseInt(e.target.value) || 0))} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '14px', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Black Time (s)</label>
+                    <input type="number" value={blackTime} onChange={(e) => setBlackTime(Math.max(0, parseInt(e.target.value) || 0))} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '14px', outline: 'none' }} />
+                  </div>
+                </div>
+              )}
               <div className="controls-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
                 {/* Board Theme Dropdown */}
                 <div ref={themeDropdownRef} style={{ position: 'relative' }}>
@@ -1157,6 +1319,18 @@ export const LocalGame = () => {
                     : (manualResult || gameStatus)}
               </p>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%', marginTop: '16px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '1px' }}>Moves</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff' }}>{Math.ceil(game.history().length / 2)}</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '1px' }}>Total Captures</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff' }}>{capturedByWhite.length + capturedByBlack.length}</div>
+                </div>
+              </div>
+              
+              <AdvantageGraph gameHistory={game.history()} />
               <div style={{ width: '100%', marginTop: '24px' }}>
                 <button onClick={() => { onRestart(); setShowEndModal(false); }} className="modal-btn-primary" style={{ padding: '16px', fontSize: '16px' }}>
                   Play Again
