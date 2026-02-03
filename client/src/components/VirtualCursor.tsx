@@ -29,13 +29,29 @@ export const VirtualCursor = () => {
       clientX: px,
       clientY: py,
       button: 0,
-      buttons: isPinching ? 1 : 0
+      buttons: isPinching ? 1 : 0,
+      pointerId: 9999,
+      pointerType: 'mouse',
+      isPrimary: true
     };
 
-    // We only simulate clicks to prevent fighting with the physical mouse's pointermove events.
-    // This perfectly satisfies the "Hover -> Click -> Select -> Move -> Click -> Move" requirement.
-    if (!isPinching && prevPinching.current) {
+    if (isPinching && !prevPinching.current) {
+      // Pinch started: trigger grab
+      el.dispatchEvent(new PointerEvent('pointerdown', eventInit));
+      el.dispatchEvent(new MouseEvent('mousedown', eventInit));
+    } else if (isPinching && prevPinching.current) {
+      // Pinch holding: trigger drag
+      el.dispatchEvent(new PointerEvent('pointermove', eventInit));
+      el.dispatchEvent(new MouseEvent('mousemove', eventInit));
+    } else if (!isPinching && prevPinching.current) {
+      // Pinch released: trigger drop
+      el.dispatchEvent(new PointerEvent('pointerup', eventInit));
+      el.dispatchEvent(new MouseEvent('mouseup', eventInit));
       el.dispatchEvent(new MouseEvent('click', eventInit));
+    } else {
+      // Hovering
+      el.dispatchEvent(new PointerEvent('pointermove', eventInit));
+      el.dispatchEvent(new MouseEvent('mousemove', eventInit));
     }
 
     prevPinching.current = isPinching;
