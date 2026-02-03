@@ -8,6 +8,8 @@ import confetti from 'canvas-confetti';
 import { CameraPanel } from '../components/CameraPanel';
 import './Game.css';
 
+type Piece = 'wP' | 'wN' | 'wB' | 'wR' | 'wQ' | 'wK' | 'bP' | 'bN' | 'bB' | 'bR' | 'bQ' | 'bK';
+
 type PromotionMove = { from: Square; to: Square };
 
 const PROMOTION_PIECES: PieceSymbol[] = ['q', 'r', 'b', 'n'];
@@ -284,6 +286,8 @@ export const LocalGame = () => {
   const [capturedByWhite, setCapturedByWhite] = useState<PieceSymbol[]>([]);
   const [capturedByBlack, setCapturedByBlack] = useState<PieceSymbol[]>([]);
   const [showEndModal, setShowEndModal] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(true);
+  const [setupModalPage, setSetupModalPage] = useState<'main' | 'custom'>('main');
   const [gameDuration, setGameDuration] = useState(0);
   const [manualResult, setManualResult] = useState<string | null>(null);
   const [boardShake, setBoardShake] = useState(false);
@@ -680,8 +684,8 @@ export const LocalGame = () => {
     }
   }
 
-  function onRestart(): void {
-    const fresh = new Chess();
+  function startNewGame(withSetup: boolean, customGame: Chess | null = null): void {
+    const fresh = customGame || new Chess();
     setGame(fresh);
     setSelectedSquare('');
     setRedoStack([]);
@@ -689,10 +693,16 @@ export const LocalGame = () => {
     setCapturedByWhite([]);
     setCapturedByBlack([]);
     setShowEndModal(false);
+    setShowSetupModal(false);
+    setSetupModalPage('main');
     setGameDuration(0);
     setManualResult(null);
-    setWhiteTime(INITIAL_TIME);
-    setBlackTime(INITIAL_TIME);
+    if (!withSetup) {
+      setWhiteTime(INITIAL_TIME);
+      setBlackTime(INITIAL_TIME);
+    }
+    setSetupMode(withSetup);
+    setReviewFen(null);
     timeoutHandledRef.current = false;
   }
 
@@ -952,12 +962,15 @@ export const LocalGame = () => {
             <div className="eval-bar-fill" style={{ height: `${Math.max(5, Math.min(95, 50 + (material.w - material.b) * 4))}%` }} />
           </div>
 
-          {/* White pieces killed by black (Black's captures) */}
           <div className="captured-sidebar">
             <span className="captured-sidebar-label">White<br />Captured</span>
             {material.b > 0 && <span className="captured-sidebar-advantage">+{material.b}</span>}
             <div className="captured-sidebar-grid">
-              {capturedByBlack.map((p, i) => <div key={`w-${i}`} className="captured-sidebar-piece"><PieceIcon type={p} color="w" styleId={pieceStyle} /></div>)}
+              {capturedByBlack.map((p, i) => (
+                <div key={`w-${i}`} className="captured-sidebar-piece" style={{ width: '24px', height: '24px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }}>
+                  <ChessPieceSVG code={("w" + p.toUpperCase()) as Piece} styleId={pieceStyle} />
+                </div>
+              ))}
             </div>
           </div>
 
@@ -968,22 +981,21 @@ export const LocalGame = () => {
           >
             <Chessboard
               options={{
-                id: 'LocalBoard',
+                id: "LocalBoard",
                 position: reviewFen || game.fen(),
                 onPieceDrop: (args: any, arg2?: any, arg3?: any) => {
                   if (reviewFen) {
                     setReviewFen(null);
-                    // Let the live game handle the move attempt
                     setTimeout(() => onPieceDrop(args, arg2, arg3), 0);
-                    return false; // Reject the drop on the historical board
+                    return false;
                   }
                   return onPieceDrop(args, arg2, arg3);
                 },
-                onPieceClick: (args) => {
+                onPieceClick: (args: any) => {
                   if (reviewFen) setReviewFen(null);
                   else onPieceClick(args);
                 },
-                onSquareClick: (sq) => {
+                onSquareClick: (sq: any) => {
                   if (reviewFen) setReviewFen(null);
                   else onSquareClick(sq);
                 },
@@ -992,20 +1004,19 @@ export const LocalGame = () => {
                   else setSelectedSquare('');
                 },
                 allowDragging: true,
-                boardOrientation,
+                boardOrientation: boardOrientation,
                 allowDragOffBoard: true,
-                // @ts-expect-error - Custom options extension
-                sparePieces: setupMode,
-                dropOffBoardAction: setupMode ? 'trash' : 'snapback',
+                // dropOffBoardAction: setupMode ? 'trash' : 'snapback',
                 animationDurationInMs: 300,
-                showBoardNotation: true,
-                customNotationStyle: { fontWeight: 'bold', fontSize: '14px', opacity: 0.8 },
+                showNotation: true,
+                darkSquareNotationStyle: { fontWeight: 'bold', fontSize: '14px', opacity: 0.8 },
+                lightSquareNotationStyle: { fontWeight: 'bold', fontSize: '14px', opacity: 0.8 },
                 darkSquareStyle: { backgroundColor: getThemeStyles().dark, transition: 'background-color 0.4s ease' },
                 lightSquareStyle: { backgroundColor: getThemeStyles().light, transition: 'background-color 0.4s ease' },
                 squareStyles: optionSquares,
                 boardStyle: { cursor: 'pointer' },
                 draggingPieceStyle: { zIndex: 9999, cursor: 'grabbing', transform: 'scale(1.1)', filter: 'drop-shadow(0px 10px 15px rgba(0,0,0,0.5))' },
-                ...(customPieces ? { pieces: customPieces } : {}),
+                pieces: customPieces
               }}
             />
           </div>
@@ -1015,7 +1026,11 @@ export const LocalGame = () => {
             <span className="captured-sidebar-label">Black<br />Captured</span>
             {material.w > 0 && <span className="captured-sidebar-advantage">+{material.w}</span>}
             <div className="captured-sidebar-grid">
-              {capturedByWhite.map((p, i) => <div key={`b-${i}`} className="captured-sidebar-piece"><PieceIcon type={p} color="b" styleId={pieceStyle} /></div>)}
+              {capturedByWhite.map((p, i) => (
+                <div key={`b-${i}`} className="captured-sidebar-piece" style={{ width: '24px', height: '24px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }}>
+                  <ChessPieceSVG code={("b" + p.toUpperCase()) as Piece} styleId={pieceStyle} />
+                </div>
+              ))}
             </div>
           </div>
 
@@ -1107,28 +1122,11 @@ export const LocalGame = () => {
                   <span className="control-text">Fullscreen</span>
                 </button>
               </div>
-              <div className="controls-row" style={{ gridTemplateColumns: setupMode ? 'repeat(2, 1fr)' : '1fr' }}>
-                <button onClick={onRestart} className="control-btn primary" aria-label="New Game" tabIndex={0}>
+              <div className="controls-row" style={{ gridTemplateColumns: '1fr' }}>
+                <button onClick={() => setShowSetupModal(true)} className="control-btn primary" aria-label="New Game" tabIndex={0}>
                   <RotateCcw style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>New Game</span>
                 </button>
-                {setupMode && (
-                  <button onClick={() => { game.clear(); setGame(new Chess(game.fen())); }} className="control-btn danger" aria-label="Clear Board">
-                    <span className="control-text">Clear</span>
-                  </button>
-                )}
               </div>
-              {setupMode && (
-                <div className="controls-row" style={{ gridTemplateColumns: '1fr 1fr', gap: '8px', padding: '8px', background: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>White Time (s)</label>
-                    <input type="number" value={whiteTime} onChange={(e) => setWhiteTime(Math.max(0, parseInt(e.target.value) || 0))} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '14px', outline: 'none' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Black Time (s)</label>
-                    <input type="number" value={blackTime} onChange={(e) => setBlackTime(Math.max(0, parseInt(e.target.value) || 0))} style={{ background: 'transparent', border: '1px solid var(--border-color)', color: '#fff', padding: '4px 8px', borderRadius: '4px', fontSize: '14px', outline: 'none' }} />
-                  </div>
-                </div>
-              )}
               <div className="controls-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
                 {/* Board Theme Dropdown */}
                 <div ref={themeDropdownRef} style={{ position: 'relative' }}>
@@ -1332,7 +1330,7 @@ export const LocalGame = () => {
               
               <AdvantageGraph gameHistory={game.history()} />
               <div style={{ width: '100%', marginTop: '24px' }}>
-                <button onClick={() => { onRestart(); setShowEndModal(false); }} className="modal-btn-primary" style={{ padding: '16px', fontSize: '16px' }}>
+                <button onClick={() => { setShowSetupModal(true); setShowEndModal(false); }} className="modal-btn-primary" style={{ padding: '16px', fontSize: '16px' }}>
                   Play Again
                 </button>
                 <button onClick={() => setShowEndModal(false)} className="modal-btn-secondary" style={{ padding: '16px', fontSize: '16px' }}>
@@ -1386,7 +1384,6 @@ export const LocalGame = () => {
                 </div>
                 <div className="tutorial-target" />
               </div>
-
               <button
                 onClick={closeTutorial}
                 className="tutorial-btn"
@@ -1396,6 +1393,7 @@ export const LocalGame = () => {
             </motion.div>
           </motion.div>
         )}
+
         {/* Confirm Action Modal */}
         {confirmAction && (
           <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -1405,21 +1403,76 @@ export const LocalGame = () => {
                 Do you really want to {confirmAction}?
               </p>
               <div style={{ width: '100%', marginTop: '24px', display: 'flex', gap: '12px' }}>
-                <button onClick={() => {
-                  if (confirmAction === 'resign') {
-                    setManualResult(game.turn() === 'w' ? 'WHITE RESIGNED' : 'BLACK RESIGNED');
-                  } else {
-                    setManualResult('DRAW AGREED');
-                  }
-                  setShowEndModal(true);
-                  setConfirmAction(null);
-                }} className="modal-btn-primary" style={{ padding: '16px', flex: 1, background: confirmAction === 'resign' ? 'var(--color-danger)' : undefined }}>
+                <button
+                  onClick={() => {
+                    if (confirmAction === 'resign') setManualResult(`${game.turn() === 'w' ? 'WHITE' : 'BLACK'} RESIGNED`);
+                    else if (confirmAction === 'draw') setManualResult('DRAW AGREED');
+                    setShowEndModal(true);
+                    setConfirmAction(null);
+                  }}
+                  className="modal-btn-primary"
+                >
                   Yes, {confirmAction}
                 </button>
-                <button onClick={() => setConfirmAction(null)} className="modal-btn-secondary" style={{ padding: '16px', flex: 1 }}>
-                  Cancel
-                </button>
+                <button onClick={() => setConfirmAction(null)} className="modal-btn-secondary">Cancel</button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Pre-Game Setup Modal */}
+        {showSetupModal && (
+          <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ zIndex: 300 }}>
+            <motion.div className="modal-box center relative z-10" initial={{ scale: 0.8, y: 50, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }}>
+              {setupModalPage === 'main' ? (
+                <>
+                  <h2 className="modal-title" style={{ fontSize: '32px' }}>Start New Game</h2>
+                  <p className="modal-subtitle" style={{ fontSize: '18px', color: '#94A3B8' }}>
+                    How would you like to configure this game?
+                  </p>
+                  <div style={{ width: '100%', marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <button onClick={() => startNewGame(false)} className="modal-btn-primary" style={{ padding: '16px', fontSize: '16px' }}>
+                      Standard Game (10 min)
+                    </button>
+                    <button onClick={() => setSetupModalPage('custom')} className="modal-btn-secondary" style={{ padding: '16px', fontSize: '16px' }}>
+                      Custom Setup (Time Odds & Material)
+                    </button>
+                    {(game.history().length > 0 && !game.isGameOver()) && (
+                      <button onClick={() => { setShowSetupModal(false); setSetupModalPage('main'); }} className="modal-btn-secondary" style={{ padding: '16px', fontSize: '16px', opacity: 0.7 }}>
+                        Cancel (Return to Game)
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="modal-title" style={{ fontSize: '32px' }}>Custom Setup</h2>
+                  <p className="modal-subtitle" style={{ fontSize: '18px', color: '#94A3B8', marginBottom: '8px' }}>
+                    Configure time odds. Adjust material by dragging pieces off the board once the game starts.
+                  </p>
+                  <div style={{ width: '100%', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 'bold' }}>White Time (s)</label>
+                        <input type="number" value={whiteTime} onChange={(e) => setWhiteTime(Math.max(0, parseInt(e.target.value) || 0))} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', fontSize: '16px', outline: 'none' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 'bold' }}>Black Time (s)</label>
+                        <input type="number" value={blackTime} onChange={(e) => setBlackTime(Math.max(0, parseInt(e.target.value) || 0))} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.2)', color: '#fff', fontSize: '16px', outline: 'none' }} />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                      <button onClick={() => startNewGame(true)} className="modal-btn-primary" style={{ padding: '16px', fontSize: '16px', flex: 2 }}>
+                        Start Custom Game
+                      </button>
+                      <button onClick={() => setSetupModalPage('main')} className="modal-btn-secondary" style={{ padding: '16px', fontSize: '16px', flex: 1 }}>
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}
