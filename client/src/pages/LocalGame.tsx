@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js';
 import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -423,6 +424,38 @@ export function LocalGame() {
     window.addEventListener('pointerdown', onPointerDown);
     return () => window.removeEventListener('pointerdown', onPointerDown);
   }, [themeDropdownOpen, pieceStyleDropdownOpen]);
+
+  // Save game to backend on completion
+  useEffect(() => {
+    if (showEndModal) {
+      const token = useAuthStore.getState().token;
+      if (token && game.history().length > 0) {
+        // Determine result string
+        let resultStr = 'draw';
+        if (game.isCheckmate() || manualResult?.includes('RESIGNED') || manualResult?.includes('TIMEOUT')) {
+           const winner = game.turn() === 'w' ? 'black' : 'white';
+           // If white resigned, black won.
+           if (manualResult === 'WHITE RESIGNED' || manualResult === 'WHITE TIMEOUT') resultStr = 'loss';
+           else if (manualResult === 'BLACK RESIGNED' || manualResult === 'BLACK TIMEOUT') resultStr = 'win';
+           else resultStr = winner === 'white' ? 'win' : 'loss';
+        }
+        
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/match`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            pgn: game.pgn(),
+            fen: game.fen(),
+            result: resultStr,
+            opponentType: 'local'
+          })
+        }).catch(err => console.error('Failed to save game:', err));
+      }
+    }
+  }, [showEndModal]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');

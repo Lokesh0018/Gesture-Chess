@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { useSettingsStore } from '../store/useSettingsStore';
 import toast from 'react-hot-toast';
 import { motion, type Variants } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
@@ -12,6 +13,7 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const login = useAuthStore((state) => state.login);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,6 +34,10 @@ export const Login = () => {
       }
 
       login(data.user, data.token);
+      
+      // Fetch settings associated with the user account
+      await fetchSettings();
+      
       toast.success('Logged in successfully!');
       navigate('/dashboard');
     } catch (err: any) {

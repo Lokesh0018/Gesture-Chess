@@ -4,6 +4,7 @@ import { Chessboard } from 'react-chessboard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { stockfishService } from '../services/StockfishService';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import './Game.css';
@@ -110,6 +111,29 @@ export const PlayBot = () => {
       else if (game.isDraw()) setGameResult('Game drawn');
       else if (game.isStalemate()) setGameResult('Stalemate');
       else setGameResult('Game Over');
+
+      // Save match
+      const token = useAuthStore.getState().token;
+      if (token && game.history().length > 0) {
+        let resultStr = 'draw';
+        if (game.isCheckmate()) {
+          const winner = game.turn() === 'w' ? 'black' : 'white';
+          resultStr = winner === playerColor ? 'win' : 'loss';
+        }
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/match`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            pgn: game.pgn(),
+            fen: game.fen(),
+            result: resultStr,
+            opponentType: 'bot'
+          })
+        }).catch(err => console.error('Failed to save game:', err));
+      }
     }
   }, [game.fen()]);
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useAuthStore } from './useAuthStore';
 
 interface SettingsState {
   cursorSensitivity: number;
@@ -11,6 +12,7 @@ interface SettingsState {
   pieceTheme: string;
   soundVolume: number;
   updateSettings: (settings: Partial<SettingsState>) => void;
+  fetchSettings: () => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -24,7 +26,45 @@ export const useSettingsStore = create<SettingsState>()(
       boardTheme: 'classic',
       pieceTheme: 'classic',
       soundVolume: 0.8,
-      updateSettings: (newSettings) => set((state) => ({ ...state, ...newSettings })),
+      updateSettings: async (newSettings) => {
+        // Optimistic UI update
+        set((state) => ({ ...state, ...newSettings }));
+        
+        // Sync with server if logged in
+        const token = useAuthStore.getState().token;
+        if (token) {
+          try {
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/settings`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(newSettings)
+            });
+          } catch (e) {
+            console.error('Failed to sync settings with server', e);
+          }
+        }
+      },
+      fetchSettings: async () => {
+        const token = useAuthStore.getState().token;
+        if (token) {
+          try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/settings`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.settings) {
+                set((state) => ({ ...state, ...data.settings }));
+              }
+            }
+          } catch (e) {
+            console.error('Failed to fetch settings from server', e);
+          }
+        }
+      }
     }),
     {
       name: 'gesture-chess-settings',
