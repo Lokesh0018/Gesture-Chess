@@ -12,6 +12,8 @@ import { Register } from './pages/Register';
 import { Profile } from './pages/Profile';
 import { Leaderboard } from './pages/Leaderboard';
 import { NotFound } from './pages/NotFound';
+import { PlayBot } from './pages/PlayBot';
+import { Puzzles } from './pages/Puzzles';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PageTransition } from './components/PageTransition';
@@ -31,6 +33,8 @@ function App() {
             <Route path="login" element={<PageTransition><Login /></PageTransition>} />
             <Route path="register" element={<PageTransition><Register /></PageTransition>} />
             <Route path="local" element={<PageTransition><LocalGame /></PageTransition>} />
+            <Route path="bot" element={<PageTransition><PlayBot /></PageTransition>} />
+            <Route path="puzzles" element={<PageTransition><Puzzles /></PageTransition>} />
             <Route path="leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
             
             <Route element={<ProtectedRoute />}>

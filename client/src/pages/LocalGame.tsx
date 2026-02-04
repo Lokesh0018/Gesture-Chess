@@ -198,7 +198,7 @@ function isPromotionCandidate(game: Chess, from: string, to: string): boolean {
   return isPromotionRank(to, piece.color);
 }
 
-function generateSquareStyles(game: Chess, selectedSquare: string, hoveredMove: { from: string, to: string } | null): Record<string, React.CSSProperties> {
+function generateSquareStyles(game: Chess, selectedSquare: string, hoveredMove: { from: string, to: string } | null, premove: { from: Square, to: Square } | null): Record<string, React.CSSProperties> {
   const styles: Record<string, React.CSSProperties> = {};
 
   const history = game.history({ verbose: true });
@@ -211,6 +211,11 @@ function generateSquareStyles(game: Chess, selectedSquare: string, hoveredMove: 
   if (hoveredMove) {
     styles[hoveredMove.from] = { ...styles[hoveredMove.from], backgroundColor: 'rgba(59, 130, 246, 0.5)' };
     styles[hoveredMove.to] = { ...styles[hoveredMove.to], backgroundColor: 'rgba(59, 130, 246, 0.5)' };
+  }
+
+  if (premove) {
+    styles[premove.from] = { ...styles[premove.from], backgroundColor: 'rgba(235, 97, 80, 0.5)' };
+    styles[premove.to] = { ...styles[premove.to], backgroundColor: 'rgba(235, 97, 80, 0.8)' };
   }
 
   if (game.isCheck()) {
@@ -289,6 +294,7 @@ export const LocalGame = () => {
   const [showSetupModal, setShowSetupModal] = useState(true);
   const [setupModalPage, setSetupModalPage] = useState<'main' | 'custom'>('main');
   const [gameDuration, setGameDuration] = useState(0);
+  const [premove, setPremove] = useState<{ from: Square, to: Square } | null>(null);
   const [manualResult, setManualResult] = useState<string | null>(null);
   const [boardShake, setBoardShake] = useState(false);
   const [whiteTime, setWhiteTime] = useState(INITIAL_TIME);
@@ -319,6 +325,21 @@ export const LocalGame = () => {
   const timeoutHandledRef = useRef(false);
   const themeDropdownRef = useRef<HTMLDivElement>(null);
   const pieceStyleDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Execute Premove
+  useEffect(() => {
+    if (premove && !game.isGameOver()) {
+      const pieceObj = game.get(premove.from);
+      if (pieceObj && pieceObj.color === game.turn()) {
+        const success = requestMove(premove.from, premove.to);
+        if (!success) {
+          setBoardShake(true);
+          setTimeout(() => setBoardShake(false), 500);
+        }
+        setPremove(null);
+      }
+    }
+  }, [game.fen()]);
 
   useEffect(() => {
     if (!localStorage.getItem('tutorialSeen')) {
@@ -412,8 +433,8 @@ export const LocalGame = () => {
     const match = move.match(/^[NBRQK]/);
     if (!match) return <span>{move}</span>;
     const map: Record<string, Record<string, string>> = {
-      'w': { N: 'ÔÖÿ', B: 'ÔÖù', R: 'ÔÖû', Q: 'ÔÖò', K: 'ÔÖö' },
-      'b': { N: 'ÔÖ×', B: 'ÔÖØ', R: 'ÔÖ£', Q: 'ÔÖø', K: 'ÔÖÜ' }
+      'w': { N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔' },
+      'b': { N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚' }
     };
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -426,8 +447,8 @@ export const LocalGame = () => {
   };
 
   const optionSquares = useMemo(
-    () => generateSquareStyles(game, selectedSquare, hoveredMove),
-    [game, selectedSquare, hoveredMove],
+    () => generateSquareStyles(game, selectedSquare, hoveredMove, premove),
+    [game, selectedSquare, hoveredMove, premove],
   );
 
   // Recompute custom board pieces whenever piece style or blindfold changes
@@ -598,8 +619,8 @@ export const LocalGame = () => {
       if (targetSquare === 'spare') return true;
       if (sourceSquare !== 'spare') game.remove(sourceSquare as Square);
       if (piece) {
-        const color = piece[0] as 'w' | 'b';
-        const type = piece[1].toLowerCase() as PieceSymbol;
+        const type = piece.charAt(1).toLowerCase() as PieceSymbol;
+        const color = piece.charAt(0) as Color;
         try {
           game.put({ type, color }, targetSquare as Square);
           setGame(new Chess(game.fen()));
@@ -611,7 +632,15 @@ export const LocalGame = () => {
 
     if (!targetSquare) return false;
     const sourcePiece = game.get(sourceSquare as Square);
-    if (!sourcePiece || sourcePiece.color !== game.turn()) return false;
+    
+    // Premove logic
+    if (sourcePiece && sourcePiece.color !== game.turn()) {
+      setPremove({ from: sourceSquare as Square, to: targetSquare as Square });
+      return false; // Snap back, it's a premove
+    }
+    
+    if (!sourcePiece) return false;
+
     const success = requestMove(sourceSquare, targetSquare);
     if (!success) {
       if (!isMuted) playMoveSound('invalid');
@@ -993,14 +1022,21 @@ export const LocalGame = () => {
                 },
                 onPieceClick: (args: any) => {
                   if (reviewFen) setReviewFen(null);
-                  else onPieceClick(args);
+                  else {
+                    if (premove) setPremove(null);
+                    onPieceClick(args);
+                  }
                 },
                 onSquareClick: (sq: any) => {
                   if (reviewFen) setReviewFen(null);
-                  else onSquareClick(sq);
+                  else {
+                    if (premove) setPremove(null);
+                    onSquareClick(sq);
+                  }
                 },
                 onSquareRightClick: () => {
                   if (reviewFen) setReviewFen(null);
+                  else if (premove) setPremove(null);
                   else setSelectedSquare('');
                 },
                 allowDragging: true,

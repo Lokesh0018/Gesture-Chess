@@ -25,6 +25,12 @@ export const Navbar = () => {
         <Link to="/local" className={`nav-link ${location.pathname === '/local' ? 'active' : ''}`}>
           Local Game
         </Link>
+        <Link to="/bot" className={`nav-link ${location.pathname === '/bot' ? 'active' : ''}`}>
+          Play Bot
+        </Link>
+        <Link to="/puzzles" className={`nav-link ${location.pathname === '/puzzles' ? 'active' : ''}`}>
+          Puzzles
+        </Link>
       </div>
 
       {/* Right: Auth & Theme */}
