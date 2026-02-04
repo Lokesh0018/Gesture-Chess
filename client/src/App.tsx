@@ -14,6 +14,8 @@ import { Leaderboard } from './pages/Leaderboard';
 import { NotFound } from './pages/NotFound';
 import { PlayBot } from './pages/PlayBot';
 import { Puzzles } from './pages/Puzzles';
+import { Analysis } from './pages/Analysis';
+import { Learn } from './pages/Learn';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PageTransition } from './components/PageTransition';
@@ -35,6 +37,8 @@ function App() {
             <Route path="local" element={<PageTransition><LocalGame /></PageTransition>} />
             <Route path="bot" element={<PageTransition><PlayBot /></PageTransition>} />
             <Route path="puzzles" element={<PageTransition><Puzzles /></PageTransition>} />
+            <Route path="analysis" element={<PageTransition><Analysis /></PageTransition>} />
+            <Route path="learn" element={<PageTransition><Learn /></PageTransition>} />
             <Route path="leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
             
             <Route element={<ProtectedRoute />}>

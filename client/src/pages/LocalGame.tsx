@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
+import { useNavigate } from 'react-router-dom';
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js';
 import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -281,7 +282,8 @@ const PieceIcon = ({ type, color, styleId = 'classic' }: { type: PieceSymbol, co
   );
 };
 
-export const LocalGame = () => {
+export function LocalGame() {
+  const navigate = useNavigate();
   const [game, setGame] = useState(new Chess());
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [selectedSquare, setSelectedSquare] = useState('');
@@ -1365,13 +1367,26 @@ export const LocalGame = () => {
               </div>
               
               <AdvantageGraph gameHistory={game.history()} />
-              <div style={{ width: '100%', marginTop: '24px' }}>
+              <div style={{ width: '100%', marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button onClick={() => { setShowSetupModal(true); setShowEndModal(false); }} className="modal-btn-primary" style={{ padding: '16px', fontSize: '16px' }}>
                   Play Again
                 </button>
-                <button onClick={() => setShowEndModal(false)} className="modal-btn-secondary" style={{ padding: '16px', fontSize: '16px' }}>
-                  Review Game
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => navigate('/analysis', { state: { pgn: game.pgn() } })} className="modal-btn-secondary flex-1" style={{ padding: '12px', fontSize: '14px', background: 'var(--color-primary)' }}>
+                    Analyze Game
+                  </button>
+                  <button onClick={() => setShowEndModal(false)} className="modal-btn-secondary flex-1" style={{ padding: '12px', fontSize: '14px' }}>
+                    Review Board
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => { navigator.clipboard.writeText(game.pgn()); toast.success('PGN copied to clipboard'); }} className="modal-btn-secondary flex-1" style={{ padding: '12px', fontSize: '14px', opacity: 0.8 }}>
+                    Copy PGN
+                  </button>
+                  <button onClick={() => { navigator.clipboard.writeText(game.fen()); toast.success('FEN copied to clipboard'); }} className="modal-btn-secondary flex-1" style={{ padding: '12px', fontSize: '14px', opacity: 0.8 }}>
+                    Copy FEN
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

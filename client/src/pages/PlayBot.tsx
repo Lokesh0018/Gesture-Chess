@@ -4,8 +4,32 @@ import { Chessboard } from 'react-chessboard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { stockfishService } from '../services/StockfishService';
 import { useSettingsStore } from '../store/useSettingsStore';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import './Game.css';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
+
+const SOUND_URLS = {
+  move: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3',
+  capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3',
+  check: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3',
+  invalid: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/illegal.mp3'
+};
+
+const audioCache: Record<string, HTMLAudioElement> = {};
+
+function playMoveSound(type: 'move' | 'capture' | 'check' | 'invalid'): void {
+  try {
+    const url = SOUND_URLS[type];
+    if (!url) return;
+    if (!audioCache[url]) audioCache[url] = new Audio(url);
+    const audio = audioCache[url];
+    audio.currentTime = 0;
+    audio.play().catch(() => { });
+  } catch {
+    // Ignore audio errors
+  }
+}
 
 const BOT_LEVELS = [
   { level: 1, name: 'Novice Nick', elo: 600, depth: 1, skill: 0, avatar: '👶' },
@@ -26,10 +50,11 @@ export const PlayBot = () => {
   const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
   const [gameResult, setGameResult] = useState<string | null>(null);
 
-
   const [selectedSquare, setSelectedSquare] = useState<string>('');
 
-  const { pieceTheme, boardTheme } = useSettingsStore();
+  const { pieceTheme, boardTheme, soundVolume } = useSettingsStore();
+  const isMuted = soundVolume === 0;
+  const navigate = useNavigate();
   
   const customPieces = useMemo(() => {
     if (pieceTheme === 'classic') return undefined;
@@ -102,12 +127,19 @@ export const PlayBot = () => {
 
         if (bestMove && game.fen() === fen) { // ensure state hasn't changed
           try {
-            game.move({
+            const gameCopy = new Chess(game.fen());
+            const move = gameCopy.move({
               from: bestMove.substring(0, 2) as Square,
               to: bestMove.substring(2, 4) as Square,
               promotion: bestMove.length > 4 ? bestMove[4] : 'q'
             });
-            setGame(new Chess(game.fen()));
+            setGame(gameCopy);
+            
+            if (!isMuted) {
+              if (gameCopy.isCheck()) playMoveSound('check');
+              else if (move.captured) playMoveSound('capture');
+              else playMoveSound('move');
+            }
           } catch (e) {
             console.error('Bot attempted invalid move:', bestMove);
           }
@@ -123,18 +155,27 @@ export const PlayBot = () => {
     if (game.turn() !== playerColor || isBotThinking) return false;
     
     try {
-      const move = game.move({
+      const gameCopy = new Chess(game.fen());
+      const move = gameCopy.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: piece[1].toLowerCase() ?? 'q'
       });
       
       if (move) {
-        setGame(new Chess(game.fen()));
+        setGame(gameCopy);
         setSelectedSquare('');
+        
+        if (!isMuted) {
+          if (gameCopy.isCheck()) playMoveSound('check');
+          else if (move.captured) playMoveSound('capture');
+          else playMoveSound('move');
+        }
+        
         return true;
       }
     } catch {
+      if (!isMuted) playMoveSound('invalid');
       return false;
     }
     return false;
@@ -160,6 +201,12 @@ export const PlayBot = () => {
       if (move) {
         setGame(new Chess(game.fen()));
         setSelectedSquare('');
+        
+        if (!isMuted) {
+          if (game.isCheck()) playMoveSound('check');
+          else if (move.captured) playMoveSound('capture');
+          else playMoveSound('move');
+        }
       } else {
         const p = game.get(square);
         if (p && p.color === playerColor) setSelectedSquare(square);
@@ -288,10 +335,26 @@ export const PlayBot = () => {
               <h2 className="text-4xl font-bold text-white mb-4">{gameResult}</h2>
               <p className="text-xl text-[var(--text-secondary)] mb-8">Against {selectedLevel.name}</p>
               
-              <div className="flex gap-4">
-                <button onClick={() => setShowSetup(true)} className="px-8 py-4 bg-[var(--color-primary)] hover:bg-blue-600 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(59,130,246,0.4)] flex items-center gap-2 transition-all">
+              <div className="flex flex-col gap-4 w-full px-8">
+                <button onClick={() => setShowSetup(true)} className="w-full py-4 bg-[var(--color-primary)] hover:bg-blue-600 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(59,130,246,0.4)] flex justify-center items-center gap-2 transition-all">
                   <RotateCcw size={20} /> Play Again
                 </button>
+                <div className="flex gap-4">
+                  <button onClick={() => navigate('/analysis', { state: { pgn: game.pgn() } })} className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all">
+                    Analyze
+                  </button>
+                  <button onClick={() => { setGameResult(null); }} className="flex-1 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all">
+                    Board
+                  </button>
+                </div>
+                <div className="flex gap-4">
+                  <button onClick={() => { navigator.clipboard.writeText(game.pgn()); toast.success('PGN copied!'); }} className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white/70 rounded-xl text-sm font-bold transition-all">
+                    Copy PGN
+                  </button>
+                  <button onClick={() => { navigator.clipboard.writeText(game.fen()); toast.success('FEN copied!'); }} className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white/70 rounded-xl text-sm font-bold transition-all">
+                    Copy FEN
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

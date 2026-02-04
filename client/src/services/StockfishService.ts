@@ -3,6 +3,7 @@ export class StockfishService {
   private isReady: boolean = false;
   private resolveBestMove: ((move: string) => void) | null = null;
   private resolveReady: (() => void) | null = null;
+  private onEvalUpdate: ((evaluation: { score: number; isMate: boolean }) => void) | null = null;
 
   constructor() {
     // We copied stockfish.js to the public folder to bypass cross-origin worker restrictions.
@@ -24,6 +25,16 @@ export class StockfishService {
           this.resolveBestMove(match[1]);
           this.resolveBestMove = null;
         }
+      } else if (line.startsWith('info') && this.onEvalUpdate) {
+        // Parse evaluation score: "info depth 10 ... score cp 120 ..." or "score mate -3"
+        const cpMatch = line.match(/score cp (-?\d+)/);
+        const mateMatch = line.match(/score mate (-?\d+)/);
+        
+        if (mateMatch) {
+          this.onEvalUpdate({ score: parseInt(mateMatch[1], 10), isMate: true });
+        } else if (cpMatch) {
+          this.onEvalUpdate({ score: parseInt(cpMatch[1], 10) / 100, isMate: false }); // Convert centipawns to pawns
+        }
       }
     };
 
@@ -44,6 +55,7 @@ export class StockfishService {
 
     return new Promise((resolve) => {
       this.resolveBestMove = resolve;
+      this.onEvalUpdate = null; // Disable streaming eval for bestMove requests
       
       // Configure skill level (0-20)
       this.worker.postMessage(`setoption name Skill Level value ${skillLevel}`);
@@ -52,6 +64,20 @@ export class StockfishService {
       this.worker.postMessage(`position fen ${fen}`);
       this.worker.postMessage(`go depth ${depth}`);
     });
+  }
+
+  public async startEvaluation(fen: string, callback: (evaluation: { score: number; isMate: boolean }) => void): Promise<void> {
+    await this.init();
+    this.worker.postMessage('stop'); // Stop any ongoing calculations
+    this.onEvalUpdate = callback;
+    this.worker.postMessage('setoption name Skill Level value 20'); // Max skill for analysis
+    this.worker.postMessage(`position fen ${fen}`);
+    this.worker.postMessage('go infinite'); // Evaluate indefinitely until stopped
+  }
+
+  public stopEvaluation() {
+    this.worker.postMessage('stop');
+    this.onEvalUpdate = null;
   }
 
   public terminate() {
