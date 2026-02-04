@@ -471,8 +471,7 @@ export const LocalGame = () => {
               lightSquareStyle: { backgroundColor: 'var(--color-board-light, #DCE3EE)' },
               squareStyles: optionSquares,
               boardStyle: { cursor: 'pointer' },
-              draggingPieceStyle: { zIndex: 9999, cursor: 'grabbing', transform: 'scale(1.1)', filter: 'drop-shadow(0px 10px 15px rgba(0,0,0,0.5))' },
-              customNotationStyle: { fontSize: '14px', fontWeight: 'bold', opacity: 0.7 }
+              draggingPieceStyle: { zIndex: 9999, cursor: 'grabbing', transform: 'scale(1.1)', filter: 'drop-shadow(0px 10px 15px rgba(0,0,0,0.5))' }
             }}
           />
         </div>
