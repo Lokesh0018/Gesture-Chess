@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useMotionTemplate, animate, useInView } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Hand, Camera, Zap, Shield, Play, Menu, X, ChevronRight, CheckCircle2, Globe, Cpu, Lock, Code, MessageCircle, Mail, ArrowRight, ChessQueen } from 'lucide-react';
-
 import { AuroraBackground } from '../components/AuroraBackground';
+import './LandingPage.css';
 
 // ─── Preloader ──────────────────────────────────────────
 
@@ -38,14 +38,14 @@ function Preloader({ onComplete }: { onComplete: () => void }) {
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-b from-[#050913] to-[#08101F] overflow-hidden"
+      className="lp-preloader"
     >
       {/* Subtle floating particles in background */}
       <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
-        <div className="absolute top-[30%] left-[20%] w-1 h-1 bg-white rounded-full animate-[pulse_3s_infinite]" />
-        <div className="absolute top-[60%] left-[70%] w-1.5 h-1.5 bg-[#60A5FA] rounded-full animate-[pulse_4s_infinite]" />
-        <div className="absolute top-[40%] right-[30%] w-1 h-1 bg-cyan-300 rounded-full animate-[pulse_2s_infinite]" />
-        <div className="absolute top-[80%] left-[40%] w-1 h-1 bg-white/50 rounded-full animate-[pulse_3.5s_infinite]" />
+        <div className="lp-preloader-particle-1" />
+        <div className="lp-preloader-particle-2" />
+        <div className="lp-preloader-particle-3" />
+        <div className="lp-preloader-particle-4" />
       </div>
 
       {/* Centerpiece Container */}
@@ -55,17 +55,17 @@ function Preloader({ onComplete }: { onComplete: () => void }) {
         className="relative z-10 w-40 h-40 flex flex-col items-center justify-center"
       >
         {/* SVG Chess King with Tracing Outline */}
-        <div className="relative w-32 h-32 flex items-center justify-center">
+        <div className="lp-loader-container">
           {/* Ambient glow perfectly centered behind the king */}
           <motion.div
             animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.4, 0.15] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute w-20 h-20 bg-[#3B82F6] rounded-full blur-[30px]"
+            className="lp-loader-glow"
           />
 
           {/* Base shape */}
           <ChessQueen
-            className="absolute z-10 w-24 h-24 text-white opacity-20"
+            className="lp-loader-icon-base"
             strokeWidth={1.5}
             style={{ filter: "drop-shadow(0 0 10px rgba(255,255,255,0.3))" }}
           />
@@ -78,7 +78,7 @@ function Preloader({ onComplete }: { onComplete: () => void }) {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="absolute z-20 w-24 h-24 text-[#60A5FA] single-trace"
+            className="lp-loader-icon-trace single-trace"
             style={{ filter: "drop-shadow(0 0 12px #60A5FA) drop-shadow(0 0 24px #3B82F6)" }}
           >
             <path
@@ -893,10 +893,10 @@ function BackgroundSequence({ scrollContainerRef }: { scrollContainerRef: React.
   }, [frameIndex]);
 
   return (
-    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#08111F]/60 via-[#08111F]/40 to-[#08111F]/90" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-[#08111F]/20 to-[#08111F]/90" />
+    <div className="lp-bg-sequence">
+      <canvas ref={canvasRef} className="lp-bg-canvas" />
+      <div className="lp-bg-overlay-1" />
+      <div className="lp-bg-overlay-2" />
     </div>
   );
 }
@@ -908,7 +908,7 @@ export const LandingPage: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={scrollContainerRef} className="relative w-full h-screen overflow-x-hidden overflow-y-auto bg-[#08111F] text-white selection:bg-[#3B82F6]/30 scroll-smooth">
+    <div ref={scrollContainerRef} className="lp-root">
 
       <AnimatePresence>
         {isLoading && <Preloader onComplete={() => setIsLoading(false)} />}

@@ -166,7 +166,7 @@ export const Login = () => {
               <div className="auth-submit-shine" />
               {isLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="spinner" />
                   Authenticating...
                 </>
               ) : (
