@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useMotionTemplate, animate, useInView } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Hand, Camera, Zap, Shield, Play, Menu, X, ChevronRight, CheckCircle2, Globe, Cpu, Lock, Code, MessageCircle, Mail, ArrowRight, ChessQueen } from 'lucide-react';
-import './LandingPage.css';
+
 import { AuroraBackground } from '../components/AuroraBackground';
 
 // ─── Preloader ──────────────────────────────────────────

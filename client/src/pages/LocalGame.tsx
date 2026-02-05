@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { CameraPanel } from '../components/CameraPanel';
 import { playMoveSound } from '../utils/audio';
-import './Game.css';
+
 
 type Piece = 'wP' | 'wN' | 'wB' | 'wR' | 'wQ' | 'wK' | 'bP' | 'bN' | 'bB' | 'bR' | 'bQ' | 'bK';
 

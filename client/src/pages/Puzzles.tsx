@@ -3,7 +3,7 @@ import { Chess, type Square, type Move } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { CheckCircle2, XCircle } from 'lucide-react';
-import './Game.css';
+
 
 interface Puzzle {
   id: string;

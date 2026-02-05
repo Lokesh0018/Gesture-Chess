@@ -2,6 +2,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AnimatePresence } from 'framer-motion';
 import { MainLayout } from './layouts/MainLayout';
+import { DashboardLayout } from './components/DashboardLayout';
 import { LandingPage } from './pages/LandingPage';
 import { Home } from './pages/Home';
 import { LocalGame } from './pages/LocalGame';
@@ -35,17 +36,18 @@ function App() {
             <Route path="login" element={<PageTransition><Login /></PageTransition>} />
             <Route path="register" element={<PageTransition><Register /></PageTransition>} />
             <Route path="local" element={<PageTransition><LocalGame /></PageTransition>} />
-            <Route path="bot" element={<PageTransition><PlayBot /></PageTransition>} />
-            <Route path="puzzles" element={<PageTransition><Puzzles /></PageTransition>} />
-            <Route path="analysis" element={<PageTransition><Analysis /></PageTransition>} />
-            <Route path="learn" element={<PageTransition><Learn /></PageTransition>} />
-            <Route path="leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
-            
-            <Route element={<ProtectedRoute />}>
-              <Route path="dashboard" element={<PageTransition><Home /></PageTransition>} />
-              <Route path="online" element={<PageTransition><TournamentLobby /></PageTransition>} />
-              <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
-              <Route path="profile" element={<PageTransition><Profile /></PageTransition>} />
+            <Route element={<DashboardLayout />}>
+              <Route element={<ProtectedRoute />}>
+                <Route path="dashboard" element={<PageTransition><Home /></PageTransition>} />
+                <Route path="online" element={<PageTransition><TournamentLobby /></PageTransition>} />
+                <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+                <Route path="profile" element={<PageTransition><Profile /></PageTransition>} />
+                <Route path="bot" element={<PageTransition><PlayBot /></PageTransition>} />
+                <Route path="puzzles" element={<PageTransition><Puzzles /></PageTransition>} />
+                <Route path="analysis" element={<PageTransition><Analysis /></PageTransition>} />
+                <Route path="learn" element={<PageTransition><Learn /></PageTransition>} />
+                <Route path="leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
+              </Route>
             </Route>
             
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

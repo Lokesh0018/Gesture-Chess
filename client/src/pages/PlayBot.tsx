@@ -7,7 +7,7 @@ import { useSettingsStore } from '../store/useSettingsStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import './Game.css';
+
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 
 import { playMoveSound } from '../utils/audio';

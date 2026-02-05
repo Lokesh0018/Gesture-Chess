@@ -6,6 +6,10 @@ interface User {
   username: string;
   email: string;
   rating: number;
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  draws: number;
 }
 
 interface AuthState {

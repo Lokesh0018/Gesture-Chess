@@ -3,14 +3,14 @@ import { useAuthStore } from '../store/useAuthStore';
 import { motion } from 'framer-motion';
 import { Trophy, Clock, Users, Play, Eye, Swords } from 'lucide-react';
 import toast from 'react-hot-toast';
-import io, { Socket } from 'socket.io-client';
+import { useSocketStore } from '../store/useSocketStore';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useSettingsStore } from '../store/useSettingsStore';
 
 export const TournamentLobby = () => {
   const { user, token } = useAuthStore();
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const { socket, isConnected, connect, disconnect } = useSocketStore();
   
   const [inRoom, setInRoom] = useState(false);
   const [roomId, setRoomId] = useState('');
@@ -36,43 +36,37 @@ export const TournamentLobby = () => {
   
   useEffect(() => {
     if (!token) return;
+    connect();
     
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001', {
-      auth: { token }
-    });
+    if (!socket) return;
     
-    newSocket.on('connect', () => {
-      console.log('Connected to socket', newSocket.id);
-    });
-    
-    newSocket.on('room_created', (data) => {
+    socket.on('room_created', (data) => {
       setRoomId(data.roomId);
       setInRoom(true);
       setIsHost(true);
       toast.success('Tournament Room created!');
     });
     
-    newSocket.on('room_joined', (data) => {
+    socket.on('room_joined', (data) => {
       setRoomId(data.roomId);
       setInRoom(true);
       setPlayers(data.players);
       toast.success('Joined Tournament Room!');
     });
     
-    newSocket.on('players_update', (data) => {
+    socket.on('players_update', (data) => {
       setPlayers(data.players);
     });
     
-    newSocket.on('tournament_started', () => {
+    socket.on('tournament_started', () => {
       toast.success('Tournament started!');
     });
 
-    newSocket.on('round_started', (data) => {
+    socket.on('round_started', (data) => {
       setTournamentStatus('in_progress');
       setRound(data.round);
       setMatches(data.matches);
       
-      // Check if we are playing
       const myMatch = data.matches.find((m: any) => m.white.id === user?.id || m.black.id === user?.id);
       if (myMatch) {
         setActiveMatchId(myMatch.matchId);
@@ -89,18 +83,18 @@ export const TournamentLobby = () => {
       }
     });
 
-    newSocket.on('move_made', (data) => {
+    socket.on('move_made', (data) => {
       try {
         const gameCopy = new Chess(data.fen);
         setGame(gameCopy);
       } catch (e) {}
     });
 
-    newSocket.on('sync_spectator', (data) => {
+    socket.on('sync_spectator', (data) => {
       setGame(new Chess(data.fen));
     });
 
-    newSocket.on('match_finished', (data) => {
+    socket.on('match_finished', (data) => {
       if (activeMatchId) {
         toast(data.winnerId === user?.id ? 'You won!' : 'You lost!', {
           icon: data.winnerId === user?.id ? '🏆' : '💀'
@@ -112,21 +106,28 @@ export const TournamentLobby = () => {
       }
     });
 
-    newSocket.on('tournament_finished', (data) => {
+    socket.on('tournament_finished', (data) => {
       setTournamentStatus('finished');
       setWinner({ id: data.winnerId, name: data.winnerName });
     });
     
-    newSocket.on('error', (msg) => {
+    socket.on('error', (msg) => {
       toast.error(msg);
     });
     
-    setSocket(newSocket);
-    
     return () => {
-      newSocket.disconnect();
+      socket.off('room_created');
+      socket.off('room_joined');
+      socket.off('players_update');
+      socket.off('tournament_started');
+      socket.off('round_started');
+      socket.off('move_made');
+      socket.off('sync_spectator');
+      socket.off('match_finished');
+      socket.off('tournament_finished');
+      socket.off('error');
     };
-  }, [token]);
+  }, [token, socket]);
   
   const createRoom = () => {
     if (!socket) return;
@@ -259,15 +260,15 @@ export const TournamentLobby = () => {
           
           <div className="bg-gray-900 rounded-xl overflow-hidden shadow-2xl ring-4 ring-gray-800 relative aspect-square">
             <Chessboard 
-              options={{
-                id: "TournamentBoard",
-                position: game.fen(),
-                onPieceDrop: handlePieceDrop as any,
-                boardOrientation: isSpectating ? 'white' : (activeMatchColor === 'w' ? 'white' : 'black'),
-                arePiecesDraggable: !isSpectating && game.turn() === activeMatchColor,
-                darkSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#779556' : '#2C3E50' },
-                lightSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#EBECD0' : '#ECF0F1' }
-              }}
+              id="TournamentBoard"
+              position={game.fen()}
+              onPieceDrop={handlePieceDrop as any}
+              boardOrientation={isSpectating ? 'white' : (activeMatchColor === 'w' ? 'white' : 'black')}
+              customDarkSquareStyle={{ backgroundColor: boardTheme === 'classic' ? '#779556' : '#2C3E50' }}
+              customLightSquareStyle={{ backgroundColor: boardTheme === 'classic' ? '#EBECD0' : '#ECF0F1' }}
+              {...{
+                arePiecesDraggable: !isSpectating && game.turn() === activeMatchColor
+              } as any}
             />
           </div>
         </div>

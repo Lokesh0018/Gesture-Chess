@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useAuthStore } from './useAuthStore';
+import { getApiUrl } from '../lib/api';
 
 interface SettingsState {
   cursorSensitivity: number;
@@ -34,7 +35,7 @@ export const useSettingsStore = create<SettingsState>()(
         const token = useAuthStore.getState().token;
         if (token) {
           try {
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/settings`, {
+            await fetch(getApiUrl('/api/user/settings'), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ export const useSettingsStore = create<SettingsState>()(
         const token = useAuthStore.getState().token;
         if (token) {
           try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/settings`, {
+            const res = await fetch(getApiUrl('/api/user/settings'), {
               headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {

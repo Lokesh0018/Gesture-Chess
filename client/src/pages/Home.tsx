@@ -2,6 +2,7 @@
 import { Swords, Users, Trophy, Settings, BarChart2, LayoutDashboard, Crown, Bot, Puzzle, BookOpen } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
+import { useAuthStore } from '../store/useAuthStore';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -19,72 +20,42 @@ const itemVariants: Variants = {
 export const Home = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { user } = useAuthStore();
+  
+  const winRate = user && user.gamesPlayed > 0 
+    ? Math.round((user.wins / user.gamesPlayed) * 100) 
+    : 0;
 
   return (
-    <div className="home-layout relative overflow-hidden bg-[#060A14]">
-      {/* Background Glows */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full mix-blend-screen filter blur-[150px] opacity-10 bg-[#3B82F6] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full mix-blend-screen filter blur-[150px] opacity-10 bg-[#818CF8] pointer-events-none" />
+    <motion.div 
+      className="flex-1 relative z-10 flex flex-col h-full"
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+    >
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 lg:p-12">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Section */}
+          <div className="mb-12 relative">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="absolute -top-10 -left-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl"
+            />
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 relative z-10">
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{user?.username || 'Player'}</span>
+            </h1>
+            <p className="text-slate-400 text-lg max-w-2xl relative z-10">
+              Ready for your next challenge? Jump right back into a game or hone your skills with daily puzzles.
+            </p>
+          </div>
 
-      {/* Sidebar Navigation */}
-      <motion.aside 
-        initial={{ x: -50, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="home-sidebar relative z-10 border-r border-white/[0.05] bg-[#0F172A]/40 backdrop-blur-xl"
-      >
-        <nav className="sidebar-nav pt-8">
-          <Link to="/" className={`sidebar-link ${currentPath === '/' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
-            <LayoutDashboard className="sidebar-icon" />
-            <span>Dashboard</span>
-          </Link>
-          <Link to="/local" className={`sidebar-link ${currentPath === '/local' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
-            <Users className="sidebar-icon" />
-            <span>Local Play</span>
-          </Link>
-          <Link to="/online" className={`sidebar-link ${currentPath === '/online' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
-            <Swords className="sidebar-icon" />
-            <span>Online Match</span>
-          </Link>
-          <Link to="/bot" className={`sidebar-link ${currentPath === '/bot' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
-            <Bot className="sidebar-icon" />
-            <span>Play vs Bot</span>
-          </Link>
-          <Link to="/puzzles" className={`sidebar-link ${currentPath === '/puzzles' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
-            <Puzzle className="sidebar-icon" />
-            <span>Puzzles</span>
-          </Link>
-          <Link to="/leaderboard" className={`sidebar-link ${currentPath === '/leaderboard' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
-            <BarChart2 className="sidebar-icon" />
-            <span>Leaderboard</span>
-          </Link>
-          <Link to="/settings" className={`sidebar-link ${currentPath === '/settings' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
-            <Settings className="sidebar-icon" />
-            <span>Settings</span>
-          </Link>
-        </nav>
-      </motion.aside>
-
-      {/* Main Content */}
-      <div className="home-content-area relative z-10">
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="home-container"
-        >
-          <motion.div variants={itemVariants} className="home-header mb-12">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2">
-                <span className="text-white">Welcome back, </span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#60A5FA] via-[#3B82F6] to-[#2563EB]">Grandmaster</span>
-              </h1>
-              <p className="text-slate-400 text-lg">Ready to play some gesture-controlled chess?</p>
-            </div>
-          </motion.div>
-
-          <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
+          {/* Main Grid */}
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={containerVariants}
+          >
             {/* Local Play Card */}
             <motion.div variants={itemVariants}>
               <Link to="/local" className="group block h-full relative bg-[#0F172A]/60 backdrop-blur-xl border border-white/[0.08] rounded-[24px] p-8 hover:-translate-y-2 hover:border-[#3B82F6]/50 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-[0_8px_30px_rgba(59,130,246,0.15)]">
@@ -158,19 +129,19 @@ export const Home = () => {
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-center pb-4 border-b border-white/[0.05]">
                     <span className="text-slate-400">Rating</span>
-                    <span className="text-2xl font-bold text-white">1200</span>
+                    <span className="text-2xl font-bold text-white">{user?.rating || 1200}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400">Win Rate</span>
-                    <span className="text-2xl font-bold text-green-400">52%</span>
+                    <span className="text-2xl font-bold text-green-400">{winRate}%</span>
                   </div>
                 </div>
               </div>
             </motion.div>
 
           </motion.div>
-        </motion.div>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

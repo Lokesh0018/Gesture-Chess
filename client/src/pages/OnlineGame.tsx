@@ -3,11 +3,12 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { io, Socket } from 'socket.io-client';
 import { useGestureStore } from '../store/useGestureStore';
-import './Game.css';
+import { useSocketStore } from '../store/useSocketStore';
+
 
 export const OnlineGame = () => {
   const [game, setGame] = useState(new Chess());
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const { socket, connect, disconnect } = useSocketStore();
   const [roomId, setRoomId] = useState('');
   const [playerColor, setPlayerColor] = useState<'w' | 'b' | null>(null);
   const [status, setStatus] = useState('Disconnected');
@@ -17,18 +18,20 @@ export const OnlineGame = () => {
   const prevPinching = useRef(isPinching);
 
   useEffect(() => {
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001');
-    setSocket(newSocket);
 
-    newSocket.on('connect', () => setStatus('Connected to server. Create or Join a room.'));
+    connect();
     
-    newSocket.on('room_created', (data) => {
+    if (!socket) return;
+    
+    socket.on('connect', () => setStatus('Connected to server. Create or Join a room.'));
+    
+    socket.on('room_created', (data) => {
       setRoomId(data.roomId);
       setPlayerColor(data.color);
       setStatus(`Room Created: ${data.roomId}. Waiting for opponent...`);
     });
 
-    newSocket.on('room_joined', (data) => {
+    socket.on('room_joined', (data) => {
       setRoomId(data.roomId);
       setPlayerColor(data.color);
       const newGame = new Chess(data.fen);
@@ -36,17 +39,24 @@ export const OnlineGame = () => {
       setStatus(`Joined room ${data.roomId} as Black. Game started!`);
     });
 
-    newSocket.on('game_started', () => setStatus('Opponent joined. Game started!'));
+    socket.on('game_started', () => setStatus('Opponent joined. Game started!'));
 
-    newSocket.on('move_made', (data) => {
+    socket.on('move_made', (data) => {
       const newGame = new Chess(data.fen);
       setGame(newGame);
     });
 
-    newSocket.on('error', (msg) => setStatus(`Error: ${msg}`));
+    socket.on('error', (msg) => setStatus(`Error: ${msg}`));
 
-    return () => { newSocket.close(); };
-  }, []);
+    return () => {
+      socket.off('connect');
+      socket.off('room_created');
+      socket.off('room_joined');
+      socket.off('game_started');
+      socket.off('move_made');
+      socket.off('error');
+    };
+  }, [socket]);
 
   // Custom gesture drop logic
   useEffect(() => {

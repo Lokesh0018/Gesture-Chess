@@ -227,14 +227,16 @@ export function Analysis() {
               customDarkSquareStyle={{ backgroundColor: boardTheme === 'classic' ? '#779556' : '#2C3E50' }}
               customLightSquareStyle={{ backgroundColor: boardTheme === 'classic' ? '#EBECD0' : '#ECF0F1' }}
               customPieces={customPieces}
-              arePiecesDraggable={false}
-              customArrows={evaluation?.bestMove ? [
-                [
-                  evaluation.bestMove.substring(0, 2) as any,
-                  evaluation.bestMove.substring(2, 4) as any,
-                  'rgba(59, 130, 246, 0.5)' // Blue arrow
-                ]
-              ] : []}
+              {...{
+                arePiecesDraggable: false,
+                customArrows: evaluation?.bestMove ? [
+                  [
+                    evaluation.bestMove.substring(0, 2),
+                    evaluation.bestMove.substring(2, 4),
+                    'rgba(59, 130, 246, 0.5)'
+                  ]
+                ] : []
+              } as any}
             />
           </div>
         </div>
