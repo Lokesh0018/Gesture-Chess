@@ -11,17 +11,20 @@ export const Navbar = () => {
       <div className="navbar-container">
         {/* Left: Logo */}
         <div className="nav-section">
-          <ChessQueen style={{ width: '32px', height: '32px', color: 'var(--color-accent)', marginRight: '10px' }} />
+          <ChessQueen 
+            style={{ width: '32px', height: '32px', color: 'var(--color-accent)', marginRight: '10px', cursor: 'pointer' }} 
+            onClick={() => window.dispatchEvent(new Event('toggle-sidebar'))}
+          />
           <Link to="/" className="nav-logo">Gesture<span>Chess</span></Link>
         </div>
 
       {/* Center: Navigation */}
       <div className="nav-section center">
-        <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
-          <Home style={{ width: '16px', height: '16px' }} />
-          <span>Home</span>
-        </Link>
-        <div className="nav-divider"></div>
+        {user && (
+          <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+            Dashboard
+          </Link>
+        )}
         <Link to="/local" className={`nav-link ${location.pathname === '/local' ? 'active' : ''}`}>
           Local Game
         </Link>

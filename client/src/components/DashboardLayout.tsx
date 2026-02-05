@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Swords, Users, Trophy, Settings, BarChart2, LayoutDashboard, Bot, Puzzle, BookOpen, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +10,12 @@ export const DashboardLayout = () => {
   const currentPath = location.pathname;
   const { user, logout } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    const toggle = () => setIsCollapsed(prev => !prev);
+    window.addEventListener('toggle-sidebar', toggle);
+    return () => window.removeEventListener('toggle-sidebar', toggle);
+  }, []);
 
   const sidebarLinks = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },

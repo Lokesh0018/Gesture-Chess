@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useMotionValue, useMo
 import { Link } from 'react-router-dom';
 import { Hand, Camera, Zap, Shield, Play, Menu, X, ChevronRight, CheckCircle2, Globe, Cpu, Lock, Code, MessageCircle, Mail, ArrowRight, ChessQueen } from 'lucide-react';
 import { AuroraBackground } from '../components/AuroraBackground';
+import { useAuthStore } from '../store/useAuthStore';
 import './LandingPage.css';
 
 // ─── Preloader ──────────────────────────────────────────
@@ -127,6 +128,7 @@ function Preloader({ onComplete }: { onComplete: () => void }) {
 function Navigation({ scrollContainerRef }: { scrollContainerRef?: React.RefObject<HTMLDivElement | null> }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const { user } = useAuthStore();
 
   useEffect(() => {
     const container = scrollContainerRef?.current || window;
@@ -195,20 +197,33 @@ function Navigation({ scrollContainerRef }: { scrollContainerRef?: React.RefObje
 
         {/* Right: Actions */}
         <div className="nav-actions">
-          <Link
-            to="/login"
-            className="hidden sm:inline-flex nav-btn-login"
-            id="landing-login"
-          >
-            Log in
-          </Link>
-          <Link
-            to="/register"
-            className="hidden sm:inline-flex nav-btn-signup"
-            id="landing-signup"
-          >
-            Sign Up
-          </Link>
+          {user ? (
+            <Link
+              to="/dashboard"
+              className="hidden sm:inline-flex nav-btn-primary"
+              style={{ backgroundColor: '#2563EB', color: 'white', padding: '10px 20px', borderRadius: '12px', fontWeight: 600, textDecoration: 'none' }}
+              id="landing-dashboard"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="hidden sm:inline-flex nav-btn-login"
+                id="landing-login"
+              >
+                Log in
+              </Link>
+              <Link
+                to="/register"
+                className="hidden sm:inline-flex nav-btn-signup"
+                id="landing-signup"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
 
           {/* Mobile hamburger */}
           <button
@@ -234,12 +249,20 @@ function Navigation({ scrollContainerRef }: { scrollContainerRef?: React.RefObje
             </a>
           ))}
           <div className="nav-mobile-actions">
-            <Link to="/login" className="nav-mobile-login">
-              Login
-            </Link>
-            <Link to="/register" className="nav-mobile-signup">
-              Sign Up
-            </Link>
+            {user ? (
+              <Link to="/dashboard" className="nav-mobile-login" style={{ backgroundColor: '#2563EB', color: 'white', textAlign: 'center' }}>
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="nav-mobile-login">
+                  Login
+                </Link>
+                <Link to="/register" className="nav-mobile-signup">
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </motion.div>
       )}
@@ -287,6 +310,7 @@ function HeroText() {
 // ─── CTA Button ─────────────────────────────────────────
 
 function CTAButton() {
+  const { user } = useAuthStore();
   const [ripple, setRipple] = useState(false);
   const buttonRef = useRef<HTMLAnchorElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -325,7 +349,7 @@ function CTAButton() {
           transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.5 }}
         >
           <Link
-            to="/local"
+            to={user ? "/dashboard" : "/local"}
             ref={buttonRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
