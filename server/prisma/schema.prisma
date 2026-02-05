@@ -29,6 +29,8 @@ model User {
   friends       Friend[]  @relation("UserFriends")
   friendOf      Friend[]  @relation("FriendUsers")
   tournaments   TournamentParticipant[]
+  activities    Activity[]
+  achievements  Achievement[]
 }
 
 model Settings {
@@ -89,3 +91,41 @@ model TournamentParticipant {
   tournament   Tournament  @relation(fields: [tournamentId], references: [id])
   user         User        @relation(fields: [userId], references: [id])
 }
+
+model Activity {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  type       String   // "game", "puzzle", "achievement"
+  title      String
+  subtitle   String?
+  points     Int?     // ELO change or EXP gained
+  isPositive Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Achievement {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  badgeName   String
+  description String
+  icon        String   // "Trophy", "Flame", "Target"
+  progress    Int      @default(0)
+  maxProgress Int      @default(1)
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Puzzle {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  fen       String
+  moves     String[] // ["e2e4", "e7e5"]
+  rating    Int
+  theme     String
+  createdAt DateTime @default(now())
+}
+

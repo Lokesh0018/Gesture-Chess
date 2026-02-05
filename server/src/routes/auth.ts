@@ -3,13 +3,31 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
+import { z } from 'zod';
 
 export const authRouter = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
-authRouter.post('/register', async (req, res) => {
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 requests per windowMs
+  message: { error: 'Too many authentication attempts, please try again later.' }
+});
+
+const registerSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  username: z.string().min(3, 'Username must be at least 3 characters').max(30),
+  password: z.string().min(6, 'Password must be at least 6 characters')
+});
+
+authRouter.post('/register', authLimiter, async (req, res) => {
   try {
-    const { email, username, password } = req.body;
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.issues[0].message });
+    }
+    const { email, username, password } = parsed.data;
 
     const existingUser = await prisma.user.findFirst({
       where: { OR: [{ email }, { username }] }
@@ -68,9 +86,13 @@ authRouter.post('/register', async (req, res) => {
   }
 });
 
-authRouter.post('/login', async (req, res) => {
+authRouter.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
     
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !user.passwordHash) {

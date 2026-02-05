@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 import { authRouter } from './routes/auth';
 import { userRouter } from './routes/user';
 import { leaderboardRouter } from './routes/leaderboard';
+import activityRouter from './routes/activity';
+import achievementsRouter from './routes/achievements';
+import puzzlesRouter from './routes/puzzles';
 import { initializeSocket } from './socket';
 
 dotenv.config();
@@ -20,6 +23,9 @@ app.use(express.json());
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/leaderboard', leaderboardRouter);
+app.use('/api/activity', activityRouter);
+app.use('/api/achievements', achievementsRouter);
+app.use('/api/puzzles', puzzlesRouter);
 
 app.get('/api/health', (req, res) => {
   res.send('GestureChess API is running');

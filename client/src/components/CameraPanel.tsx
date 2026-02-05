@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Camera, CameraOff } from 'lucide-react';
 import { GestureService } from '../services/GestureService';
 import { useGestureStore } from '../store/useGestureStore';
+import toast from 'react-hot-toast';
 
 export const CameraPanel = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -33,6 +34,7 @@ export const CameraPanel = () => {
         }
       } catch (err) {
         console.error('Camera permission denied or unavailable.', err);
+        toast.error('Camera permission denied or unavailable.');
       }
     }
   };

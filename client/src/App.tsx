@@ -25,7 +25,31 @@ function App() {
   const location = useLocation();
   return (
     <ErrorBoundary>
-      <Toaster position="top-right" />
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          style: {
+            background: 'rgba(15, 23, 42, 0.9)',
+            color: '#fff',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px'
+          },
+          success: {
+            iconTheme: {
+              primary: '#22C55E',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Landing Page without MainLayout */}
