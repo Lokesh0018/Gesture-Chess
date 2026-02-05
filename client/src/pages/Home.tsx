@@ -1,7 +1,9 @@
-import { Swords, Users, Trophy, LayoutDashboard, Crown, Bot, Puzzle, BookOpen, Clock, Target, Flame, Play, ChevronRight, TrendingUp, Medal, Star } from 'lucide-react';
+import { Swords, Users, Trophy, LayoutDashboard, Crown, Bot, Puzzle, BookOpen, Clock, Target, Play, ChevronRight, TrendingUp, Medal, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
+import { useState, useEffect } from 'react';
+import { getApiUrl } from '../lib/api';
 import './Home.css';
 
 const containerVariants = {
@@ -15,7 +17,40 @@ const itemVariants: Variants = {
 };
 
 export const Home = () => {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
+  const [activities, setActivities] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchData = async () => {
+      try {
+        const [activityRes, achievementRes] = await Promise.all([
+          fetch(getApiUrl('/api/activity'), {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(getApiUrl('/api/achievements'), {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        
+        if (activityRes.ok) {
+          const data = await activityRes.json();
+          setActivities(data.activities || []);
+        }
+        
+        if (achievementRes.ok) {
+          const data = await achievementRes.json();
+          setAchievements(data.achievements || []);
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+      }
+    };
+    
+    fetchData();
+  }, [token]);
   
   const gamesPlayed = user?.gamesPlayed || 0;
   const wins = user?.wins || 0;
@@ -205,47 +240,28 @@ export const Home = () => {
             <motion.div variants={itemVariants} className="home-panel">
               <div className="home-activity-timeline">
                 
-                {/* Activity Item 1 */}
-                <div className="home-activity-item">
-                  <div className="home-activity-dot-wrapper">
-                    <div className="home-activity-dot home-activity-dot-green"></div>
-                  </div>
-                  <div className="home-activity-content">
-                    <div>
-                      <p className="home-activity-title">Won vs MasterBot (Lvl 5)</p>
-                      <p className="home-activity-time">2 hours ago</p>
+                {activities.length > 0 ? activities.slice(0, 3).map((act, idx) => (
+                  <div key={idx} className="home-activity-item">
+                    <div className="home-activity-dot-wrapper">
+                      <div className={`home-activity-dot home-activity-dot-${act.type === 'game' ? 'green' : act.type === 'puzzle' ? 'blue' : 'purple'}`}></div>
                     </div>
-                    <span className="home-activity-badge home-activity-badge-green">+15 Rating</span>
-                  </div>
-                </div>
-
-                {/* Activity Item 2 */}
-                <div className="home-activity-item">
-                  <div className="home-activity-dot-wrapper">
-                    <div className="home-activity-dot home-activity-dot-blue"></div>
-                  </div>
-                  <div className="home-activity-content">
-                    <div>
-                      <p className="home-activity-title">Solved Puzzle #4892</p>
-                      <p className="home-activity-time">Yesterday</p>
+                    <div className="home-activity-content">
+                      <div>
+                        <p className="home-activity-title">{act.description}</p>
+                        <p className="home-activity-time">{new Date(act.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`home-activity-badge home-activity-badge-${act.type === 'game' ? 'green' : act.type === 'puzzle' ? 'blue' : 'purple'}`}>
+                        {act.points > 0 ? `+${act.points}` : act.points} EXP
+                      </span>
                     </div>
-                    <span className="home-activity-badge home-activity-badge-blue">+5 EXP</span>
                   </div>
-                </div>
-
-                {/* Activity Item 3 */}
-                <div className="home-activity-item">
-                  <div className="home-activity-dot-wrapper">
-                    <div className="home-activity-dot home-activity-dot-purple"></div>
-                  </div>
-                  <div className="home-activity-content">
-                    <div>
-                      <p className="home-activity-title">Achievement Unlocked: First Victory</p>
-                      <p className="home-activity-time">2 days ago</p>
+                )) : (
+                  <div className="home-activity-item">
+                    <div className="home-activity-content">
+                      <p className="home-activity-title">No recent activity found.</p>
                     </div>
-                    <span className="home-activity-badge home-activity-badge-purple">+50 EXP</span>
                   </div>
-                </div>
+                )}
 
               </div>
             </motion.div>
@@ -337,40 +353,24 @@ export const Home = () => {
             </div>
             
             <div className="home-achievements-list">
-              <div className="home-achievement-item">
-                <div className="home-achievement-icon-wrapper home-achievement-icon-flame">
-                  <Flame size={24} />
-                </div>
-                <div className="home-achievement-details">
-                  <p className="home-achievement-title">3 Day Streak</p>
-                  <p className="home-achievement-desc">Log in tomorrow to keep it going!</p>
-                </div>
-              </div>
-              
-              <div className="home-achievement-item">
-                <div className="home-achievement-icon-wrapper home-achievement-icon-crown">
-                  <Crown size={24} />
-                </div>
-                <div className="home-achievement-details">
-                  <p className="home-achievement-title">First Victory</p>
-                  <p className="home-achievement-desc">Won a game against AI</p>
-                </div>
-              </div>
-              
-              <div className="home-achievement-item locked">
-                <div className="home-achievement-icon-wrapper home-achievement-icon-locked">
-                  <Target size={24} />
-                </div>
-                <div className="home-achievement-details">
-                  <div className="home-achievement-progress-info">
-                    <p className="home-achievement-title">Sharpshooter</p>
-                    <span className="home-achievement-progress-text">12/50</span>
+              {achievements.length > 0 ? achievements.slice(0, 3).map((ach, idx) => (
+                <div key={idx} className="home-achievement-item">
+                  <div className="home-achievement-icon-wrapper home-achievement-icon-flame">
+                    <Trophy size={24} />
                   </div>
-                  <div className="home-achievement-progress-bar">
-                    <div className="home-achievement-progress-fill" style={{ width: '24%' }} />
+                  <div className="home-achievement-details">
+                    <p className="home-achievement-title">{ach.name}</p>
+                    <p className="home-achievement-desc">{ach.description}</p>
                   </div>
                 </div>
-              </div>
+              )) : (
+                <div className="home-achievement-item">
+                  <div className="home-achievement-details">
+                    <p className="home-achievement-title">No achievements yet</p>
+                    <p className="home-achievement-desc">Keep playing to unlock them!</p>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
 

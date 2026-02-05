@@ -6,6 +6,7 @@ import { DashboardLayout } from './components/DashboardLayout';
 import { LandingPage } from './pages/LandingPage';
 import { Home } from './pages/Home';
 import { LocalGame } from './pages/LocalGame';
+import { LocalGameSetup } from './pages/LocalGameSetup';
 import { Profile } from './pages/Profile';
 import { SettingsPage } from './pages/SettingsPage';
 import { Login } from './pages/Login';
@@ -59,6 +60,7 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="login" element={<PageTransition><Login /></PageTransition>} />
             <Route path="register" element={<PageTransition><Register /></PageTransition>} />
+            <Route path="local-setup" element={<PageTransition><LocalGameSetup /></PageTransition>} />
             <Route path="local" element={<PageTransition><LocalGame /></PageTransition>} />
             <Route element={<DashboardLayout />}>
               <Route element={<ProtectedRoute />}>

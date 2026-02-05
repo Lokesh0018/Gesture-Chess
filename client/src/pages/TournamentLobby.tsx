@@ -10,7 +10,7 @@ import { useSettingsStore } from '../store/useSettingsStore';
 
 export const TournamentLobby = () => {
   const { user, token } = useAuthStore();
-  const { socket, isConnected, connect, disconnect } = useSocketStore();
+  const { socket, connect } = useSocketStore();
   
   const [inRoom, setInRoom] = useState(false);
   const [roomId, setRoomId] = useState('');

@@ -805,7 +805,7 @@ button {
 }
 
 .control-btn {
-  height: 48px;
+  height: 45px;
   background-color: rgba(30, 41, 59, 0.6);
   /* Slate-800 semi-transparent */
   backdrop-filter: blur(12px);

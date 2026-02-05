@@ -7,7 +7,6 @@ import './DashboardLayout.css';
 
 export const DashboardLayout = () => {
   const location = useLocation();
-  const currentPath = location.pathname;
   const { user, logout } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -19,7 +18,7 @@ export const DashboardLayout = () => {
 
   const sidebarLinks = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/local', icon: Users, label: 'Local Play' },
+    { path: '/local-setup', icon: Users, label: 'Local Play' },
     { path: '/online', icon: Swords, label: 'Online Match' },
     { path: '/bot', icon: Bot, label: 'Play vs Bot' },
     { path: '/puzzles', icon: Puzzle, label: 'Puzzles' },
@@ -45,7 +44,9 @@ export const DashboardLayout = () => {
 
         <nav className="dashboard-nav custom-scrollbar">
           {sidebarLinks.map((link) => {
-            const isActive = currentPath === link.path || (currentPath === '/' && link.path === '/dashboard');
+            const isActive = link.path === '/local-setup' 
+              ? location.pathname.startsWith('/local') 
+              : (location.pathname === link.path || (location.pathname === '/' && link.path === '/dashboard') || (link.path !== '/dashboard' && location.pathname.startsWith(link.path)));
             return (
               <Link 
                 key={link.path}

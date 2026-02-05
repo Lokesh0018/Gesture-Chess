@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
-import { io, Socket } from 'socket.io-client';
+
 import { useGestureStore } from '../store/useGestureStore';
 import { useSocketStore } from '../store/useSocketStore';
 
 
 export const OnlineGame = () => {
   const [game, setGame] = useState(new Chess());
-  const { socket, connect, disconnect } = useSocketStore();
+  const { socket, connect } = useSocketStore();
   const [roomId, setRoomId] = useState('');
   const [playerColor, setPlayerColor] = useState<'w' | 'b' | null>(null);
   const [status, setStatus] = useState('Disconnected');

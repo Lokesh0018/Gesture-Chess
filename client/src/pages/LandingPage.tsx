@@ -349,7 +349,7 @@ function CTAButton() {
           transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.5 }}
         >
           <Link
-            to={user ? "/dashboard" : "/local"}
+            to={user ? "/dashboard" : "/local-setup"}
             ref={buttonRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}

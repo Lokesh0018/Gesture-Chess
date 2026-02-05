@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { ChessQueen, User, LogOut, Home } from 'lucide-react';
+import { ChessQueen, User, LogOut } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -21,27 +21,24 @@ export const Navbar = () => {
       {/* Center: Navigation */}
       <div className="nav-section center">
         {user && (
-          <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+          <Link to="/dashboard" className={`nav-link ${location.pathname.startsWith('/dashboard') ? 'active' : ''}`}>
             Dashboard
           </Link>
         )}
-        <Link to="/local" className={`nav-link ${location.pathname === '/local' ? 'active' : ''}`}>
+        <Link to="/local-setup" className={`nav-link ${location.pathname.startsWith('/local') ? 'active' : ''}`}>
           Local Game
         </Link>
-        <Link to="/bot" className={`nav-link ${location.pathname === '/bot' ? 'active' : ''}`}>
+        <Link to="/online" className={`nav-link ${location.pathname.startsWith('/online') ? 'active' : ''}`}>
+          Online Game
+        </Link>
+        <Link to="/bot" className={`nav-link ${location.pathname.startsWith('/bot') ? 'active' : ''}`}>
           Play Bot
         </Link>
-        <Link to="/puzzles" className={`nav-link ${location.pathname === '/puzzles' ? 'active' : ''}`}>
+        <Link to="/puzzles" className={`nav-link ${location.pathname.startsWith('/puzzles') ? 'active' : ''}`}>
           Puzzles
         </Link>
-        <Link to="/analysis" className={`nav-link ${location.pathname === '/analysis' ? 'active' : ''}`}>
-          Analysis
-        </Link>
-        <Link to="/learn" className={`nav-link ${location.pathname === '/learn' ? 'active' : ''}`}>
+        <Link to="/learn" className={`nav-link ${location.pathname.startsWith('/learn') ? 'active' : ''}`}>
           Learn
-        </Link>
-        <Link to="/online" className={`nav-link ${location.pathname === '/online' ? 'active' : ''}`}>
-          Tournaments
         </Link>
       </div>
 
