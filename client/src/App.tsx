@@ -5,13 +5,13 @@ import { MainLayout } from './layouts/MainLayout';
 import { LandingPage } from './pages/LandingPage';
 import { Home } from './pages/Home';
 import { LocalGame } from './pages/LocalGame';
-import { OnlineGame } from './pages/OnlineGame';
+import { Profile } from './pages/Profile';
 import { SettingsPage } from './pages/SettingsPage';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
-import { Profile } from './pages/Profile';
 import { Leaderboard } from './pages/Leaderboard';
 import { NotFound } from './pages/NotFound';
+import { TournamentLobby } from './pages/TournamentLobby';
 import { PlayBot } from './pages/PlayBot';
 import { Puzzles } from './pages/Puzzles';
 import { Analysis } from './pages/Analysis';
@@ -43,7 +43,7 @@ function App() {
             
             <Route element={<ProtectedRoute />}>
               <Route path="dashboard" element={<PageTransition><Home /></PageTransition>} />
-              <Route path="online" element={<PageTransition><OnlineGame /></PageTransition>} />
+              <Route path="online" element={<PageTransition><TournamentLobby /></PageTransition>} />
               <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
               <Route path="profile" element={<PageTransition><Profile /></PageTransition>} />
             </Route>

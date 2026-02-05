@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { CameraPanel } from '../components/CameraPanel';
+import { playMoveSound } from '../utils/audio';
 import './Game.css';
 
 type Piece = 'wP' | 'wN' | 'wB' | 'wR' | 'wQ' | 'wK' | 'bP' | 'bN' | 'bB' | 'bR' | 'bQ' | 'bK';
@@ -248,31 +249,6 @@ function generateSquareStyles(game: Chess, selectedSquare: string, hoveredMove: 
   return styles;
 }
 
-const SOUND_URLS = {
-  move: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3',
-  capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3',
-  check: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3',
-  invalid: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/illegal.mp3'
-};
-
-const audioCache: Record<string, HTMLAudioElement> = {};
-
-function playMoveSound(type: 'move' | 'capture' | 'check' | 'invalid'): void {
-  try {
-    const url = SOUND_URLS[type];
-    if (!url) return;
-
-    if (!audioCache[url]) {
-      audioCache[url] = new Audio(url);
-    }
-
-    const audio = audioCache[url];
-    audio.currentTime = 0;
-    audio.play().catch(() => { });
-  } catch {
-    // No-op
-  }
-}
 
 const PieceIcon = ({ type, color, styleId = 'classic' }: { type: PieceSymbol, color: 'w' | 'b', styleId?: PieceStyleId }) => {
   const style = PIECE_STYLES.find(s => s.id === styleId) || PIECE_STYLES[0];

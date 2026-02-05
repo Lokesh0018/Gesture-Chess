@@ -17,7 +17,7 @@ export function Analysis() {
   const [pgnInput, setPgnInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
-  const [evaluation, setEvaluation] = useState<{ score: number; isMate: boolean } | null>(null);
+  const [evaluation, setEvaluation] = useState<{ score: number; isMate: boolean, bestMove?: string } | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
 
   // Derive the current FEN from the history index
@@ -221,16 +221,20 @@ export function Analysis() {
           {/* Board */}
           <div className="w-full max-w-[600px] aspect-square relative shadow-2xl rounded-sm overflow-hidden flex-1">
             <Chessboard
-              options={{
-                position: currentFen,
-                boardOrientation: 'white',
-                animationDurationInMs: 200,
-                showNotation: true,
-                darkSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#779556' : '#2C3E50' },
-                lightSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#EBECD0' : '#ECF0F1' },
-                pieces: customPieces,
-                allowDragging: false
-              }}
+              position={currentFen}
+              boardOrientation="white"
+              animationDuration={200}
+              customDarkSquareStyle={{ backgroundColor: boardTheme === 'classic' ? '#779556' : '#2C3E50' }}
+              customLightSquareStyle={{ backgroundColor: boardTheme === 'classic' ? '#EBECD0' : '#ECF0F1' }}
+              customPieces={customPieces}
+              arePiecesDraggable={false}
+              customArrows={evaluation?.bestMove ? [
+                [
+                  evaluation.bestMove.substring(0, 2) as any,
+                  evaluation.bestMove.substring(2, 4) as any,
+                  'rgba(59, 130, 246, 0.5)' // Blue arrow
+                ]
+              ] : []}
             />
           </div>
         </div>

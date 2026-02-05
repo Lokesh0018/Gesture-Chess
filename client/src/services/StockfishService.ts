@@ -3,7 +3,7 @@ export class StockfishService {
   private isReady: boolean = false;
   private resolveBestMove: ((move: string) => void) | null = null;
   private resolveReady: (() => void) | null = null;
-  private onEvalUpdate: ((evaluation: { score: number; isMate: boolean }) => void) | null = null;
+  private onEvalUpdate: ((evaluation: { score: number; isMate: boolean, bestMove?: string }) => void) | null = null;
 
   constructor() {
     // We copied stockfish.js to the public folder to bypass cross-origin worker restrictions.
@@ -29,11 +29,13 @@ export class StockfishService {
         // Parse evaluation score: "info depth 10 ... score cp 120 ..." or "score mate -3"
         const cpMatch = line.match(/score cp (-?\d+)/);
         const mateMatch = line.match(/score mate (-?\d+)/);
+        const pvMatch = line.match(/ pv ([a-h][1-8][a-h][1-8][qrbn]?)/);
+        const bestMove = pvMatch ? pvMatch[1] : undefined;
         
         if (mateMatch) {
-          this.onEvalUpdate({ score: parseInt(mateMatch[1], 10), isMate: true });
+          this.onEvalUpdate({ score: parseInt(mateMatch[1], 10), isMate: true, bestMove });
         } else if (cpMatch) {
-          this.onEvalUpdate({ score: parseInt(cpMatch[1], 10) / 100, isMate: false }); // Convert centipawns to pawns
+          this.onEvalUpdate({ score: parseInt(cpMatch[1], 10) / 100, isMate: false, bestMove }); // Convert centipawns to pawns
         }
       }
     };
@@ -66,7 +68,7 @@ export class StockfishService {
     });
   }
 
-  public async startEvaluation(fen: string, callback: (evaluation: { score: number; isMate: boolean }) => void): Promise<void> {
+  public async startEvaluation(fen: string, callback: (evaluation: { score: number; isMate: boolean, bestMove?: string }) => void): Promise<void> {
     await this.init();
     this.worker.postMessage('stop'); // Stop any ongoing calculations
     this.onEvalUpdate = callback;

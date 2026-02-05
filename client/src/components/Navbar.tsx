@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { Pointer, User, LogOut, Home } from 'lucide-react';
+import { ChessQueen, User, LogOut, Home } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -11,7 +11,7 @@ export const Navbar = () => {
       <div className="navbar-container">
         {/* Left: Logo */}
         <div className="nav-section">
-          <Pointer style={{ width: '32px', height: '32px', color: 'var(--color-accent)' }} />
+          <ChessQueen style={{ width: '32px', height: '32px', color: 'var(--color-accent)' }} />
           <Link to="/" className="nav-logo">Gesture<span>Chess</span></Link>
         </div>
 
@@ -36,6 +36,9 @@ export const Navbar = () => {
         </Link>
         <Link to="/learn" className={`nav-link ${location.pathname === '/learn' ? 'active' : ''}`}>
           Learn
+        </Link>
+        <Link to="/online" className={`nav-link ${location.pathname === '/online' ? 'active' : ''}`}>
+          Tournaments
         </Link>
       </div>
 

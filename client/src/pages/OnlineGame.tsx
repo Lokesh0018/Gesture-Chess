@@ -11,6 +11,7 @@ export const OnlineGame = () => {
   const [roomId, setRoomId] = useState('');
   const [playerColor, setPlayerColor] = useState<'w' | 'b' | null>(null);
   const [status, setStatus] = useState('Disconnected');
+  const [boardShake, setBoardShake] = useState(false);
   
   const { isPinching, selectedSquare, hoveredSquare, clearDrag } = useGestureStore();
   const prevPinching = useRef(isPinching);
@@ -100,7 +101,11 @@ export const OnlineGame = () => {
         promotion: 'q',
       });
 
-      if (move === null) return false;
+      if (move === null) {
+        setBoardShake(true);
+        setTimeout(() => setBoardShake(false), 300);
+        return false;
+      }
 
       setGame(gameCopy);
       if (socket) {
@@ -108,9 +113,47 @@ export const OnlineGame = () => {
       }
       return true;
     } catch (e) {
+      setBoardShake(true);
+      setTimeout(() => setBoardShake(false), 300);
       return false;
     }
   }
+
+  // Snap Highlighting Logic
+  const optionSquares = (() => {
+    const styles: Record<string, React.CSSProperties> = {};
+    const history = game.history({ verbose: true });
+    if (history.length > 0) {
+      const last = history[history.length - 1];
+      styles[last.from] = { backgroundColor: 'rgba(234, 179, 8, 0.4)' };
+      styles[last.to] = { backgroundColor: 'rgba(234, 179, 8, 0.6)' };
+    }
+    if (selectedSquare) {
+      styles[selectedSquare] = { backgroundColor: 'rgba(59, 130, 246, 0.5)' };
+      const moves = game.moves({ square: selectedSquare as import('chess.js').Square, verbose: true });
+      moves.forEach(m => {
+        styles[m.to] = {
+          background: game.get(m.to as import('chess.js').Square)
+            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
+            : 'radial-gradient(circle, rgba(0,0,0,.1) 25%, transparent 25%)',
+          borderRadius: '50%'
+        };
+      });
+    }
+    if (game.isCheck()) {
+      const kingColor = game.turn();
+      const board = game.board();
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const p = board[r][c];
+          if (p && p.type === 'k' && p.color === kingColor) {
+            styles[p.square] = { background: 'radial-gradient(circle, rgba(239, 68, 68, 0.7) 35%, transparent 70%)' };
+          }
+        }
+      }
+    }
+    return styles;
+  })();
 
   return (
     <div className="online-game-container">
@@ -139,7 +182,7 @@ export const OnlineGame = () => {
         </div>
       )}
 
-      <div className="online-board-wrapper">
+      <div className={`online-board-wrapper ${boardShake ? 'shake-error' : ''} ${game.isCheck() ? 'check-alert' : ''}`}>
         <Chessboard 
           options={{
             position: game.fen(),
@@ -147,6 +190,7 @@ export const OnlineGame = () => {
             boardOrientation: playerColor === 'b' ? 'black' : 'white',
             darkSquareStyle: { backgroundColor: 'var(--color-board-dark)' },
             lightSquareStyle: { backgroundColor: 'var(--color-board-light)' },
+            squareStyles: optionSquares,
             animationDurationInMs: 200,
             allowDragging: true,
             allowDragOffBoard: true,

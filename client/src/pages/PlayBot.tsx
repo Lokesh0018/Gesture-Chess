@@ -10,27 +10,7 @@ import toast from 'react-hot-toast';
 import './Game.css';
 import { CheckCircle2, RotateCcw } from 'lucide-react';
 
-const SOUND_URLS = {
-  move: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-self.mp3',
-  capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/capture.mp3',
-  check: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/move-check.mp3',
-  invalid: 'https://images.chesscomfiles.com/chess-themes/sounds/_MP3_/default/illegal.mp3'
-};
-
-const audioCache: Record<string, HTMLAudioElement> = {};
-
-function playMoveSound(type: 'move' | 'capture' | 'check' | 'invalid'): void {
-  try {
-    const url = SOUND_URLS[type];
-    if (!url) return;
-    if (!audioCache[url]) audioCache[url] = new Audio(url);
-    const audio = audioCache[url];
-    audio.currentTime = 0;
-    audio.play().catch(() => { });
-  } catch {
-    // Ignore audio errors
-  }
-}
+import { playMoveSound } from '../utils/audio';
 
 const BOT_LEVELS = [
   { level: 1, name: 'Novice Nick', elo: 600, depth: 1, skill: 0, avatar: '👶' },
@@ -47,9 +27,12 @@ export const PlayBot = () => {
   const [game, setGame] = useState(new Chess());
   const [selectedLevel, setSelectedLevel] = useState(BOT_LEVELS[2]);
   const [isBotThinking, setIsBotThinking] = useState(false);
+  const [hintMove, setHintMove] = useState<string | null>(null);
+  const [isGettingHint, setIsGettingHint] = useState(false);
   const [showSetup, setShowSetup] = useState(true);
   const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
   const [gameResult, setGameResult] = useState<string | null>(null);
+  const [boardShake, setBoardShake] = useState(false);
 
   const [selectedSquare, setSelectedSquare] = useState<string>('');
 
@@ -117,7 +100,7 @@ export const PlayBot = () => {
       if (token && game.history().length > 0) {
         let resultStr = 'draw';
         if (game.isCheckmate()) {
-          const winner = game.turn() === 'w' ? 'black' : 'white';
+          const winner = game.turn() === 'w' ? 'b' : 'w';
           resultStr = winner === playerColor ? 'win' : 'loss';
         }
         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/user/match`, {
@@ -189,6 +172,7 @@ export const PlayBot = () => {
       if (move) {
         setGame(gameCopy);
         setSelectedSquare('');
+        setHintMove(null);
         
         if (!isMuted) {
           if (gameCopy.isCheck()) playMoveSound('check');
@@ -200,6 +184,8 @@ export const PlayBot = () => {
       }
     } catch {
       if (!isMuted) playMoveSound('invalid');
+      setBoardShake(true);
+      setTimeout(() => setBoardShake(false), 300);
       return false;
     }
     return false;
@@ -225,6 +211,7 @@ export const PlayBot = () => {
       if (move) {
         setGame(new Chess(game.fen()));
         setSelectedSquare('');
+        setHintMove(null);
         
         if (!isMuted) {
           if (game.isCheck()) playMoveSound('check');
@@ -234,19 +221,40 @@ export const PlayBot = () => {
       } else {
         const p = game.get(square);
         if (p && p.color === playerColor) setSelectedSquare(square);
-        else setSelectedSquare('');
+        else {
+          setSelectedSquare('');
+          if (!isMuted) playMoveSound('invalid');
+          setBoardShake(true);
+          setTimeout(() => setBoardShake(false), 300);
+        }
       }
     } catch {
       const p = game.get(square);
       if (p && p.color === playerColor) setSelectedSquare(square);
-      else setSelectedSquare('');
+      else {
+        setSelectedSquare('');
+        if (!isMuted) playMoveSound('invalid');
+        setBoardShake(true);
+        setTimeout(() => setBoardShake(false), 300);
+      }
     }
   }
 
   const startGame = () => {
     setGame(new Chess());
     setGameResult(null);
+    setHintMove(null);
     setShowSetup(false);
+  };
+
+  const getHint = async () => {
+    if (isGettingHint || game.turn() !== playerColor || isBotThinking) return;
+    setIsGettingHint(true);
+    const bestMove = await stockfishService.getBestMove(game.fen(), 12, 20);
+    setHintMove(bestMove);
+    setIsGettingHint(false);
+    // Auto-hide hint after 3 seconds
+    setTimeout(() => setHintMove(null), 3000);
   };
 
   return (
@@ -269,7 +277,7 @@ export const PlayBot = () => {
         </div>
 
         {/* Board */}
-        <div className="w-full max-w-[600px] aspect-square relative shadow-2xl rounded-sm overflow-hidden">
+        <div className={`w-full max-w-[600px] aspect-square relative shadow-2xl rounded-sm overflow-hidden ${boardShake ? 'shake-error' : ''} ${game.isCheck() ? 'check-alert' : ''}`}>
           <Chessboard
             options={{
               id: "BotBoard",
@@ -285,6 +293,13 @@ export const PlayBot = () => {
               pieces: customPieces,
               allowDragging: game.turn() === playerColor && !isBotThinking && !gameResult
             }}
+            {...{ customArrows: hintMove ? [
+              [
+                hintMove.substring(0, 2) as import('chess.js').Square,
+                hintMove.substring(2, 4) as import('chess.js').Square,
+                'rgba(59, 130, 246, 0.6)'
+              ]
+            ] : undefined } as any}
           />
         </div>
 
@@ -293,10 +308,19 @@ export const PlayBot = () => {
           <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)] flex items-center justify-center text-2xl shadow-lg">
             👤
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col flex-1">
             <span className="text-white font-bold text-lg">You</span>
             <span className="text-[var(--text-secondary)] text-sm">Human</span>
           </div>
+          {!gameResult && game.turn() === playerColor && !isBotThinking && (
+            <button 
+              onClick={getHint}
+              disabled={isGettingHint}
+              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/40 text-blue-400 rounded-lg text-sm font-bold transition-colors disabled:opacity-50"
+            >
+              {isGettingHint ? 'Thinking...' : '💡 Hint'}
+            </button>
+          )}
         </div>
       </div>
 

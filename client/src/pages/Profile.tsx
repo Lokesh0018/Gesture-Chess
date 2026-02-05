@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
-import { Shield, Target, Trophy, Clock, XCircle, MinusCircle, CheckCircle2 } from 'lucide-react';
+import { Target, Trophy, Clock, XCircle, MinusCircle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const Profile = () => {

@@ -1,5 +1,5 @@
 
-import { Swords, Users, Trophy, Settings, BarChart2, LayoutDashboard, Crown } from 'lucide-react';
+import { Swords, Users, Trophy, Settings, BarChart2, LayoutDashboard, Crown, Bot, Puzzle, BookOpen } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 
@@ -45,6 +45,14 @@ export const Home = () => {
           <Link to="/online" className={`sidebar-link ${currentPath === '/online' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
             <Swords className="sidebar-icon" />
             <span>Online Match</span>
+          </Link>
+          <Link to="/bot" className={`sidebar-link ${currentPath === '/bot' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
+            <Bot className="sidebar-icon" />
+            <span>Play vs Bot</span>
+          </Link>
+          <Link to="/puzzles" className={`sidebar-link ${currentPath === '/puzzles' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
+            <Puzzle className="sidebar-icon" />
+            <span>Puzzles</span>
           </Link>
           <Link to="/leaderboard" className={`sidebar-link ${currentPath === '/leaderboard' ? 'active' : ''} hover:bg-white/[0.05] transition-colors rounded-xl mx-2 mb-2`}>
             <BarChart2 className="sidebar-icon" />
@@ -98,6 +106,42 @@ export const Home = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-3">Online Match</h3>
                 <p className="text-slate-400 leading-relaxed">Find an opponent online and climb the global leaderboard.</p>
+              </Link>
+            </motion.div>
+            
+            {/* Play vs Bot Card */}
+            <motion.div variants={itemVariants}>
+              <Link to="/bot" className="group block h-full relative bg-[#0F172A]/60 backdrop-blur-xl border border-white/[0.08] rounded-[24px] p-8 hover:-translate-y-2 hover:border-[#A855F7]/50 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-[0_8px_30px_rgba(168,85,247,0.15)]">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#A855F7]/0 to-[#A855F7]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="w-14 h-14 rounded-2xl bg-[#A855F7]/10 border border-[#A855F7]/20 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[#A855F7] transition-all duration-300">
+                  <Bot className="w-7 h-7 text-[#A855F7] group-hover:text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Play vs Bot</h3>
+                <p className="text-slate-400 leading-relaxed">Challenge our advanced AI with adjustable difficulty levels.</p>
+              </Link>
+            </motion.div>
+
+            {/* Puzzles Card */}
+            <motion.div variants={itemVariants}>
+              <Link to="/puzzles" className="group block h-full relative bg-[#0F172A]/60 backdrop-blur-xl border border-white/[0.08] rounded-[24px] p-8 hover:-translate-y-2 hover:border-[#F97316]/50 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-[0_8px_30px_rgba(249,115,22,0.15)]">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#F97316]/0 to-[#F97316]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="w-14 h-14 rounded-2xl bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[#F97316] transition-all duration-300">
+                  <Puzzle className="w-7 h-7 text-[#F97316] group-hover:text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Puzzles</h3>
+                <p className="text-slate-400 leading-relaxed">Improve your tactical skills with daily chess puzzles.</p>
+              </Link>
+            </motion.div>
+
+            {/* Learn Card */}
+            <motion.div variants={itemVariants}>
+              <Link to="/learn" className="group block h-full relative bg-[#0F172A]/60 backdrop-blur-xl border border-white/[0.08] rounded-[24px] p-8 hover:-translate-y-2 hover:border-[#EC4899]/50 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-[0_8px_30px_rgba(236,72,153,0.15)]">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#EC4899]/0 to-[#EC4899]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="w-14 h-14 rounded-2xl bg-[#EC4899]/10 border border-[#EC4899]/20 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-[#EC4899] transition-all duration-300">
+                  <BookOpen className="w-7 h-7 text-[#EC4899] group-hover:text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Learn</h3>
+                <p className="text-slate-400 leading-relaxed">Study openings, endgames, and master chess fundamentals.</p>
               </Link>
             </motion.div>
             
