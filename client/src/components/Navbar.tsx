@@ -11,7 +11,7 @@ export const Navbar = () => {
       <div className="navbar-container">
         {/* Left: Logo */}
         <div className="nav-section">
-          <ChessQueen style={{ width: '32px', height: '32px', color: 'var(--color-accent)' }} />
+          <ChessQueen style={{ width: '32px', height: '32px', color: 'var(--color-accent)', marginRight: '10px' }} />
           <Link to="/" className="nav-logo">Gesture<span>Chess</span></Link>
         </div>
 

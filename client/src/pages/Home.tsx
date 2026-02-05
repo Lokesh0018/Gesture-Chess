@@ -2,14 +2,11 @@ import { Swords, Users, Trophy, LayoutDashboard, Crown, Bot, Puzzle, BookOpen, C
 import { Link } from 'react-router-dom';
 import { motion, type Variants } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
+import './Home.css';
 
-// Animation Variants
 const containerVariants = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
 const itemVariants: Variants = {
@@ -28,42 +25,41 @@ export const Home = () => {
 
   return (
     <motion.div 
-      className="max-w-[1400px] mx-auto w-full pb-12 font-sans"
+      className="home-container"
       variants={containerVariants}
       initial="hidden"
       animate="show"
     >
-      {/* 1. Hero Section (240px height) */}
-      <motion.div variants={itemVariants} className="relative h-[240px] mb-10 bg-gradient-to-br from-blue-900/40 via-[#0B1120] to-purple-900/20 rounded-[24px] border border-white/10 overflow-hidden shadow-2xl flex items-center px-10">
-        {/* Decorative Elements */}
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 mix-blend-overlay"></div>
-        <div className="absolute -right-10 -top-10 w-96 h-96 bg-blue-500/20 blur-[100px] rounded-full pointer-events-none"></div>
-        <div className="absolute right-12 top-1/2 -translate-y-1/2 opacity-[0.03] pointer-events-none select-none">
-          <Crown className="w-[300px] h-[300px] rotate-12" />
+      {/* Hero Section */}
+      <motion.div variants={itemVariants} className="home-hero">
+        <div className="home-hero-bg-texture"></div>
+        <div className="home-hero-glow"></div>
+        <div className="home-hero-icon">
+          <Crown className="rotate-12" size={300} />
         </div>
 
-        <div className="relative z-10 max-w-2xl">
+        <div className="home-hero-content">
           <motion.h1 
             initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
-            className="text-5xl md:text-[64px] font-extrabold text-white mb-3 tracking-tight leading-tight"
+            className="home-hero-title"
           >
-            Welcome Back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">{user?.username || 'Player'}</span> 👋
+            Welcome Back, <span className="home-hero-title-highlight">{user?.username || 'Player'}</span> 👋
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-            className="text-slate-400 text-lg mb-8 font-medium max-w-xl leading-relaxed"
+            className="home-hero-subtitle"
           >
             Ready for your next challenge? Play online, improve your rating, solve today's puzzle, and climb the leaderboard.
           </motion.p>
           <motion.div 
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-            className="flex flex-wrap gap-4"
+            className="home-hero-actions"
           >
-            <Link to="/online" className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3.5 rounded-[16px] font-bold transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)] flex items-center gap-2 hover:-translate-y-0.5">
+            <Link to="/online" className="home-btn-primary">
               <Play size={20} fill="currentColor" />
               Play Now
             </Link>
-            <Link to="/puzzles" className="bg-[#182235] hover:bg-[#202D45] border border-white/10 text-white px-8 py-3.5 rounded-[16px] font-bold transition-all flex items-center gap-2 hover:-translate-y-0.5 hover:border-white/20">
+            <Link to="/puzzles" className="home-btn-secondary">
               <Puzzle size={20} />
               Daily Puzzle
             </Link>
@@ -71,131 +67,127 @@ export const Home = () => {
         </div>
       </motion.div>
 
-      {/* 2. Quick Actions (4 compact cards) */}
-      <div className="mb-12">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <Link to="/local" className="group bg-[#182235] border border-white/5 hover:border-white/10 rounded-[20px] p-5 flex items-center gap-4 transition-all duration-300 hover:bg-[#202D45] hover:-translate-y-1 shadow-lg h-[90px]">
-            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)] transition-all">
-              <Clock className="text-blue-400 group-hover:text-white transition-colors" size={24} />
+      {/* Quick Actions */}
+      <div className="home-quick-actions">
+        <div className="home-quick-actions-grid">
+          <Link to="/local" className="home-action-card group">
+            <div className="home-action-icon-wrapper home-action-icon-clock">
+              <Clock size={24} />
             </div>
-            <div className="flex flex-col flex-1">
-              <span className="font-bold text-white text-sm">Continue Game</span>
-              <span className="text-slate-400 text-xs">Local Match</span>
+            <div className="home-action-text">
+              <span className="home-action-title">Continue Game</span>
+              <span className="home-action-subtitle">Local Match</span>
             </div>
-            <ChevronRight className="text-slate-500 group-hover:text-white transition-colors" size={18} />
+            <ChevronRight className="home-action-arrow" size={18} />
           </Link>
           
-          <Link to="/puzzles" className="group bg-[#182235] border border-white/5 hover:border-white/10 rounded-[20px] p-5 flex items-center gap-4 transition-all duration-300 hover:bg-[#202D45] hover:-translate-y-1 shadow-lg h-[90px]">
-            <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500 group-hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] transition-all">
-              <Target className="text-orange-400 group-hover:text-white transition-colors" size={24} />
+          <Link to="/puzzles" className="home-action-card group">
+            <div className="home-action-icon-wrapper home-action-icon-target">
+              <Target size={24} />
             </div>
-            <div className="flex flex-col flex-1">
-              <span className="font-bold text-white text-sm">Daily Puzzle</span>
-              <span className="text-slate-400 text-xs">Rating 1450</span>
+            <div className="home-action-text">
+              <span className="home-action-title">Daily Puzzle</span>
+              <span className="home-action-subtitle">Rating 1450</span>
             </div>
-            <ChevronRight className="text-slate-500 group-hover:text-white transition-colors" size={18} />
+            <ChevronRight className="home-action-arrow" size={18} />
           </Link>
 
-          <Link to="/bot" className="group bg-[#182235] border border-white/5 hover:border-white/10 rounded-[20px] p-5 flex items-center gap-4 transition-all duration-300 hover:bg-[#202D45] hover:-translate-y-1 shadow-lg h-[90px]">
-            <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500 group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] transition-all">
-              <Bot className="text-purple-400 group-hover:text-white transition-colors" size={24} />
+          <Link to="/bot" className="home-action-card group">
+            <div className="home-action-icon-wrapper home-action-icon-bot">
+              <Bot size={24} />
             </div>
-            <div className="flex flex-col flex-1">
-              <span className="font-bold text-white text-sm">Play Bot</span>
-              <span className="text-slate-400 text-xs">Practice offline</span>
+            <div className="home-action-text">
+              <span className="home-action-title">Play Bot</span>
+              <span className="home-action-subtitle">Practice offline</span>
             </div>
-            <ChevronRight className="text-slate-500 group-hover:text-white transition-colors" size={18} />
+            <ChevronRight className="home-action-arrow" size={18} />
           </Link>
 
-          <Link to="/online" className="group bg-[#182235] border border-white/5 hover:border-white/10 rounded-[20px] p-5 flex items-center gap-4 transition-all duration-300 hover:bg-[#202D45] hover:-translate-y-1 shadow-lg h-[90px]">
-            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center group-hover:bg-green-500 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.4)] transition-all">
-              <Swords className="text-green-400 group-hover:text-white transition-colors" size={24} />
+          <Link to="/online" className="home-action-card group">
+            <div className="home-action-icon-wrapper home-action-icon-swords">
+              <Swords size={24} />
             </div>
-            <div className="flex flex-col flex-1">
-              <span className="font-bold text-white text-sm">Online Match</span>
-              <span className="text-slate-400 text-xs">Find opponent</span>
+            <div className="home-action-text">
+              <span className="home-action-title">Online Match</span>
+              <span className="home-action-subtitle">Find opponent</span>
             </div>
-            <ChevronRight className="text-slate-500 group-hover:text-white transition-colors" size={18} />
+            <ChevronRight className="home-action-arrow" size={18} />
           </Link>
         </div>
       </div>
 
-      {/* 70/30 Split Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+      <div className="home-split-layout">
         
         {/* Left Column (70%) */}
-        <div className="xl:col-span-8 flex flex-col gap-10">
+        <div className="home-left-col">
           
           {/* Game Modes (2x2 Grid) */}
           <section>
-            <h2 className="text-[28px] font-semibold text-white mb-6 flex items-center gap-3">
-              <LayoutDashboard className="text-indigo-400" size={28} />
+            <h2 className="home-section-title">
+              <LayoutDashboard style={{ color: '#818CF8' }} size={28} />
               Game Modes
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="home-modes-grid">
               
               <motion.div variants={itemVariants}>
-                <Link to="/local" className="block bg-[#182235] border border-white/5 hover:border-white/10 p-8 rounded-[24px] flex flex-col h-full group transition-all duration-300 hover:-translate-y-1 hover:bg-[#202D45] shadow-lg relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500 pointer-events-none">
+                <Link to="/local" className="home-mode-card">
+                  <div className="home-mode-bg-icon">
                     <Users size={120} />
                   </div>
-                  <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-blue-500/20 to-indigo-500/10 border border-blue-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Users className="w-8 h-8 text-blue-400" />
+                  <div className="home-mode-icon-container home-mode-blue">
+                    <Users size={32} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Local Play</h3>
-                  <p className="text-slate-400 mb-8 flex-1 text-[15px] leading-relaxed">Play against a friend on the same device using hand gestures or mouse.</p>
-                  <div className="flex items-center text-blue-400 font-bold text-sm gap-2">
+                  <h3 className="home-mode-title">Local Play</h3>
+                  <p className="home-mode-desc">Play against a friend on the same device using hand gestures or mouse.</p>
+                  <div className="home-mode-action" style={{ color: '#60A5FA' }}>
                     Start Game <ChevronRight size={16} />
                   </div>
                 </Link>
               </motion.div>
 
               <motion.div variants={itemVariants}>
-                <Link to="/online" className="block bg-[#182235] border border-white/5 hover:border-white/10 p-8 rounded-[24px] flex flex-col h-full group transition-all duration-300 hover:-translate-y-1 hover:bg-[#202D45] shadow-lg relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500 pointer-events-none">
+                <Link to="/online" className="home-mode-card">
+                  <div className="home-mode-bg-icon">
                     <Swords size={120} />
                   </div>
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-green-500/20 to-emerald-500/10 border border-green-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Swords className="w-8 h-8 text-green-400" />
-                    </div>
-                    <span className="bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wider">HOT</span>
+                  <div className="home-mode-icon-container home-mode-green">
+                    <Swords size={32} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Online Match</h3>
-                  <p className="text-slate-400 mb-8 flex-1 text-[15px] leading-relaxed">Find an opponent online and climb the global leaderboard ranking.</p>
-                  <div className="flex items-center text-green-400 font-bold text-sm gap-2">
+                  <h3 className="home-mode-title">Online Match</h3>
+                  <p className="home-mode-desc">Find an opponent online and climb the global leaderboard ranking.</p>
+                  <div className="home-mode-action" style={{ color: '#4ADE80' }}>
                     Find Match <ChevronRight size={16} />
                   </div>
                 </Link>
               </motion.div>
 
               <motion.div variants={itemVariants}>
-                <Link to="/learn" className="block bg-[#182235] border border-white/5 hover:border-white/10 p-8 rounded-[24px] flex flex-col h-full group transition-all duration-300 hover:-translate-y-1 hover:bg-[#202D45] shadow-lg relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500 pointer-events-none">
+                <Link to="/learn" className="home-mode-card">
+                  <div className="home-mode-bg-icon">
                     <BookOpen size={120} />
                   </div>
-                  <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-pink-500/20 to-rose-500/10 border border-pink-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <BookOpen className="w-8 h-8 text-pink-400" />
+                  <div className="home-mode-icon-container home-mode-pink">
+                    <BookOpen size={32} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Learn</h3>
-                  <p className="text-slate-400 mb-8 flex-1 text-[15px] leading-relaxed">Study openings, endgames, and master chess fundamentals with interactive lessons.</p>
-                  <div className="flex items-center text-pink-400 font-bold text-sm gap-2">
+                  <h3 className="home-mode-title">Learn</h3>
+                  <p className="home-mode-desc">Study openings, endgames, and master chess fundamentals with interactive lessons.</p>
+                  <div className="home-mode-action" style={{ color: '#F472B6' }}>
                     Start Learning <ChevronRight size={16} />
                   </div>
                 </Link>
               </motion.div>
 
               <motion.div variants={itemVariants}>
-                <Link to="/bot" className="block bg-[#182235] border border-white/5 hover:border-white/10 p-8 rounded-[24px] flex flex-col h-full group transition-all duration-300 hover:-translate-y-1 hover:bg-[#202D45] shadow-lg relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:scale-110 group-hover:opacity-10 transition-all duration-500 pointer-events-none">
+                <Link to="/bot" className="home-mode-card">
+                  <div className="home-mode-bg-icon">
                     <Bot size={120} />
                   </div>
-                  <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-purple-500/20 to-violet-500/10 border border-purple-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Bot className="w-8 h-8 text-purple-400" />
+                  <div className="home-mode-icon-container home-mode-purple">
+                    <Bot size={32} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">Play vs Bot</h3>
-                  <p className="text-slate-400 mb-8 flex-1 text-[15px] leading-relaxed">Challenge our advanced Stockfish AI with 8 adjustable difficulty levels.</p>
-                  <div className="flex items-center text-purple-400 font-bold text-sm gap-2">
+                  <h3 className="home-mode-title">Play vs Bot</h3>
+                  <p className="home-mode-desc">Challenge our advanced Stockfish AI with 8 adjustable difficulty levels.</p>
+                  <div className="home-mode-action" style={{ color: '#C084FC' }}>
                     Challenge AI <ChevronRight size={16} />
                   </div>
                 </Link>
@@ -206,52 +198,52 @@ export const Home = () => {
 
           {/* Recent Activity Timeline */}
           <section>
-            <h2 className="text-[28px] font-semibold text-white mb-6 flex items-center gap-3">
-              <ActivityIcon className="text-slate-400 w-7 h-7" />
+            <h2 className="home-section-title">
+              <ActivityIcon style={{ color: '#94A3B8' }} />
               Recent Activity
             </h2>
-            <motion.div variants={itemVariants} className="bg-[#182235] border border-white/5 rounded-[24px] p-8 shadow-lg">
-              <div className="relative border-l border-white/10 ml-4 space-y-8 pb-4">
+            <motion.div variants={itemVariants} className="home-panel">
+              <div className="home-activity-timeline">
                 
                 {/* Activity Item 1 */}
-                <div className="relative pl-8">
-                  <div className="absolute -left-4 top-0 w-8 h-8 bg-[#182235] border-4 border-[#0B1120] rounded-full flex items-center justify-center shadow-lg">
-                    <div className="w-3 h-3 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.6)]"></div>
+                <div className="home-activity-item">
+                  <div className="home-activity-dot-wrapper">
+                    <div className="home-activity-dot home-activity-dot-green"></div>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="home-activity-content">
                     <div>
-                      <p className="text-white font-bold text-lg">Won vs MasterBot (Lvl 5)</p>
-                      <p className="text-slate-500 text-sm">2 hours ago</p>
+                      <p className="home-activity-title">Won vs MasterBot (Lvl 5)</p>
+                      <p className="home-activity-time">2 hours ago</p>
                     </div>
-                    <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1 rounded-lg text-sm font-bold w-fit">+15 Rating</span>
+                    <span className="home-activity-badge home-activity-badge-green">+15 Rating</span>
                   </div>
                 </div>
 
                 {/* Activity Item 2 */}
-                <div className="relative pl-8">
-                  <div className="absolute -left-4 top-0 w-8 h-8 bg-[#182235] border-4 border-[#0B1120] rounded-full flex items-center justify-center shadow-lg">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
+                <div className="home-activity-item">
+                  <div className="home-activity-dot-wrapper">
+                    <div className="home-activity-dot home-activity-dot-blue"></div>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="home-activity-content">
                     <div>
-                      <p className="text-white font-bold text-lg">Solved Puzzle #4892</p>
-                      <p className="text-slate-500 text-sm">Yesterday</p>
+                      <p className="home-activity-title">Solved Puzzle #4892</p>
+                      <p className="home-activity-time">Yesterday</p>
                     </div>
-                    <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-lg text-sm font-bold w-fit">+5 EXP</span>
+                    <span className="home-activity-badge home-activity-badge-blue">+5 EXP</span>
                   </div>
                 </div>
 
                 {/* Activity Item 3 */}
-                <div className="relative pl-8">
-                  <div className="absolute -left-4 top-0 w-8 h-8 bg-[#182235] border-4 border-[#0B1120] rounded-full flex items-center justify-center shadow-lg">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.6)]"></div>
+                <div className="home-activity-item">
+                  <div className="home-activity-dot-wrapper">
+                    <div className="home-activity-dot home-activity-dot-purple"></div>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="home-activity-content">
                     <div>
-                      <p className="text-white font-bold text-lg">Achievement Unlocked: First Victory</p>
-                      <p className="text-slate-500 text-sm">2 days ago</p>
+                      <p className="home-activity-title">Achievement Unlocked: First Victory</p>
+                      <p className="home-activity-time">2 days ago</p>
                     </div>
-                    <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-1 rounded-lg text-sm font-bold w-fit">+50 EXP</span>
+                    <span className="home-activity-badge home-activity-badge-purple">+50 EXP</span>
                   </div>
                 </div>
 
@@ -262,118 +254,120 @@ export const Home = () => {
         </div>
 
         {/* Right Column (30%) */}
-        <div className="xl:col-span-4 flex flex-col gap-8">
+        <div className="home-right-col">
           
           {/* Analytics Panel */}
-          <motion.div variants={itemVariants} className="bg-[#182235] border border-white/5 rounded-[24px] p-8 shadow-lg">
-            <h3 className="text-[22px] font-bold text-white mb-6 flex items-center gap-3">
-              <TrendingUp className="text-blue-400" />
+          <motion.div variants={itemVariants} className="home-panel">
+            <h3 className="home-panel-title">
+              <TrendingUp style={{ color: '#60A5FA' }} />
               Analytics
             </h3>
             
-            <div className="bg-[#0B1120] rounded-[16px] p-6 text-center mb-6 border border-white/5">
-              <p className="text-slate-400 text-sm font-semibold tracking-wider uppercase mb-2">Global Rating</p>
-              <p className="text-[48px] font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400 leading-none mb-2">
-                {user?.rating || 1200}
-              </p>
-              <div className="flex items-center justify-center gap-2 text-green-400 text-sm font-bold">
+            <div className="home-rating-box">
+              <p className="home-rating-label">Global Rating</p>
+              <p className="home-rating-value">{user?.rating || 1200}</p>
+              <div className="home-rating-trend">
                 <TrendingUp size={16} /> +15 this week
               </div>
             </div>
 
-            <div className="space-y-5">
+            <div>
               <div>
-                <div className="flex justify-between items-end mb-2">
-                  <span className="text-slate-400 text-sm font-medium">Win Rate</span>
-                  <span className="text-white font-bold text-lg">{winRate}%</span>
+                <div className="home-stats-row">
+                  <span className="home-stats-label">Win Rate</span>
+                  <span className="home-stats-value">{winRate}%</span>
                 </div>
-                <div className="w-full h-2.5 bg-[#0B1120] rounded-full overflow-hidden">
+                <div className="home-progress-bar-bg">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${winRate}%` }}
                     transition={{ duration: 1, delay: 0.5 }}
-                    className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                    className="home-progress-bar-fill"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 pt-4 border-t border-white/5">
-                <div className="text-center bg-[#0B1120] py-3 rounded-xl border border-white/5">
-                  <p className="text-slate-400 text-xs mb-1">Wins</p>
-                  <p className="text-green-400 font-bold text-lg">{wins}</p>
+              <div className="home-stats-grid">
+                <div className="home-stat-box">
+                  <p className="home-stat-box-label">Wins</p>
+                  <p className="home-stat-box-win">{wins}</p>
                 </div>
-                <div className="text-center bg-[#0B1120] py-3 rounded-xl border border-white/5">
-                  <p className="text-slate-400 text-xs mb-1">Draws</p>
-                  <p className="text-slate-300 font-bold text-lg">{draws}</p>
+                <div className="home-stat-box">
+                  <p className="home-stat-box-label">Draws</p>
+                  <p className="home-stat-box-draw">{draws}</p>
                 </div>
-                <div className="text-center bg-[#0B1120] py-3 rounded-xl border border-white/5">
-                  <p className="text-slate-400 text-xs mb-1">Losses</p>
-                  <p className="text-red-400 font-bold text-lg">{losses}</p>
+                <div className="home-stat-box">
+                  <p className="home-stat-box-label">Losses</p>
+                  <p className="home-stat-box-loss">{losses}</p>
                 </div>
               </div>
             </div>
           </motion.div>
 
           {/* Daily Challenge Widget */}
-          <motion.div variants={itemVariants} className="bg-gradient-to-br from-purple-900/40 to-[#182235] border border-purple-500/20 rounded-[24px] p-8 shadow-[0_10px_30px_rgba(168,85,247,0.1)] relative overflow-hidden">
-            <div className="absolute -right-6 -top-6 text-purple-500/20 pointer-events-none">
+          <motion.div variants={itemVariants} className="home-challenge-panel">
+            <div className="home-challenge-bg-icon">
               <Star size={120} fill="currentColor" />
             </div>
-            <h3 className="text-[22px] font-bold text-white mb-2 relative z-10">Daily Challenge</h3>
-            <p className="text-purple-300/80 text-sm mb-6 relative z-10">Solve today's Grandmaster puzzle to earn double EXP.</p>
-            
-            <div className="flex justify-between items-center mb-6 relative z-10">
-              <span className="bg-[#0B1120] text-purple-400 border border-purple-500/30 px-3 py-1 rounded-lg text-sm font-bold">Hard</span>
-              <span className="text-white font-bold flex items-center gap-1"><Trophy size={16} className="text-amber-400"/> +50 EXP</span>
-            </div>
+            <div className="home-challenge-content">
+              <h3 className="home-challenge-title">Daily Challenge</h3>
+              <p className="home-challenge-desc">Solve today's Grandmaster puzzle to earn double EXP.</p>
+              
+              <div className="home-challenge-info">
+                <span className="home-challenge-badge">Hard</span>
+                <span className="home-challenge-exp">
+                  <Trophy size={16} style={{ color: '#FBBF24' }}/> +50 EXP
+                </span>
+              </div>
 
-            <Link to="/puzzles" className="block w-full bg-purple-600 hover:bg-purple-500 text-white text-center font-bold py-3.5 rounded-[16px] transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] relative z-10">
-              Play Challenge
-            </Link>
+              <Link to="/puzzles" className="home-btn-challenge">
+                Play Challenge
+              </Link>
+            </div>
           </motion.div>
 
           {/* Achievements Widget */}
-          <motion.div variants={itemVariants} className="bg-[#182235] border border-white/5 rounded-[24px] p-8 shadow-lg">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-[22px] font-bold text-white flex items-center gap-3">
-                <Medal className="text-amber-400" />
+          <motion.div variants={itemVariants} className="home-panel">
+            <div className="home-achievements-header">
+              <h3 className="home-panel-title" style={{ marginBottom: 0 }}>
+                <Medal style={{ color: '#FBBF24' }} />
                 Achievements
               </h3>
-              <span className="text-slate-400 text-sm hover:text-white cursor-pointer transition-colors">View All</span>
+              <span className="home-achievements-view-all">View All</span>
             </div>
             
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 bg-[#0B1120] p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center flex-shrink-0 border border-orange-500/20">
-                  <Flame className="text-orange-500" size={24} />
+            <div className="home-achievements-list">
+              <div className="home-achievement-item">
+                <div className="home-achievement-icon-wrapper home-achievement-icon-flame">
+                  <Flame size={24} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold text-[15px] truncate">3 Day Streak</p>
-                  <p className="text-slate-400 text-xs truncate">Log in tomorrow to keep it going!</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4 bg-[#0B1120] p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 border border-purple-500/20">
-                  <Crown className="text-purple-400" size={24} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-bold text-[15px] truncate">First Victory</p>
-                  <p className="text-slate-400 text-xs truncate">Won a game against AI</p>
+                <div className="home-achievement-details">
+                  <p className="home-achievement-title">3 Day Streak</p>
+                  <p className="home-achievement-desc">Log in tomorrow to keep it going!</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-4 bg-[#0B1120] p-4 rounded-xl border border-white/5 opacity-60">
-                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
-                  <Target className="text-slate-400" size={24} />
+              <div className="home-achievement-item">
+                <div className="home-achievement-icon-wrapper home-achievement-icon-crown">
+                  <Crown size={24} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-end mb-1">
-                    <p className="text-white font-bold text-[15px] truncate">Sharpshooter</p>
-                    <span className="text-slate-400 text-xs">12/50</span>
+                <div className="home-achievement-details">
+                  <p className="home-achievement-title">First Victory</p>
+                  <p className="home-achievement-desc">Won a game against AI</p>
+                </div>
+              </div>
+              
+              <div className="home-achievement-item locked">
+                <div className="home-achievement-icon-wrapper home-achievement-icon-locked">
+                  <Target size={24} />
+                </div>
+                <div className="home-achievement-details">
+                  <div className="home-achievement-progress-info">
+                    <p className="home-achievement-title">Sharpshooter</p>
+                    <span className="home-achievement-progress-text">12/50</span>
                   </div>
-                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-slate-500 rounded-full" style={{ width: '24%' }} />
+                  <div className="home-achievement-progress-bar">
+                    <div className="home-achievement-progress-fill" style={{ width: '24%' }} />
                   </div>
                 </div>
               </div>
@@ -381,29 +375,29 @@ export const Home = () => {
           </motion.div>
 
           {/* Leaderboard Preview */}
-          <motion.div variants={itemVariants} className="bg-[#182235] border border-white/5 rounded-[24px] p-8 shadow-lg">
-            <h3 className="text-[22px] font-bold text-white mb-6 flex items-center gap-3">
-              <Trophy className="text-yellow-400" />
+          <motion.div variants={itemVariants} className="home-panel">
+            <h3 className="home-panel-title">
+              <Trophy style={{ color: '#FACC15' }} />
               Top Players
             </h3>
             
-            <div className="space-y-3 mb-6">
+            <div className="home-leaderboard-list">
               {[
                 { name: 'Magnus C.', rating: 3102, rank: 1 },
                 { name: 'Hikaru N.', rating: 3085, rank: 2 },
                 { name: 'Fabiano C.', rating: 2950, rank: 3 },
               ].map((p, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-xl hover:bg-[#0B1120] transition-colors cursor-default">
-                  <div className="flex items-center gap-3">
-                    <span className={`font-black ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-slate-300' : 'text-amber-600'}`}>#{p.rank}</span>
-                    <span className="text-white font-medium">{p.name}</span>
+                <div key={i} className="home-leaderboard-item">
+                  <div className="home-leaderboard-player">
+                    <span className={`home-leaderboard-rank home-leaderboard-rank-${p.rank}`}>#{p.rank}</span>
+                    <span className="home-leaderboard-name">{p.name}</span>
                   </div>
-                  <span className="text-slate-400 font-bold">{p.rating}</span>
+                  <span className="home-leaderboard-rating">{p.rating}</span>
                 </div>
               ))}
             </div>
 
-            <Link to="/leaderboard" className="block w-full bg-[#0B1120] hover:bg-white/5 border border-white/10 text-white text-center font-bold py-3 rounded-xl transition-all">
+            <Link to="/leaderboard" className="home-btn-leaderboard">
               View Full Leaderboard
             </Link>
           </motion.div>
