@@ -3,6 +3,7 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { io, Socket } from 'socket.io-client';
 import { useGestureStore } from '../store/useGestureStore';
+import './Game.css';
 
 export const OnlineGame = () => {
   const [game, setGame] = useState(new Chess());
@@ -112,33 +113,33 @@ export const OnlineGame = () => {
   }
 
   return (
-    <div className="flex flex-col items-center max-w-4xl mx-auto space-y-6">
-      <div className="flex justify-between w-full">
-        <h2 className="text-2xl font-bold">Online Match</h2>
-        <div className="text-sm font-semibold text-primary-400">{status}</div>
+    <div className="online-game-container">
+      <div className="online-game-header">
+        <h2 className="online-game-title">Online Match</h2>
+        <div className="online-game-status">{status}</div>
       </div>
       
       {!playerColor && (
-        <div className="flex space-x-4 bg-gray-800 p-6 rounded-lg w-full max-w-[600px] shadow-xl border border-gray-700">
-          <button onClick={createRoom} className="px-4 py-2 bg-primary-600 rounded-lg hover:bg-primary-500 font-semibold flex-1">
+        <div className="online-room-controls">
+          <button onClick={createRoom} className="online-btn-primary">
             Create Room
           </button>
-          <div className="flex flex-1 space-x-2">
+          <div className="online-input-group">
             <input 
               type="text" 
               placeholder="Room ID" 
-              className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg w-full focus:outline-none focus:border-primary-500"
+              className="online-input"
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
             />
-            <button onClick={joinRoom} className="px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 font-semibold">
+            <button onClick={joinRoom} className="online-btn-secondary">
               Join
             </button>
           </div>
         </div>
       )}
 
-      <div className="w-full max-w-[600px] shadow-2xl rounded-sm overflow-hidden border border-gray-800">
+      <div className="online-board-wrapper">
         <Chessboard 
           options={{
             position: game.fen(),

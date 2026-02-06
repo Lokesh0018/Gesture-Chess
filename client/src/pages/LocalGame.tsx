@@ -3,7 +3,9 @@ import { Chessboard } from 'react-chessboard';
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js';
 import { RotateCcw, RefreshCw, Flag, Trophy, User, Hourglass, Download, Handshake } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CameraPanel } from '../components/CameraPanel';
+import './Game.css';
 
 type PromotionMove = { from: Square; to: Square };
 
@@ -79,7 +81,7 @@ function playMoveSound(isCapture: boolean): void {
   }
 }
 
-const PieceIcon = ({ type, color }: { type: PieceSymbol, color: 'w'|'b' }) => {
+const PieceIcon = ({ type, color }: { type: PieceSymbol, color: 'w' | 'b' }) => {
   const map: Record<string, Record<PieceSymbol, string>> = {
     'w': { p: '♙', n: '♘', b: '♗', r: '♖', q: '♕', k: '♔' },
     'b': { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' }
@@ -97,13 +99,13 @@ export const LocalGame = () => {
   const [selectedSquare, setSelectedSquare] = useState('');
   const [redoStack, setRedoStack] = useState<Array<{ from: string; to: string; promotion?: PieceSymbol }>>([]);
   const [pendingPromotion, setPendingPromotion] = useState<PromotionMove | null>(null);
-  
+
   const [capturedByWhite, setCapturedByWhite] = useState<PieceSymbol[]>([]);
   const [capturedByBlack, setCapturedByBlack] = useState<PieceSymbol[]>([]);
 
-  const boardContainerRef = useRef<HTMLDivElement | null>(null);
   const [showEndModal, setShowEndModal] = useState(false);
   const [gameDuration, setGameDuration] = useState(0);
+  const [manualResult, setManualResult] = useState<string | null>(null);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -146,6 +148,7 @@ export const LocalGame = () => {
   }, [game]);
 
   const moveHistoryEndRef = useRef<HTMLDivElement>(null);
+  const boardContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     moveHistoryEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [movePairs]);
@@ -154,9 +157,9 @@ export const LocalGame = () => {
     if (game.isGameOver()) {
       setShowEndModal(true);
     } else if (game.isCheck()) {
-      toast('Check!', { 
-        icon: '⚠️', 
-        style: { borderRadius: '12px', background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-color)' } 
+      toast('Check!', {
+        icon: '⚠️',
+        style: { borderRadius: '12px', background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-color)' }
       });
     }
   }, [game]);
@@ -177,7 +180,7 @@ export const LocalGame = () => {
       w: { p: 0, n: 0, b: 0, r: 0, q: 0 },
       b: { p: 0, n: 0, b: 0, r: 0, q: 0 }
     };
-    
+
     currentGame.board().forEach(row => {
       row.forEach(piece => {
         if (piece && piece.type !== 'k') {
@@ -189,11 +192,11 @@ export const LocalGame = () => {
     const missingWhite: PieceSymbol[] = [];
     const missingBlack: PieceSymbol[] = [];
     const pieceTypes: PieceSymbol[] = ['q', 'r', 'b', 'n', 'p'];
-    
+
     pieceTypes.forEach(type => {
       const wCount = initialInventory[type as keyof typeof initialInventory] - currentInventory.w[type as keyof typeof initialInventory];
       for (let i = 0; i < wCount; i++) missingWhite.push(type);
-      
+
       const bCount = initialInventory[type as keyof typeof initialInventory] - currentInventory.b[type as keyof typeof initialInventory];
       for (let i = 0; i < bCount; i++) missingBlack.push(type);
     });
@@ -317,6 +320,7 @@ export const LocalGame = () => {
     setCapturedByBlack([]);
     setShowEndModal(false);
     setGameDuration(0);
+    setManualResult(null);
   }
 
   function onFlip(): void {
@@ -325,10 +329,10 @@ export const LocalGame = () => {
 
   function downloadPGN(): void {
     const element = document.createElement("a");
-    const file = new Blob([game.pgn()], {type: 'text/plain'});
+    const file = new Blob([game.pgn()], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = "chess_game.pgn";
-    document.body.appendChild(element); 
+    document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
   }
@@ -348,9 +352,51 @@ export const LocalGame = () => {
   };
   const material = getMaterialAdvantage();
 
+  const blackPlayerCard = (
+    <div className={`player-card ${game.turn() === 'b' ? 'active-turn' : 'inactive-turn'}`}>
+      <div className="player-info">
+        <div className="player-avatar">
+          <User style={{ width: '28px', height: '28px', color: '#94A3B8' }} />
+          <div className="player-status-dot"></div>
+        </div>
+        <div className="player-details">
+          <span className="player-name">Black</span>
+          <div className="player-stats">
+            <span>1180</span>
+            {material.b > 0 && <span className="player-material">+{material.b}</span>}
+          </div>
+        </div>
+      </div>
+      <div className={`player-clock ${game.turn() === 'b' && !game.isGameOver() ? 'active' : ''}`}>
+        09:30
+      </div>
+    </div>
+  );
+
+  const whitePlayerCard = (
+    <div className={`player-card ${game.turn() === 'w' ? 'active-turn' : 'inactive-turn'}`}>
+      <div className="player-info">
+        <div className="player-avatar">
+          <User style={{ width: '28px', height: '28px', color: '#94A3B8' }} />
+          <div className="player-status-dot"></div>
+        </div>
+        <div className="player-details">
+          <span className="player-name">White</span>
+          <div className="player-stats">
+            <span>1200</span>
+            {material.w > 0 && <span className="player-material">+{material.w}</span>}
+          </div>
+        </div>
+      </div>
+      <div className={`player-clock ${game.turn() === 'w' && !game.isGameOver() ? 'active' : ''}`}>
+        09:45
+      </div>
+    </div>
+  );
+
   return (
     <div className="game-grid">
-      
+
       {/* Left Column: Move History */}
       <div className="column-left">
         <div className="card history-card">
@@ -371,14 +417,20 @@ export const LocalGame = () => {
               const isWhiteLast = isLastMove && game.turn() === 'b';
               const isBlackLast = isLastMove && game.turn() === 'w';
               return (
-                <div key={i} className="history-row">
+                <motion.div
+                  key={i}
+                  className="history-row"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <div className="history-move-num">
                     <div className={`history-dot ${isLastMove ? 'active' : ''}`}></div>
                     {i + 1}.
                   </div>
                   <div className={`history-move ${isWhiteLast ? 'active' : ''}`}>{pair.w}</div>
                   <div className={`history-move ${isBlackLast ? 'active' : ''}`}>{pair.b}</div>
-                </div>
+                </motion.div>
               );
             })}
             <div ref={moveHistoryEndRef} />
@@ -394,29 +446,15 @@ export const LocalGame = () => {
 
       {/* Central Column: Chess Area */}
       <div className="column-center">
-        
-        {/* Top Player Card (Black/Opponent) */}
-        <div className="player-card">
-          <div className="player-info">
-            <div className="player-avatar">
-              <User style={{ width: '28px', height: '28px', color: '#94A3B8' }} />
-              <div className="player-status-dot"></div>
-            </div>
-            <div className="player-details">
-              <span className="player-name">Black</span>
-              <div className="player-stats">
-                <span>1180</span>
-                {material.b > 0 && <span className="player-material">+{material.b}</span>}
-              </div>
-            </div>
-          </div>
-          <div className={`player-clock ${game.turn() === 'b' && !game.isGameOver() ? 'active' : ''}`}>
-            09:30
-          </div>
-        </div>
+
+        {/* Top Player Card (Opponent based on orientation) */}
+        {boardOrientation === 'white' ? blackPlayerCard : whitePlayerCard}
 
         {/* The Board */}
-        <div ref={boardContainerRef} className="board-wrapper">
+        <div
+          ref={boardContainerRef}
+          className={`board-wrapper ${game.isCheck() ? 'check-alert' : game.turn() === 'w' ? 'turn-white' : 'turn-black'}`}
+        >
           <Chessboard
             options={{
               id: 'LocalBoard',
@@ -439,53 +477,40 @@ export const LocalGame = () => {
           />
         </div>
 
-        {/* Bottom Player Card (White/You) */}
-        <div className="player-card">
-          <div className="player-info">
-            <div className="player-avatar">
-              <User style={{ width: '28px', height: '28px', color: '#94A3B8' }} />
-              <div className="player-status-dot"></div>
-            </div>
-            <div className="player-details">
-              <span className="player-name">White</span>
-              <div className="player-stats">
-                <span>1200</span>
-                {material.w > 0 && <span className="player-material">+{material.w}</span>}
-              </div>
-            </div>
+        {/* Bottom Player Card (You based on orientation) */}
+        {boardOrientation === 'white' ? whitePlayerCard : blackPlayerCard}
+
+        {/* Bottom Controls */}
+        <div className="controls-container">
+          <div className="controls-row">
+            <button onClick={onUndo} disabled={!game.history().length} className="control-btn">
+              <RotateCcw style={{ width: '16px', height: '16px' }} /> <span className="control-text">Undo</span>
+            </button>
+            <button onClick={onRedo} disabled={!redoStack.length} className="control-btn">
+              <RefreshCw style={{ width: '16px', height: '16px', transform: 'scaleX(-1)' }} /> <span className="control-text">Redo</span>
+            </button>
+            <button onClick={onFlip} className="control-btn">
+              <RefreshCw style={{ width: '16px', height: '16px' }} /> <span className="control-text">Flip Board</span>
+            </button>
           </div>
-          <div className={`player-clock ${game.turn() === 'w' && !game.isGameOver() ? 'active' : ''}`}>
-            09:45
+          <div className="controls-row">
+            <button onClick={() => { if (!game.isGameOver()) { toast.success('Draw agreed'); setManualResult('DRAW AGREED'); setShowEndModal(true); } }} className="control-btn">
+              <Handshake style={{ width: '16px', height: '16px' }} /> <span className="control-text">Offer Draw</span>
+            </button>
+            <button onClick={() => { if (!game.isGameOver()) { toast.error('You resigned'); setManualResult(game.turn() === 'w' ? 'WHITE RESIGNED' : 'BLACK RESIGNED'); setShowEndModal(true); } }} className="control-btn danger">
+              <Flag style={{ width: '16px', height: '16px' }} /> <span className="control-text">Resign</span>
+            </button>
+            <button onClick={onRestart} className="control-btn primary">
+              <RefreshCw style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>New Game</span>
+            </button>
           </div>
         </div>
 
-        {/* Bottom Controls */}
-        <div className="controls-row">
-          <button onClick={onUndo} disabled={!game.history().length} className="control-btn">
-            <RotateCcw style={{ width: '16px', height: '16px' }} /> <span className="control-text">Undo</span>
-          </button>
-          <button onClick={onRedo} disabled={!redoStack.length} className="control-btn">
-            <RefreshCw style={{ width: '16px', height: '16px', transform: 'scaleX(-1)' }} /> <span className="control-text">Redo</span>
-          </button>
-          <button onClick={onFlip} className="control-btn">
-            <RefreshCw style={{ width: '16px', height: '16px' }} /> <span className="control-text">Flip Board</span>
-          </button>
-          <button onClick={() => toast.success('Draw offered')} className="control-btn">
-            <Handshake style={{ width: '16px', height: '16px' }} /> <span className="control-text">Offer Draw</span>
-          </button>
-          <button onClick={() => { if(!game.isGameOver()) { toast.error('You resigned'); setShowEndModal(true); } }} className="control-btn danger">
-            <Flag style={{ width: '16px', height: '16px' }} /> <span className="control-text">Resign</span>
-          </button>
-          <button onClick={onRestart} className="control-btn primary">
-            <RefreshCw style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>New Game</span>
-          </button>
-        </div>
-        
       </div>
 
       {/* Right Column: Game Status & Captured Pieces */}
       <div className="column-right">
-        
+
         {/* Game Status Card */}
         <div className="card status-card">
           <div className="card-header">
@@ -495,10 +520,9 @@ export const LocalGame = () => {
           </div>
           <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <span className={`status-badge ${
-                gameStatus.includes('CHECKMATE') ? 'mate' :
+              <span className={`status-badge ${gameStatus.includes('CHECKMATE') ? 'mate' :
                 gameStatus.includes('DRAW') ? 'draw' : 'active'
-              }`}>
+                }`}>
                 {gameStatus}
               </span>
             </div>
@@ -527,7 +551,7 @@ export const LocalGame = () => {
             </div>
           </div>
           <div className="captured-body">
-            
+
             {/* White Captured */}
             <div className="captured-section">
               <span className="captured-title">White Captured</span>
@@ -583,28 +607,83 @@ export const LocalGame = () => {
       )}
 
       {/* End Game Modal */}
-      {showEndModal && (
-        <div className="modal-overlay">
-          <div className="modal-box center">
-            <Trophy style={{ width: '64px', height: '64px', marginBottom: '16px', color: game.isCheckmate() ? 'var(--color-accent)' : 'var(--color-success)' }} />
-            <h2 className="modal-title" style={{ fontSize: '24px', textTransform: 'uppercase' }}>
-              {gameStatus.includes('CHECKMATE') ? 'CHECKMATE' : 'GAME OVER'}
-            </h2>
-            <p className="modal-subtitle">
-              {game.isCheckmate() ? (game.turn() === 'w' ? 'Black Wins' : 'White Wins') : gameStatus}
-            </p>
-            
-            <div style={{ width: '100%' }}>
-              <button onClick={() => { onRestart(); setShowEndModal(false); }} className="modal-btn-primary">
-                Play Again
-              </button>
-              <button onClick={() => setShowEndModal(false)} className="modal-btn-secondary">
-                Review Game
-              </button>
+      <AnimatePresence>
+        {showEndModal && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {/* Cinematic Particles Backdrop */}
+            <div className="local-game-particles-container">
+              {Array.from({ length: 30 }).map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="local-game-particle"
+                  style={{
+                    width: Math.random() * 8 + 4 + 'px',
+                    height: Math.random() * 8 + 4 + 'px',
+                    background: game.isCheckmate()
+                      ? (game.turn() === 'w' ? '#EF4444' : '#3B82F6')
+                      : '#F59E0B',
+                    boxShadow: '0 0 10px currentColor',
+                    left: Math.random() * 100 + '%',
+                    top: Math.random() * 100 + '%',
+                  }}
+                  animate={{
+                    y: [0, Math.random() * -200 - 100],
+                    x: [0, Math.random() * 100 - 50],
+                    opacity: [0, 0.8, 0],
+                    scale: [0, 1.5, 0]
+                  }}
+                  transition={{
+                    duration: Math.random() * 2 + 2,
+                    repeat: Infinity,
+                    ease: "easeOut",
+                    delay: Math.random() * 2
+                  }}
+                />
+              ))}
             </div>
-          </div>
-        </div>
-      )}
+
+            <motion.div
+              className="modal-box center relative z-10"
+              initial={{ scale: 0.8, y: 50, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ type: "spring", bounce: 0.4, duration: 0.8 }}
+            >
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", delay: 0.2 }}
+              >
+                <Trophy style={{
+                  width: '80px', height: '80px', marginBottom: '16px',
+                  color: game.isCheckmate() ? 'var(--color-accent)' : 'var(--color-success)',
+                  filter: 'drop-shadow(0 0 20px currentColor)'
+                }} />
+              </motion.div>
+
+              <h2 className="modal-title" style={{ fontSize: '32px', textTransform: 'uppercase', letterSpacing: '2px', textShadow: '0 0 20px rgba(255,255,255,0.3)' }}>
+                {manualResult ? (manualResult.includes('RESIGNED') ? 'RESIGNATION' : 'DRAW') : (gameStatus.includes('CHECKMATE') ? 'CHECKMATE' : 'GAME OVER')}
+              </h2>
+              <p className="modal-subtitle" style={{ fontSize: '18px', color: '#94A3B8' }}>
+                {game.isCheckmate() ? (game.turn() === 'w' ? 'Black Wins' : 'White Wins') : (manualResult || gameStatus)}
+              </p>
+
+              <div style={{ width: '100%', marginTop: '24px' }}>
+                <button onClick={() => { onRestart(); setShowEndModal(false); }} className="modal-btn-primary" style={{ padding: '16px', fontSize: '16px' }}>
+                  Play Again
+                </button>
+                <button onClick={() => setShowEndModal(false)} className="modal-btn-secondary" style={{ padding: '16px', fontSize: '16px' }}>
+                  Review Game
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

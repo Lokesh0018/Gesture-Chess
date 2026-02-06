@@ -9,11 +9,12 @@ export const Navbar = () => {
 
   return (
     <nav className="navbar">
-      {/* Left: Logo */}
-      <div className="nav-section">
-        <Pointer style={{ width: '32px', height: '32px', color: 'var(--color-accent)' }} />
-        <Link to="/" className="nav-logo">Gesture<span>Chess</span></Link>
-      </div>
+      <div className="navbar-container">
+        {/* Left: Logo */}
+        <div className="nav-section">
+          <Pointer style={{ width: '32px', height: '32px', color: 'var(--color-accent)' }} />
+          <Link to="/" className="nav-logo">Gesture<span>Chess</span></Link>
+        </div>
 
       {/* Center: Navigation */}
       <div className="nav-section center">
@@ -48,6 +49,7 @@ export const Navbar = () => {
             <Link to="/register" className="nav-btn-signup">Sign Up</Link>
           </>
         )}
+      </div>
       </div>
     </nav>
   );

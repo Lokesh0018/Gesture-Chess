@@ -84,6 +84,16 @@ export const VirtualCursor = () => {
       <div 
         style={{ width: 8, height: 8, backgroundColor: borderColor, borderRadius: '50%' }} 
       />
+      {isPinching && (
+        <div style={{
+          position: 'absolute',
+          top: -10, left: -10, right: -10, bottom: -10,
+          borderRadius: '50%',
+          border: `2px solid ${borderColor}`,
+          animation: 'ping 1s cubic-bezier(0, 0, 0.2, 1) infinite',
+          opacity: 0.5
+        }} />
+      )}
       {draggedPiece && isPinching && (
         <div style={{
           position: 'absolute',

@@ -25,8 +25,8 @@ export const CameraPanel = () => {
       setIsActive(false);
     } else {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { width: 640, height: 480, facingMode: 'user' } 
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: 'user' }
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -57,10 +57,10 @@ export const CameraPanel = () => {
     <div className="card camera-card">
       <div className="camera-header">
         <div className="camera-title">
-          <Camera style={{ width: '20px', height: '20px', color: 'var(--color-accent)' }} /> 
+          <Camera style={{ width: '20px', height: '20px', color: 'var(--color-accent)' }} />
           Camera
         </div>
-        <button 
+        <button
           onClick={toggleCamera}
           disabled={!isReady}
           className={`camera-btn ${isActive ? 'active' : 'inactive'}`}
@@ -70,12 +70,12 @@ export const CameraPanel = () => {
       </div>
 
       <div className="camera-body">
-        <div className="camera-video-wrapper">
-          <video 
+        <div className={`camera-video-wrapper ${isActive ? 'active' : ''}`}>
+          <video
             ref={videoRef}
-            autoPlay 
-            playsInline 
-            muted 
+            autoPlay
+            playsInline
+            muted
             className="camera-video"
             style={{ display: isActive ? 'block' : 'none' }}
           />
@@ -100,11 +100,12 @@ export const CameraPanel = () => {
               {gesture.replace('_', ' ')}
             </span>
           </div>
-          <div className="camera-stat-box row" style={{ marginTop: 'auto' }}>
+          <div className="camera-stat-box row" style={{ marginTop: isActive ? 'auto' : '0' }}>
             <span className="camera-stat-label" style={{ marginBottom: 0 }}>Pinch</span>
             <div style={{
               width: '12px', height: '12px', borderRadius: '50%',
-              backgroundColor: isPinching ? 'var(--color-accent)' : '#334155'
+              backgroundColor: isPinching ? 'var(--color-accent)' : '#334155',
+              animation: isPinching ? 'ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite' : 'none'
             }} />
           </div>
         </div>
