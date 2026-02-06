@@ -61,8 +61,6 @@ export const Puzzles = () => {
   }, [currentPuzzleIndex]);
 
   const customPieces = useMemo(() => {
-    if (pieceTheme === 'classic') return undefined;
-    
     const pieces = ['wP', 'wN', 'wB', 'wR', 'wQ', 'wK', 'bP', 'bN', 'bB', 'bR', 'bQ', 'bK'];
     const custom: Record<string, any> = {};
     pieces.forEach(p => {

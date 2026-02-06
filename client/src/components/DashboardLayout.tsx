@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Swords, Users, Trophy, Settings, BarChart2, LayoutDashboard, Bot, Puzzle, BookOpen, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import { Swords, Users, Trophy, Settings, BarChart2, LayoutDashboard, Bot, Puzzle, BookOpen, ChevronLeft, ChevronRight, LogOut, LayoutTemplate } from 'lucide-react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
@@ -21,6 +21,7 @@ export const DashboardLayout = () => {
     { path: '/local-setup', icon: Users, label: 'Local Play' },
     { path: '/online', icon: Swords, label: 'Online Match' },
     { path: '/bot', icon: Bot, label: 'Play vs Bot' },
+    { path: '/custom-setup', icon: LayoutTemplate, label: 'Custom Design' },
     { path: '/puzzles', icon: Puzzle, label: 'Puzzles' },
     { path: '/learn', icon: BookOpen, label: 'Learn' },
     { path: '/leaderboard', icon: BarChart2, label: 'Leaderboard' },

@@ -165,7 +165,7 @@ export const Home = () => {
             <div className="home-modes-grid">
               
               <motion.div variants={itemVariants}>
-                <Link to="/local" className="home-mode-card">
+                <Link to="/local-setup" className="home-mode-card">
                   <div className="home-mode-bg-icon">
                     <Users size={120} />
                   </div>
@@ -176,6 +176,22 @@ export const Home = () => {
                   <p className="home-mode-desc">Play against a friend on the same device using hand gestures or mouse.</p>
                   <div className="home-mode-action" style={{ color: '#60A5FA' }}>
                     Start Game <ChevronRight size={16} />
+                  </div>
+                </Link>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <Link to="/custom-setup" className="home-mode-card">
+                  <div className="home-mode-bg-icon">
+                    <LayoutDashboard size={120} />
+                  </div>
+                  <div className="home-mode-icon-container" style={{ background: 'rgba(234,179,8,0.1)', color: '#EAB308' }}>
+                    <LayoutDashboard size={32} />
+                  </div>
+                  <h3 className="home-mode-title">Custom Game</h3>
+                  <p className="home-mode-desc">Design your own board layout and play with Sandbox rules.</p>
+                  <div className="home-mode-action" style={{ color: '#EAB308' }}>
+                    Design Board <ChevronRight size={16} />
                   </div>
                 </Link>
               </motion.div>

@@ -4,6 +4,7 @@ import { Chess } from 'chess.js';
 
 import { useGestureStore } from '../store/useGestureStore';
 import { useSocketStore } from '../store/useSocketStore';
+import { getCustomPieces } from '../utils/pieces';
 
 
 export const OnlineGame = () => {
@@ -207,6 +208,7 @@ export const OnlineGame = () => {
             allowAutoScroll: false,
             boardStyle: { touchAction: 'none' },
             draggingPieceStyle: { zIndex: 9999, cursor: 'grabbing' },
+            pieces: getCustomPieces(),
           }}
         />
       </div>

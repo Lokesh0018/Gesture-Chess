@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { useGestureStore } from '../store/useGestureStore';
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js';
 import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -282,6 +283,26 @@ export function LocalGame() {
   const [premove, setPremove] = useState<{ from: Square, to: Square } | null>(null);
   const [manualResult, setManualResult] = useState<string | null>(null);
   const [boardShake, setBoardShake] = useState(false);
+
+  // Gesture Drop Support
+  const { isPinching, selectedSquare: gestureSelectedSquare, hoveredSquare, clearDrag } = useGestureStore();
+  const prevPinching = useRef(isPinching);
+
+  // Setup refs to keep latest values without adding them as dependencies to useEffect
+  const applyMoveRef = useRef(applyMove);
+  applyMoveRef.current = applyMove;
+
+  useEffect(() => {
+    if (!isPinching && prevPinching.current) {
+      if (gestureSelectedSquare && hoveredSquare && gestureSelectedSquare !== hoveredSquare) {
+         requestMove(gestureSelectedSquare, hoveredSquare);
+      }
+      clearDrag();
+    }
+    prevPinching.current = isPinching;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPinching, gestureSelectedSquare, hoveredSquare, clearDrag]);
+
   const [whiteTime, setWhiteTime] = useState(location.state?.whiteTime || INITIAL_TIME);
   const [blackTime, setBlackTime] = useState(location.state?.blackTime || INITIAL_TIME);
   const [increment] = useState(location.state?.increment || 0);
@@ -464,8 +485,14 @@ export function LocalGame() {
   };
 
   const optionSquares = useMemo(
-    () => generateSquareStyles(game, selectedSquare, hoveredMove, premove),
-    [game, selectedSquare, hoveredMove, premove],
+    () => {
+      const styles = generateSquareStyles(game, selectedSquare || gestureSelectedSquare || '', hoveredMove, premove);
+      if (hoveredSquare && isPinching) {
+        styles[hoveredSquare] = { ...styles[hoveredSquare], border: '3px solid rgba(74, 222, 128, 0.8)', borderRadius: '8px', boxSizing: 'border-box' };
+      }
+      return styles;
+    },
+    [game, selectedSquare, gestureSelectedSquare, hoveredMove, premove, hoveredSquare, isPinching],
   );
 
   // Recompute custom board pieces whenever piece style or blindfold changes

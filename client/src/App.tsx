@@ -7,6 +7,8 @@ import { LandingPage } from './pages/LandingPage';
 import { Home } from './pages/Home';
 import { LocalGame } from './pages/LocalGame';
 import { LocalGameSetup } from './pages/LocalGameSetup';
+import { CustomGameSetup } from './pages/CustomGameSetup';
+import { CustomGame } from './pages/CustomGame';
 import { Profile } from './pages/Profile';
 import { SettingsPage } from './pages/SettingsPage';
 import { Login } from './pages/Login';
@@ -62,6 +64,8 @@ function App() {
             <Route path="register" element={<PageTransition><Register /></PageTransition>} />
             <Route path="local-setup" element={<PageTransition><LocalGameSetup /></PageTransition>} />
             <Route path="local" element={<PageTransition><LocalGame /></PageTransition>} />
+            <Route path="custom-setup" element={<PageTransition><CustomGameSetup /></PageTransition>} />
+            <Route path="custom-game" element={<PageTransition><CustomGame /></PageTransition>} />
             <Route element={<DashboardLayout />}>
               <Route element={<ProtectedRoute />}>
                 <Route path="dashboard" element={<PageTransition><Home /></PageTransition>} />

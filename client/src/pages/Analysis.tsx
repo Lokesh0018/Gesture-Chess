@@ -115,8 +115,6 @@ export function Analysis() {
   const goForward = () => setCurrentMoveIndex(Math.min(history.length - 1, currentMoveIndex + 1));
 
   const customPieces = useMemo(() => {
-    if (pieceTheme === 'classic') return undefined;
-    
     const pieces = ['wP', 'wN', 'wB', 'wR', 'wQ', 'wK', 'bP', 'bN', 'bB', 'bR', 'bQ', 'bK'];
     const custom: Record<string, any> = {};
     pieces.forEach(p => {

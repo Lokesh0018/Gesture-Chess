@@ -21,6 +21,12 @@ export const VirtualCursor = () => {
     
     // Find the element under cursor
     const el = document.elementFromPoint(px, py);
+    
+    // Update hovered square for custom gesture logic
+    const squareEl = el?.closest('[data-square]');
+    const square = squareEl ? squareEl.getAttribute('data-square') : null;
+    useGestureStore.getState().setHoveredSquare(square);
+
     if (!el) return;
 
     const eventInit = {
@@ -37,6 +43,7 @@ export const VirtualCursor = () => {
 
     if (isPinching && !prevPinching.current) {
       // Pinch started: trigger grab
+      if (square) useGestureStore.getState().setSelectedSquare(square, null);
       el.dispatchEvent(new PointerEvent('pointerdown', eventInit));
       el.dispatchEvent(new MouseEvent('mousedown', eventInit));
     } else if (isPinching && prevPinching.current) {

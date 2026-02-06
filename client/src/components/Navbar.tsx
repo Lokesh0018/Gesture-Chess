@@ -34,6 +34,9 @@ export const Navbar = () => {
         <Link to="/bot" className={`nav-link ${location.pathname.startsWith('/bot') ? 'active' : ''}`}>
           Play Bot
         </Link>
+        <Link to="/custom-setup" className={`nav-link ${location.pathname.startsWith('/custom-setup') ? 'active' : ''}`}>
+          Custom Design
+        </Link>
         <Link to="/puzzles" className={`nav-link ${location.pathname.startsWith('/puzzles') ? 'active' : ''}`}>
           Puzzles
         </Link>
