@@ -20,6 +20,7 @@ import { OnlineGame } from './pages/OnlineGame';
 import { TournamentSetup } from './pages/TournamentSetup';
 import { TournamentLobby } from './pages/TournamentLobby';
 import { PlayBot } from './pages/PlayBot';
+import { BotSetup } from './pages/BotSetup';
 import { Puzzles } from './pages/Puzzles';
 import { Analysis } from './pages/Analysis';
 import { Learn } from './pages/Learn';
@@ -68,6 +69,7 @@ function App() {
             <Route path="local" element={<PageTransition><LocalGame /></PageTransition>} />
             <Route path="custom-game" element={<PageTransition><CustomGame /></PageTransition>} />
             <Route path="online-game" element={<PageTransition><OnlineGame /></PageTransition>} />
+            <Route path="bot-game" element={<PageTransition><PlayBot /></PageTransition>} />
             <Route path="room" element={<PageTransition><TournamentLobby /></PageTransition>} />
             
             <Route element={<DashboardLayout />}>
@@ -80,7 +82,7 @@ function App() {
                 <Route path="room-setup" element={<PageTransition><TournamentSetup /></PageTransition>} />
                 <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
                 <Route path="profile" element={<PageTransition><Profile /></PageTransition>} />
-                <Route path="bot" element={<PageTransition><PlayBot /></PageTransition>} />
+                <Route path="bot-setup" element={<PageTransition><BotSetup /></PageTransition>} />
                 <Route path="puzzles" element={<PageTransition><Puzzles /></PageTransition>} />
                 <Route path="analysis" element={<PageTransition><Analysis /></PageTransition>} />
                 <Route path="learn" element={<PageTransition><Learn /></PageTransition>} />

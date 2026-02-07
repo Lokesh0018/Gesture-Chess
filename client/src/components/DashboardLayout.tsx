@@ -21,7 +21,7 @@ export const DashboardLayout = () => {
     { path: '/local-setup', icon: Users, label: 'Local Play' },
     { path: '/online-setup', icon: Swords, label: 'Play Online' },
     { path: '/room-setup', icon: Trophy, label: 'Rooms' },
-    { path: '/bot', icon: Bot, label: 'Play vs Bot' },
+    { path: '/bot-setup', icon: Bot, label: 'Play vs Bot' },
     { path: '/custom-setup', icon: LayoutTemplate, label: 'Custom Design' },
     { path: '/puzzles', icon: Puzzle, label: 'Puzzles' },
     { path: '/learn', icon: BookOpen, label: 'Learn' },

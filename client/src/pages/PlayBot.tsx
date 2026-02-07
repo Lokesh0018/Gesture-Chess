@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { stockfishService } from '../services/StockfishService';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 import { CheckCircle2, RotateCcw } from 'lucide-react';
@@ -24,21 +24,30 @@ const BOT_LEVELS = [
 ];
 
 export const PlayBot = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const initialState = location.state as { selectedLevel: any, playerColor: 'w' | 'b' };
+
   const [game, setGame] = useState(new Chess());
-  const [selectedLevel, setSelectedLevel] = useState(BOT_LEVELS[2]);
+  const [selectedLevel] = useState(initialState?.selectedLevel || BOT_LEVELS[2]);
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [hintMove, setHintMove] = useState<string | null>(null);
   const [isGettingHint, setIsGettingHint] = useState(false);
-  const [showSetup, setShowSetup] = useState(true);
-  const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
+  const [playerColor] = useState<'w' | 'b'>(initialState?.playerColor || 'w');
   const [gameResult, setGameResult] = useState<string | null>(null);
   const [boardShake, setBoardShake] = useState(false);
 
   const [selectedSquare, setSelectedSquare] = useState<string>('');
 
+  useEffect(() => {
+    if (!initialState) {
+      navigate('/bot-setup');
+    }
+  }, [initialState, navigate]);
+
   const { pieceTheme, boardTheme, soundVolume } = useSettingsStore();
   const isMuted = soundVolume === 0;
-  const navigate = useNavigate();
   
   const customPieces = useMemo(() => {
     if (pieceTheme === 'classic') return undefined;
@@ -122,7 +131,7 @@ export const PlayBot = () => {
 
   // Bot move logic
   useEffect(() => {
-    if (!showSetup && game.turn() !== playerColor && !game.isGameOver()) {
+    if (game.turn() !== playerColor && !game.isGameOver()) {
       setIsBotThinking(true);
       const makeBotMove = async () => {
         const fen = game.fen();
@@ -155,7 +164,7 @@ export const PlayBot = () => {
       };
       makeBotMove();
     }
-  }, [game.fen(), showSetup, playerColor]);
+  }, [game.fen(), playerColor, selectedLevel]);
 
   function onPieceDrop(args: any) {
     const { sourceSquare, targetSquare, piece } = args;
@@ -240,12 +249,6 @@ export const PlayBot = () => {
     }
   }
 
-  const startGame = () => {
-    setGame(new Chess());
-    setGameResult(null);
-    setHintMove(null);
-    setShowSetup(false);
-  };
 
   const getHint = async () => {
     if (isGettingHint || game.turn() !== playerColor || isBotThinking) return;
@@ -324,53 +327,7 @@ export const PlayBot = () => {
         </div>
       </div>
 
-      {/* Setup Modal Overlay */}
-      <AnimatePresence>
-        {showSetup && (
-          <motion.div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="bg-[#1E293B] border border-white/10 p-6 md:p-10 rounded-[2rem] shadow-2xl w-[95%] max-w-4xl mx-auto" initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-2 text-center tracking-tight">Play vs Computer</h2>
-              <p className="text-[var(--text-secondary)] text-center mb-10 text-lg">Select your opponent's difficulty level.</p>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-10">
-                {BOT_LEVELS.map(bot => (
-                  <button
-                    key={bot.level}
-                    onClick={() => setSelectedLevel(bot)}
-                    className={`flex flex-col items-center justify-center p-4 md:p-6 rounded-2xl transition-all duration-200 border-2 ${
-                      selectedLevel.level === bot.level 
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 shadow-[0_0_20px_rgba(59,130,246,0.2)] scale-105' 
-                      : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
-                    }`}
-                  >
-                    <span className="text-4xl md:text-5xl mb-3">{bot.avatar}</span>
-                    <span className="text-white font-bold text-sm md:text-base text-center leading-tight mb-1">{bot.name}</span>
-                    <span className="text-xs md:text-sm font-semibold text-[var(--color-primary)]">{bot.elo} ELO</span>
-                  </button>
-                ))}
-              </div>
 
-              <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-10">
-                <span className="text-[var(--text-secondary)] font-medium mr-2">I want to play as:</span>
-                <div className="flex gap-4 bg-white/5 p-2 rounded-2xl border border-white/10">
-                  <button onClick={() => setPlayerColor('w')} className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${playerColor === 'w' ? 'bg-white text-black shadow-lg scale-105' : 'text-[var(--text-secondary)] hover:text-white'}`}>
-                    <div className="w-4 h-4 rounded-full bg-white border border-gray-300"></div>
-                    White
-                  </button>
-                  <button onClick={() => setPlayerColor('b')} className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all ${playerColor === 'b' ? 'bg-[#0F172A] text-white shadow-lg scale-105 border border-white/20' : 'text-[var(--text-secondary)] hover:text-white'}`}>
-                    <div className="w-4 h-4 rounded-full bg-black border border-gray-600"></div>
-                    Black
-                  </button>
-                </div>
-              </div>
-
-              <button onClick={startGame} className="w-full py-5 bg-[var(--color-primary)] hover:bg-blue-600 active:scale-[0.98] text-white rounded-2xl font-bold text-xl shadow-[0_10px_25px_rgba(59,130,246,0.5)] transition-all">
-                Start Game
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Game Over Overlay */}
       <AnimatePresence>
@@ -384,7 +341,7 @@ export const PlayBot = () => {
               <p className="text-xl text-[var(--text-secondary)] mb-8">Against {selectedLevel.name}</p>
               
               <div className="flex flex-col gap-4 w-full px-8">
-                <button onClick={() => setShowSetup(true)} className="w-full py-4 bg-[var(--color-primary)] hover:bg-blue-600 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(59,130,246,0.4)] flex justify-center items-center gap-2 transition-all">
+                <button onClick={() => navigate('/bot-setup')} className="w-full py-4 bg-[var(--color-primary)] hover:bg-blue-600 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(59,130,246,0.4)] flex justify-center items-center gap-2 transition-all">
                   <RotateCcw size={20} /> Play Again
                 </button>
                 <div className="flex gap-4">
