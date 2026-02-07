@@ -1,6 +1,6 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AnimatePresence } from 'framer-motion';
+
 import { MainLayout } from './layouts/MainLayout';
 import { DashboardLayout } from './components/DashboardLayout';
 import { LandingPage } from './pages/LandingPage';
@@ -15,6 +15,9 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Leaderboard } from './pages/Leaderboard';
 import { NotFound } from './pages/NotFound';
+import { OnlineGameSetup } from './pages/OnlineGameSetup';
+import { OnlineGame } from './pages/OnlineGame';
+import { TournamentSetup } from './pages/TournamentSetup';
 import { TournamentLobby } from './pages/TournamentLobby';
 import { PlayBot } from './pages/PlayBot';
 import { Puzzles } from './pages/Puzzles';
@@ -53,8 +56,8 @@ function App() {
           },
         }}
       />
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+      <>
+        <Routes location={location}>
           {/* Landing Page without MainLayout */}
           <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
           
@@ -62,14 +65,19 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="login" element={<PageTransition><Login /></PageTransition>} />
             <Route path="register" element={<PageTransition><Register /></PageTransition>} />
-            <Route path="local-setup" element={<PageTransition><LocalGameSetup /></PageTransition>} />
             <Route path="local" element={<PageTransition><LocalGame /></PageTransition>} />
-            <Route path="custom-setup" element={<PageTransition><CustomGameSetup /></PageTransition>} />
             <Route path="custom-game" element={<PageTransition><CustomGame /></PageTransition>} />
+            <Route path="online-game" element={<PageTransition><OnlineGame /></PageTransition>} />
+            <Route path="room" element={<PageTransition><TournamentLobby /></PageTransition>} />
+            
             <Route element={<DashboardLayout />}>
+              <Route path="local-setup" element={<PageTransition><LocalGameSetup /></PageTransition>} />
+              <Route path="custom-setup" element={<PageTransition><CustomGameSetup /></PageTransition>} />
+              
               <Route element={<ProtectedRoute />}>
                 <Route path="dashboard" element={<PageTransition><Home /></PageTransition>} />
-                <Route path="online" element={<PageTransition><TournamentLobby /></PageTransition>} />
+                <Route path="online-setup" element={<PageTransition><OnlineGameSetup /></PageTransition>} />
+                <Route path="room-setup" element={<PageTransition><TournamentSetup /></PageTransition>} />
                 <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
                 <Route path="profile" element={<PageTransition><Profile /></PageTransition>} />
                 <Route path="bot" element={<PageTransition><PlayBot /></PageTransition>} />
@@ -83,7 +91,7 @@ function App() {
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Route>
         </Routes>
-      </AnimatePresence>
+      </>
     </ErrorBoundary>
   );
 }

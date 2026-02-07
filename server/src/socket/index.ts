@@ -28,6 +28,8 @@ interface Tournament {
   matches: Match[];
   status: 'waiting' | 'in_progress' | 'finished';
   round: number;
+  maxPlayers: number;
+  isPrivate: boolean;
 }
 
 const tournaments = new Map<string, Tournament>();
@@ -49,11 +51,71 @@ export const initializeSocket = (io: Server) => {
     });
   });
 
+  // Simple Matchmaking Queues grouped by timeControl
+  const matchmakingQueues = new Map<string, Player[]>();
+
   io.on('connection', (socket: Socket) => {
     const user = (socket as any).user;
     console.log('User connected to socket:', user.username);
 
-    socket.on('create_tournament', ({ roomId, timeControl }) => {
+    socket.on('find_match', ({ timeControl }) => {
+      let queue = matchmakingQueues.get(timeControl);
+      if (!queue) {
+        queue = [];
+        matchmakingQueues.set(timeControl, queue);
+      }
+
+      // Prevent double queueing
+      if (queue.some(p => p.id === user.id)) return;
+
+      const player: Player = { id: user.id, socketId: socket.id, username: user.username, isEliminated: false };
+      queue.push(player);
+
+      if (queue.length >= 2) {
+        // Match found!
+        const p1 = queue.shift()!;
+        const p2 = queue.shift()!;
+        
+        const roomId = 'MATCH-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        // We'll store it as a 1-round "tournament" to reuse our match logic easily
+        // Or we can just create a dedicated match object. Let's just create a tournament with 2 players and start it immediately.
+        tournaments.set(roomId, {
+          id: roomId,
+          hostId: 'SERVER',
+          timeControl,
+          players: [p1, p2],
+          matches: [],
+          status: 'in_progress',
+          round: 1,
+          maxPlayers: 2,
+          isPrivate: true
+        });
+        
+        const t = tournaments.get(roomId)!;
+        
+        const p1Socket = io.sockets.sockets.get(p1.socketId);
+        const p2Socket = io.sockets.sockets.get(p2.socketId);
+        
+        p1Socket?.join(roomId);
+        p2Socket?.join(roomId);
+
+        p1Socket?.emit('match_found', { roomId, color: 'w', opponent: p2.username });
+        p2Socket?.emit('match_found', { roomId, color: 'b', opponent: p1.username });
+
+        pairRound(t, io);
+      }
+    });
+
+    socket.on('cancel_match', () => {
+      // Remove from all queues
+      for (const [tc, queue] of matchmakingQueues.entries()) {
+        const filtered = queue.filter(p => p.id !== user.id);
+        matchmakingQueues.set(tc, filtered);
+      }
+    });
+
+    socket.on('create_tournament', ({ roomId, timeControl, maxPlayers = 16, isPrivate = true }) => {
       if (tournaments.has(roomId)) {
         socket.emit('error', 'Room already exists');
         return;
@@ -65,7 +127,9 @@ export const initializeSocket = (io: Server) => {
         players: [{ id: user.id, socketId: socket.id, username: user.username, isEliminated: false }],
         matches: [],
         status: 'waiting',
-        round: 0
+        round: 0,
+        maxPlayers,
+        isPrivate
       });
       socket.join(roomId);
       socket.emit('room_created', { roomId });
@@ -76,7 +140,7 @@ export const initializeSocket = (io: Server) => {
       const tournament = tournaments.get(roomId);
       if (!tournament) return socket.emit('error', 'Tournament not found');
       if (tournament.status !== 'waiting') return socket.emit('error', 'Tournament already started');
-      if (tournament.players.length >= 16) return socket.emit('error', 'Tournament is full');
+      if (tournament.players.length >= tournament.maxPlayers) return socket.emit('error', 'Room is full');
       
       // Prevent double join
       if (tournament.players.some(p => p.id === user.id)) {

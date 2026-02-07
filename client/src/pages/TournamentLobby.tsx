@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { motion } from 'framer-motion';
-import { Trophy, Clock, Users, Play, Eye, Swords } from 'lucide-react';
+import { Trophy, Users, Play, Eye, Swords } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSocketStore } from '../store/useSocketStore';
 import { Chessboard } from 'react-chessboard';
@@ -11,15 +12,14 @@ import { useSettingsStore } from '../store/useSettingsStore';
 export const TournamentLobby = () => {
   const { user, token } = useAuthStore();
   const { socket, connect } = useSocketStore();
+  const location = useLocation();
+  const navigate = useNavigate();
   
-  const [inRoom, setInRoom] = useState(false);
-  const [roomId, setRoomId] = useState('');
-  const [joinCode, setJoinCode] = useState('');
+  const { roomId: initialRoomId, players: initialPlayers, isHost: initialIsHost } = location.state || {};
   
-  // Room state
-  const [isHost, setIsHost] = useState(false);
-  const [players, setPlayers] = useState<{ id: string, username: string }[]>([]);
-  const [timeControl, setTimeControl] = useState('5|0');
+  const [roomId] = useState(initialRoomId || '');
+  const [isHost] = useState(initialIsHost || false);
+  const [players, setPlayers] = useState<{ id: string, username: string }[]>(initialPlayers || []);
   
   // Tournament State
   const [tournamentStatus, setTournamentStatus] = useState<'waiting' | 'in_progress' | 'finished'>('waiting');
@@ -35,31 +35,23 @@ export const TournamentLobby = () => {
   const [winner, setWinner] = useState<{ id: string, name: string } | null>(null);
   
   useEffect(() => {
+    if (!roomId) {
+      navigate('/room-setup');
+      return;
+    }
+
     if (!token) return;
-    connect();
+    if (!socket?.connected) connect();
     
     if (!socket) return;
-    
-    socket.on('room_created', (data) => {
-      setRoomId(data.roomId);
-      setInRoom(true);
-      setIsHost(true);
-      toast.success('Tournament Room created!');
-    });
-    
-    socket.on('room_joined', (data) => {
-      setRoomId(data.roomId);
-      setInRoom(true);
-      setPlayers(data.players);
-      toast.success('Joined Tournament Room!');
-    });
     
     socket.on('players_update', (data) => {
       setPlayers(data.players);
     });
     
     socket.on('tournament_started', () => {
-      toast.success('Tournament started!');
+      toast.success('Room started!');
+      setTournamentStatus('in_progress');
     });
 
     socket.on('round_started', (data) => {
@@ -128,93 +120,13 @@ export const TournamentLobby = () => {
       socket.off('error');
     };
   }, [token, socket]);
-  
-  const createRoom = () => {
-    if (!socket) return;
-    const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    socket.emit('create_tournament', { roomId: newRoomId, timeControl });
-  };
-  
-  const joinRoom = () => {
-    if (!socket || !joinCode) return;
-    socket.emit('join_tournament', { roomId: joinCode.toUpperCase() });
-  };
-  
+
   const startTournament = () => {
     if (!socket || !roomId) return;
     socket.emit('start_tournament', { roomId });
   };
+  
 
-  if (!inRoom) {
-    return (
-      <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="text-center">
-          <h2 className="text-4xl font-extrabold text-white mb-4">Tournaments</h2>
-          <p className="text-gray-400 text-lg">Create a room and invite up to 16 players to a knockout tournament.</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Create Room */}
-          <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-xl">
-            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-              <Trophy className="text-yellow-500" /> Host a Tournament
-            </h3>
-            
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Time Control</label>
-                <select 
-                  value={timeControl}
-                  onChange={(e) => setTimeControl(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-primary-500 outline-none"
-                >
-                  <option value="1|0">1 min (Bullet)</option>
-                  <option value="3|0">3 min (Blitz)</option>
-                  <option value="5|0">5 min (Blitz)</option>
-                  <option value="10|0">10 min (Rapid)</option>
-                </select>
-              </div>
-            </div>
-            
-            <button 
-              onClick={createRoom}
-              className="w-full bg-primary-600 hover:bg-primary-500 text-white font-bold py-3 px-6 rounded-xl transition shadow-[0_0_15px_rgba(59,130,246,0.3)]"
-            >
-              Create Room
-            </button>
-          </div>
-          
-          {/* Join Room */}
-          <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-xl">
-            <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-              <Users className="text-green-500" /> Join a Tournament
-            </h3>
-            
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Room Code</label>
-                <input 
-                  type="text" 
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value)}
-                  placeholder="e.g. A1B2C3"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-green-500 outline-none uppercase font-mono"
-                />
-              </div>
-            </div>
-            
-            <button 
-              onClick={joinRoom}
-              disabled={!joinCode}
-              className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl transition shadow-[0_0_15px_rgba(34,197,94,0.3)] disabled:opacity-50 disabled:shadow-none"
-            >
-              Join Room
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const handlePieceDrop = (sourceSquare: string, targetSquare: string, piece: string) => {
     if (isSpectating || !activeMatchId || game.turn() !== activeMatchColor) return false;
@@ -306,7 +218,7 @@ export const TournamentLobby = () => {
     <div className="max-w-5xl mx-auto animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-white mb-2">Tournament Lobby</h2>
+          <h2 className="text-3xl font-bold text-white mb-2">Room Lobby</h2>
           <p className="text-gray-400 flex items-center gap-2">
             Room Code: <span className="font-mono text-white bg-gray-800 px-2 py-1 rounded text-lg tracking-wider">{roomId}</span>
           </p>
@@ -318,7 +230,7 @@ export const TournamentLobby = () => {
             disabled={players.length < 2}
             className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 px-8 rounded-xl transition flex items-center gap-2 shadow-[0_0_20px_rgba(234,179,8,0.4)] disabled:opacity-50"
           >
-            <Play fill="currentColor" /> Start Tournament
+            <Play fill="currentColor" /> Start Room
           </button>
         )}
       </div>
@@ -326,7 +238,7 @@ export const TournamentLobby = () => {
       {tournamentStatus === 'finished' && winner && (
         <div className="bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border-2 border-yellow-500 rounded-2xl p-8 mb-8 text-center animate-in zoom-in duration-500 shadow-[0_0_50px_rgba(234,179,8,0.3)]">
           <Trophy className="w-20 h-20 text-yellow-500 mx-auto mb-4 animate-bounce" />
-          <h2 className="text-4xl font-black text-white mb-2">Tournament Complete!</h2>
+          <h2 className="text-4xl font-black text-white mb-2">Room Complete!</h2>
           <p className="text-2xl text-yellow-400 font-bold">{winner.name} is the Champion!</p>
         </div>
       )}
@@ -358,7 +270,6 @@ export const TournamentLobby = () => {
             <Users className="text-primary-400" /> Players ({players.length}/16)
           </h3>
           <div className="flex items-center gap-2 text-gray-400 text-sm">
-            <Clock className="w-4 h-4" /> Time Control: {timeControl}
           </div>
         </div>
         

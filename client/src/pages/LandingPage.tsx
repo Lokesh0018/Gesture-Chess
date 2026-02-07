@@ -751,7 +751,7 @@ function Contact() {
 
             <div className="contact-newsletter">
               <h3 className="contact-newsletter-title">Stay Updated</h3>
-              <p className="contact-newsletter-desc">Subscribe for new features, AI updates, and tournaments.</p>
+              <p className="contact-newsletter-desc">Subscribe for new features, AI updates, and rooms.</p>
               <form className="contact-form" onSubmit={(e) => e.preventDefault()}>
                 <input type="email" placeholder="you@example.com" className="contact-input" />
                 <button type="submit" className="contact-submit group">

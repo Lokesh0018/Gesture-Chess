@@ -19,7 +19,8 @@ export const DashboardLayout = () => {
   const sidebarLinks = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/local-setup', icon: Users, label: 'Local Play' },
-    { path: '/online', icon: Swords, label: 'Online Match' },
+    { path: '/online-setup', icon: Swords, label: 'Play Online' },
+    { path: '/room-setup', icon: Trophy, label: 'Rooms' },
     { path: '/bot', icon: Bot, label: 'Play vs Bot' },
     { path: '/custom-setup', icon: LayoutTemplate, label: 'Custom Design' },
     { path: '/puzzles', icon: Puzzle, label: 'Puzzles' },

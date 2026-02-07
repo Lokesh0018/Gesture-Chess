@@ -16,7 +16,12 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   
   connect: () => {
     const { socket } = get();
-    if (socket?.connected) return;
+    if (socket) {
+      if (!socket.connected) {
+        socket.connect();
+      }
+      return;
+    }
 
     const token = useAuthStore.getState().token;
     if (!token) return;
