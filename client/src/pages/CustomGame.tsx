@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import { getCustomPieces } from '../utils/pieces';
 
 // Helper: convert a position dictionary to a FEN string
-function positionToFen(pos: Record<string, string>): string {
+function positionToFen(pos: Record<string, string>, castling?: {wK: boolean, wQ: boolean, bK: boolean, bQ: boolean}): string {
   const pieceMap: Record<string, string> = {
     wK: 'K', wQ: 'Q', wR: 'R', wB: 'B', wN: 'N', wP: 'P',
     bK: 'k', bQ: 'q', bR: 'r', bB: 'b', bN: 'n', bP: 'p',
@@ -29,7 +29,17 @@ function positionToFen(pos: Record<string, string>): string {
     if (empty > 0) fen += empty;
     if (rank > 1) fen += '/';
   }
-  return fen + ' w - - 0 1';
+  
+  let castlingStr = '';
+  if (castling) {
+    if (castling.wK) castlingStr += 'K';
+    if (castling.wQ) castlingStr += 'Q';
+    if (castling.bK) castlingStr += 'k';
+    if (castling.bQ) castlingStr += 'q';
+  }
+  if (castlingStr === '') castlingStr = '-';
+  
+  return fen + ' w ' + castlingStr + ' - 0 1';
 }
 
 export function CustomGame() {
@@ -43,12 +53,14 @@ export function CustomGame() {
     whiteName,
     blackName,
     customPosition: initialPosition,
-    winCondition
+    winCondition,
+    castling
   } = location.state || {
     whiteTime: 600, blackTime: 600, increment: 5,
     whiteName: 'White', blackName: 'Black',
     customPosition: { a1: 'wR', e1: 'wK', a8: 'bR', e8: 'bK' },
-    winCondition: 'sandbox'
+    winCondition: 'sandbox',
+    castling: { wK: true, wQ: true, bK: true, bQ: true }
   };
 
   const [position, setPosition] = useState<Record<string, string>>(initialPosition || {});
@@ -161,7 +173,7 @@ export function CustomGame() {
           <div style={{ width: '100%', aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden' }}>
             <Chessboard
               options={{
-                position: positionToFen(position),
+                position: positionToFen(position, castling),
                 onPieceDrop: onPieceDrop,
                 boardOrientation: "white",
                 darkSquareStyle: { backgroundColor: '#475569' },

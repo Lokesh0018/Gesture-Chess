@@ -1,0 +1,392 @@
+/* Advanced Editor Variables */
+:root {
+  --ae-bg: #0B1120;
+  --ae-panel: #182235;
+  --ae-card: #202D45;
+  --ae-primary: #3B82F6;
+  --ae-primary-hover: #2563EB;
+  --ae-secondary: #8B5CF6;
+  --ae-success: #10B981;
+  --ae-warning: #F59E0B;
+  --ae-danger: #EF4444;
+  --ae-text: #FFFFFF;
+  --ae-text-secondary: #94A3B8;
+  --ae-border: rgba(255, 255, 255, 0.08);
+  --ae-radius: 12px;
+  --ae-radius-sm: 8px;
+  --ae-spacing: 8px;
+  
+  --ae-topbar-height: 56px;
+  --ae-statusbar-height: 32px;
+  --ae-toolbar-height: 48px;
+}
+
+/* Global Application Layout */
+.ae-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: calc(100vh - 64px); /* Account for Dashboard Layout padding */
+  background-color: var(--ae-bg);
+  color: var(--ae-text);
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--ae-border);
+}
+
+/* Main Body Layout */
+.ae-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* Sidebars */
+.ae-sidebar {
+  background: var(--ae-panel);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.ae-sidebar-left {
+  width: 280px;
+  border-right: 1px solid var(--ae-border);
+}
+
+.ae-sidebar-right {
+  width: 320px;
+  border-left: 1px solid var(--ae-border);
+}
+
+.ae-sidebar.collapsed {
+  width: 0px !important;
+  border: none !important;
+}
+
+/* Sidebar Accordions & Content */
+.ae-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.ae-sidebar-section {
+  border-bottom: 1px solid var(--ae-border);
+}
+
+.ae-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--ae-spacing) * 1.5) calc(var(--ae-spacing) * 2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ae-section-header:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ae-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ae-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: var(--ae-spacing);
+}
+
+.ae-section-content {
+  padding: calc(var(--ae-spacing) * 2);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--ae-spacing) * 1.5);
+}
+
+/* Tool List */
+.ae-tool-item {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--ae-spacing) * 1.5);
+  padding: var(--ae-spacing);
+  border-radius: var(--ae-radius-sm);
+  color: var(--ae-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ae-tool-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ae-text);
+}
+
+.ae-tool-item.active {
+  background: rgba(34, 211, 238, 0.1);
+  color: var(--ae-primary);
+}
+
+/* Inputs and Selects */
+.ae-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ae-label {
+  font-size: 12px;
+  color: var(--ae-text-secondary);
+}
+
+.ae-input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--ae-border);
+  color: var(--ae-text);
+  padding: 8px 12px;
+  border-radius: var(--ae-radius-sm);
+  font-size: 13px;
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+}
+
+select.ae-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 14px;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+select.ae-input option {
+  background: var(--ae-bg);
+  color: var(--ae-text);
+}
+
+.ae-input:focus {
+  border-color: var(--ae-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Checkboxes */
+.ae-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ae-text-secondary);
+  cursor: pointer;
+}
+
+.ae-checkbox-label:hover {
+  color: var(--ae-text);
+}
+
+.ae-checkbox-label input {
+  accent-color: var(--ae-primary);
+  width: 16px;
+  height: 16px;
+}
+
+/* Center Workspace */
+.ae-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: radial-gradient(circle at center, #192131 0%, var(--ae-bg) 100%);
+  overflow: hidden;
+}
+
+/* Top Toolbar */
+.ae-toolbar {
+  height: var(--ae-toolbar-height);
+  background: var(--ae-panel);
+  border-bottom: 1px solid var(--ae-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ae-spacing);
+  padding: 0 calc(var(--ae-spacing) * 2);
+  flex-shrink: 0;
+}
+
+.ae-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-right: 1px solid var(--ae-border);
+  padding-right: var(--ae-spacing);
+}
+
+.ae-toolbar-group:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+/* Board Canvas */
+.ae-canvas {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--ae-spacing) * 4);
+  position: relative;
+}
+
+.ae-board-wrapper {
+  background: var(--ae-card);
+  padding: calc(var(--ae-spacing) * 2);
+  border-radius: var(--ae-radius);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ae-border);
+  width: 100%;
+  max-width: 65vh;
+  aspect-ratio: 1/1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ae-board-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Bottom Status Bar */
+.ae-statusbar {
+  height: var(--ae-statusbar-height);
+  background: var(--ae-panel);
+  border-top: 1px solid var(--ae-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 calc(var(--ae-spacing) * 2);
+  font-size: 11px;
+  color: var(--ae-text-secondary);
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+.ae-status-group {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--ae-spacing) * 3);
+}
+
+.ae-status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ae-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ae-success);
+}
+
+/* Right Sidebar Grid */
+.ae-assets-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ae-spacing);
+}
+
+.ae-asset-card {
+  aspect-ratio: 1/1;
+  background: var(--ae-card);
+  border: 1px solid var(--ae-border);
+  border-radius: var(--ae-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.ae-asset-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+  border-color: var(--ae-text-secondary);
+}
+
+.ae-asset-card:active {
+  cursor: grabbing;
+}
+
+/* Collapse Toggle Button (Floating) */
+.ae-collapse-btn {
+  position: absolute;
+  top: 16px;
+  background: var(--ae-panel);
+  border: 1px solid var(--ae-border);
+  color: var(--ae-text-secondary);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 50;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+}
+
+.ae-collapse-btn:hover {
+  color: var(--ae-text);
+  background: var(--ae-card);
+  transform: scale(1.1);
+}
+
+.ae-collapse-btn.left {
+  left: 280px;
+  transform: translateX(-50%);
+}
+.ae-collapse-btn.left.collapsed {
+  left: 16px;
+  transform: translateX(0);
+}
+
+.ae-collapse-btn.right {
+  right: 320px;
+  transform: translateX(50%);
+}
+.ae-collapse-btn.right.collapsed {
+  right: 16px;
+  transform: translateX(0);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ae-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ae-text-secondary);
+}
