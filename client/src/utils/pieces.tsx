@@ -1,4 +1,4 @@
-const PIECE_ASSET_MAP: Record<string, string> = {
+export const PIECE_ASSET_MAP: Record<string, string> = {
   wK: 'whiteKing.svg',
   wQ: 'whiteQueen.svg',
   wR: 'whiteRook.svg',
@@ -7,7 +7,7 @@ const PIECE_ASSET_MAP: Record<string, string> = {
   wP: 'whitePawn.svg',
   bK: 'blackKing.svg',
   bQ: 'blackQueen.svg',
-  bR: 'bllackRook.svg',
+  bR: 'blackRook.svg',
   bB: 'blackBishop.svg',
   bN: 'blackHorse.svg',
   bP: 'blackPawn.svg'

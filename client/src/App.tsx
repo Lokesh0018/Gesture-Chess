@@ -32,8 +32,8 @@ function App() {
   const location = useLocation();
   return (
     <ErrorBoundary>
-      <Toaster 
-        position="top-right" 
+      <Toaster
+        position="top-right"
         toastOptions={{
           style: {
             background: 'rgba(15, 23, 42, 0.9)',
@@ -61,7 +61,7 @@ function App() {
         <Routes location={location}>
           {/* Landing Page without MainLayout */}
           <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
-          
+
           {/* Pages wrapped in MainLayout */}
           <Route element={<MainLayout />}>
             <Route path="login" element={<PageTransition><Login /></PageTransition>} />
@@ -71,11 +71,11 @@ function App() {
             <Route path="online-game" element={<PageTransition><OnlineGame /></PageTransition>} />
             <Route path="bot-game" element={<PageTransition><PlayBot /></PageTransition>} />
             <Route path="room" element={<PageTransition><TournamentLobby /></PageTransition>} />
-            
+
             <Route element={<DashboardLayout />}>
               <Route path="local-setup" element={<PageTransition><LocalGameSetup /></PageTransition>} />
               <Route path="custom-setup" element={<PageTransition><CustomGameSetup /></PageTransition>} />
-              
+
               <Route element={<ProtectedRoute />}>
                 <Route path="dashboard" element={<PageTransition><Home /></PageTransition>} />
                 <Route path="online-setup" element={<PageTransition><OnlineGameSetup /></PageTransition>} />
@@ -89,7 +89,7 @@ function App() {
                 <Route path="leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />
               </Route>
             </Route>
-            
+
             <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Route>
         </Routes>
