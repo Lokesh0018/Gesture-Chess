@@ -130,7 +130,7 @@ export const DashboardLayout = () => {
             )}
           </button>
           
-          <div className="dashboard-user-profile">
+          <Link to="/profile" className="dashboard-user-profile">
             <div className="dashboard-avatar">
               {user?.username?.charAt(0).toUpperCase() || 'U'}
               {/* Online indicator */}
@@ -152,7 +152,7 @@ export const DashboardLayout = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </Link>
         </div>
       </motion.aside>
 
