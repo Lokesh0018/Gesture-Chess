@@ -37,7 +37,7 @@ export const Navbar = () => {
         <Link to="/custom-setup" className={`nav-link ${location.pathname.startsWith('/custom-setup') ? 'active' : ''}`}>
           Custom Design
         </Link>
-        <Link to="/puzzles" className={`nav-link ${location.pathname.startsWith('/puzzles') ? 'active' : ''}`}>
+        <Link to="/puzzle-setup" className={`nav-link ${location.pathname.startsWith('/puzzle') ? 'active' : ''}`}>
           Puzzles
         </Link>
         <Link to="/learn" className={`nav-link ${location.pathname.startsWith('/learn') ? 'active' : ''}`}>

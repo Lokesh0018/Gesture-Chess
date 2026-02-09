@@ -78,6 +78,32 @@ export const SettingsPage = () => {
           </div>
         </div>
       </div>
+
+      <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700 space-y-6">
+        <h3 className="text-xl font-semibold text-primary-400 border-b border-gray-700 pb-2">Accessibility & UI</h3>
+        
+        <div className="space-y-4">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={settings.highContrast}
+              onChange={(e) => settings.updateSettings({ highContrast: e.target.checked })}
+              className="w-5 h-5 accent-primary-500 cursor-pointer rounded"
+            />
+            <span className="text-gray-300 font-medium">High Contrast Mode</span>
+          </label>
+          
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={settings.soundEnabled}
+              onChange={(e) => settings.updateSettings({ soundEnabled: e.target.checked })}
+              className="w-5 h-5 accent-primary-500 cursor-pointer rounded"
+            />
+            <span className="text-gray-300 font-medium">Enable Sound Effects</span>
+          </label>
+        </div>
+      </div>
     </div>
   );
 };

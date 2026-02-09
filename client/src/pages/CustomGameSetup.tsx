@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Play, MousePointer2, Undo2, Redo2,
+  Play, Undo2, Redo2,
   Trash2, AlertTriangle, CheckCircle2, Save,
-  RefreshCw, PaintBucket, Hand, CopyX, ArrowRightLeft, Info,
-  FlipVertical, ChevronDown, ChevronRight, Zap
+  PaintBucket, CopyX, ArrowRightLeft,
+  FlipVertical
 } from 'lucide-react';
 import { CustomBoard } from '../components/CustomBoard';
 import { PIECE_ASSET_MAP } from '../utils/pieces';
@@ -17,31 +17,6 @@ const CLASSIC_POS = {
   a8: 'bR', b8: 'bN', c8: 'bB', d8: 'bQ', e8: 'bK', f8: 'bB', g8: 'bN', h8: 'bR',
   a7: 'bP', b7: 'bP', c7: 'bP', d7: 'bP', e7: 'bP', f7: 'bP', g7: 'bP', h7: 'bP',
 };
-
-function positionToFen(pos: Record<string, string>): string {
-  const pieceMap: Record<string, string> = {
-    wK: 'K', wQ: 'Q', wR: 'R', wB: 'B', wN: 'N', wP: 'P',
-    bK: 'k', bQ: 'q', bR: 'r', bB: 'b', bN: 'n', bP: 'p',
-  };
-  const files = 'abcdefgh';
-  let fen = '';
-  for (let rank = 8; rank >= 1; rank--) {
-    let empty = 0;
-    for (let f = 0; f < 8; f++) {
-      const sq = files[f] + rank;
-      const piece = pos[sq];
-      if (piece && pieceMap[piece]) {
-        if (empty > 0) { fen += empty; empty = 0; }
-        fen += pieceMap[piece];
-      } else {
-        empty++;
-      }
-    }
-    if (empty > 0) fen += empty;
-    if (rank > 1) fen += '/';
-  }
-  return fen + ' w - - 0 1';
-}
 
 type Tool = 'select' | 'place' | 'erase' | 'fill';
 type WinCondition = 'capture_all' | 'capture_king' | 'checkmate' | 'last_standing' | 'custom';
@@ -72,13 +47,12 @@ export const CustomGameSetup = () => {
   const [startingSide, setStartingSide] = useState<'w' | 'b'>('w');
   const [winCondition, setWinCondition] = useState<WinCondition>('capture_all');
 
-  const [castleWK, setCastleWK] = useState(true);
-  const [castleWQ, setCastleWQ] = useState(true);
-  const [castleBK, setCastleBK] = useState(true);
-  const [castleBQ, setCastleBQ] = useState(true);
-  const [enPassant, setEnPassant] = useState(false);
-  const [pawnPromotion, setPawnPromotion] = useState(true);
-  const [advancedRulesOpen, setAdvancedRulesOpen] = useState(false);
+  const castleWK = true;
+  const castleWQ = true;
+  const castleBK = true;
+  const castleBQ = true;
+  const enPassant = false;
+  const pawnPromotion = true;
 
   const [validationPopover, setValidationPopover] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -87,7 +61,6 @@ export const CustomGameSetup = () => {
   const [qbPiece, setQbPiece] = useState<string>('R');
   const [qbCount, setQbCount] = useState<number>(32);
 
-  const [arsenalTab, setArsenalTab] = useState<'w' | 'b'>('w');
 
   const [confirmModal, setConfirmModal] = useState<{ action: string, title: string, message: string } | null>(null);
 
@@ -237,19 +210,6 @@ export const CustomGameSetup = () => {
     updatePosition(newPos);
   };
 
-  const fillEmpty = () => {
-    if (!selectedPiece) return;
-    const newPos = { ...designerPosition };
-    const files = 'abcdefgh';
-    for (let r = 1; r <= 8; r++) {
-      for (let f = 0; f < 8; f++) {
-        const sq = files[f] + r;
-        if (!newPos[sq]) newPos[sq] = selectedPiece;
-      }
-    }
-    updatePosition(newPos);
-  };
-
   const onSquareClick = (square: string) => {
     if (activeTool === 'place' && selectedPiece) {
       const newPos = { ...designerPosition };
@@ -346,28 +306,6 @@ export const CustomGameSetup = () => {
 
   const pieceNames: Record<string, string> = {
     'K': 'King', 'Q': 'Queen', 'R': 'Rook', 'B': 'Bishop', 'N': 'Knight', 'P': 'Pawn'
-  };
-
-  const formatBattleSummary = () => {
-    const pieces = Object.values(designerPosition);
-    if (pieces.length === 0) return "Empty Board";
-
-    const getSideSummary = (side: string) => {
-      const counts: Record<string, number> = {};
-      pieces.filter(p => p.startsWith(side)).forEach(p => {
-        counts[p[1]] = (counts[p[1]] || 0) + 1;
-      });
-      const types = Object.keys(counts);
-      if (types.length === 0) return "0 Pieces";
-      if (types.length === 1) return `${counts[types[0]]} ${pieceNames[types[0]]}s`;
-      return types.map(t => `${counts[t]} ${pieceNames[t]}${counts[t] > 1 ? 's' : ''}`).join(', ');
-    };
-
-    const wSum = getSideSummary('w');
-    const bSum = getSideSummary('b');
-    const t = pieces.length;
-
-    return `White: ${wSum} • Black: ${bSum} • ${t} Pieces • ${startingSide === 'w' ? 'White' : 'Black'} to move`;
   };
 
   return (

@@ -23,7 +23,7 @@ export const DashboardLayout = () => {
     { path: '/room-setup', icon: Trophy, label: 'Rooms' },
     { path: '/bot-setup', icon: Bot, label: 'Play vs Bot' },
     { path: '/custom-setup', icon: LayoutTemplate, label: 'Custom Design' },
-    { path: '/puzzles', icon: Puzzle, label: 'Puzzles' },
+    { path: '/puzzle-setup', icon: Puzzle, label: 'Puzzles' },
     { path: '/learn', icon: BookOpen, label: 'Learn' },
     { path: '/leaderboard', icon: BarChart2, label: 'Leaderboard' },
   ];

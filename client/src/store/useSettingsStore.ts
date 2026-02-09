@@ -12,6 +12,8 @@ interface SettingsState {
   boardTheme: string;
   pieceTheme: string;
   soundVolume: number;
+  highContrast: boolean;
+  soundEnabled: boolean;
   updateSettings: (settings: Partial<SettingsState>) => void;
   fetchSettings: () => Promise<void>;
 }
@@ -27,6 +29,8 @@ export const useSettingsStore = create<SettingsState>()(
       boardTheme: 'classic',
       pieceTheme: 'classic',
       soundVolume: 0.8,
+      highContrast: false,
+      soundEnabled: true,
       updateSettings: async (newSettings) => {
         // Optimistic UI update
         set((state) => ({ ...state, ...newSettings }));
