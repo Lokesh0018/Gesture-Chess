@@ -1,10 +1,13 @@
-/* Custom Scrollbars */
 .puzzle-scroll-container {
   overflow-y: auto;
   overflow-x: hidden;
-  height: calc(100vh - 4rem);
+  height: 100%;
   background-color: #0B0F19;
   font-family: sans-serif;
+  scroll-behavior: smooth;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .puzzle-scroll-container::-webkit-scrollbar {
@@ -21,6 +24,19 @@
   background: rgba(59, 130, 246, 0.6);
 }
 
+/* Parallax Elements */
+.parallax-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.2;
+}
+.parallax-orb-1 { width: 300px; height: 300px; background-color: #3b82f6; left: -100px; top: 20%; }
+.parallax-orb-2 { width: 400px; height: 400px; background-color: #8b5cf6; right: -150px; top: 60%; }
+.parallax-orb-3 { width: 250px; height: 250px; background-color: #06b6d4; left: 20%; bottom: -50px; }
+
 /* Layout Utilities */
 .puzzle-container {
   max-width: 48rem;
@@ -34,7 +50,7 @@
 
 /* Header */
 .puzzle-header {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .puzzle-title {
@@ -56,6 +72,76 @@
   margin-bottom: 2rem;
 }
 
+/* Daily Challenge Banner */
+.daily-challenge-banner {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.8), rgba(88, 28, 135, 0.8));
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(16px);
+}
+
+.daily-challenge-bg {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDIiLz4KPHBhdGggZD0iTTAgMEw4IDhaTTAgOEw4IDBaIiBzdHJva2U9IiNmZmYiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+');
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.daily-challenge-content {
+  position: relative;
+  z-index: 10;
+}
+
+.daily-challenge-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.daily-challenge-time {
+  font-size: 0.875rem;
+  color: #d8b4fe;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-challenge {
+  background-color: white;
+  color: #1e3a8a;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-challenge:hover {
+  background-color: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* Progress Banner */
 .progress-banner {
   background-color: #151A28;
@@ -65,7 +151,7 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   position: relative;
   overflow: hidden;
-  margin-bottom: 1rem;
+  margin-bottom: 3rem;
 }
 
 .progress-banner-glow {
@@ -166,6 +252,22 @@
   z-index: 0;
   transform-origin: top;
   box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+  overflow: hidden;
+}
+
+.timeline-pulse {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, #22d3ee, transparent);
+  animation: timeline-flow 2s infinite linear;
+}
+
+@keyframes timeline-flow {
+  0% { transform: translateY(-100px); }
+  100% { transform: translateY(1000px); } /* Approximate long distance */
 }
 
 .timeline-list {
@@ -213,6 +315,20 @@
   background-color: #334155;
 }
 
+/* Card Visuals (Theme Icons) */
+.card-theme-icon {
+  position: absolute;
+  right: -1rem;
+  bottom: -1rem;
+  opacity: 0.05;
+  color: white;
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+.card-completed .card-theme-icon { color: #22d3ee; }
+.card-current .card-theme-icon { color: #3b82f6; opacity: 0.1; }
+
 /* Completed Card */
 .card-completed {
   width: 100%;
@@ -226,6 +342,8 @@
   justify-content: space-between;
   transition: all 0.2s;
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 
 .card-completed:hover {
@@ -241,6 +359,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  position: relative;
+  z-index: 2;
 }
 
 .card-completed-icon {
@@ -248,6 +368,13 @@
   color: #22d3ee;
   padding: 0.5rem;
   border-radius: 9999px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.card-completed-icon:hover {
+  transform: scale(1.1);
+  background-color: rgba(6, 182, 212, 0.2);
 }
 
 .card-completed-label {
@@ -270,6 +397,8 @@
   gap: 0.25rem;
   color: #facc15;
   filter: drop-shadow(0 0 5px rgba(250, 204, 21, 0.3));
+  position: relative;
+  z-index: 2;
 }
 
 /* Current Card */
@@ -310,6 +439,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative; z-index: 2;
 }
 
 .pulse-dot {
@@ -330,6 +460,7 @@
   font-weight: 700;
   color: white;
   margin-bottom: 0.5rem;
+  position: relative; z-index: 2;
 }
 
 .card-current-tags {
@@ -338,6 +469,7 @@
   font-size: 0.875rem;
   color: #9ca3af;
   margin-bottom: 1.5rem;
+  position: relative; z-index: 2;
 }
 
 .card-tag {
@@ -363,6 +495,7 @@
   transition: background-color 0.2s;
   cursor: pointer;
   border: none;
+  position: relative; z-index: 2;
 }
 
 @media (min-width: 768px) {
@@ -380,7 +513,7 @@
   outline-offset: 2px;
 }
 
-/* Locked Card */
+/* Locked Card & Teaser */
 .card-locked {
   width: 100%;
   background-color: rgba(15, 23, 42, 0.5);
@@ -389,8 +522,19 @@
   padding: 1.25rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
   opacity: 0.7;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.card-locked-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.3s;
 }
 
 .card-locked-icon {
@@ -413,4 +557,105 @@
   font-size: 1.125rem;
   font-weight: 500;
   color: #94a3b8;
+}
+
+.card-locked-teaser {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.3s;
+}
+
+.card-locked:hover {
+  opacity: 1;
+  background-color: rgba(30, 41, 59, 0.8);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.card-locked:hover .card-locked-teaser {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Sticky Mini-Map */
+.mini-map-container {
+  position: fixed;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+  padding: 1rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 50;
+  opacity: 0;
+  animation: fade-in 1s forwards 1s; /* fade in after load */
+}
+
+@keyframes fade-in {
+  to { opacity: 1; }
+}
+
+.mini-map-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.mini-map-dot:hover {
+  transform: scale(1.5);
+}
+
+.mini-map-dot.completed {
+  background-color: #22d3ee;
+}
+
+.mini-map-dot.current {
+  background-color: #3b82f6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.8);
+  transform: scale(1.2);
+}
+
+.mini-map-dot.locked {
+  background-color: #334155;
+}
+
+/* Tooltip for Mini-map */
+.mini-map-dot::after {
+  content: attr(data-title);
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(-10px);
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s;
+}
+
+.mini-map-dot:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(-15px);
+}
+
+@media (max-width: 1024px) {
+  .mini-map-container {
+    display: none;
+  }
 }

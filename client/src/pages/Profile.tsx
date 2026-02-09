@@ -1,8 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
+import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { Target, Trophy, Clock, XCircle, MinusCircle, CheckCircle2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Target, Trophy, Clock, XCircle, MinusCircle, CheckCircle2, User } from 'lucide-react';
+import './Profile.css';
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, type: 'spring', stiffness: 400, damping: 30 }
+  })
+};
 
 export const Profile = () => {
   const { user: authUser, token } = useAuthStore();
@@ -35,8 +45,26 @@ export const Profile = () => {
     if (token) fetchProfile();
   }, [token]);
 
-  if (!authUser || isLoading) return <div className="text-white text-center mt-20">Loading profile...</div>;
-  if (!profileData) return <div className="text-white text-center mt-20">Failed to load profile data.</div>;
+  if (!authUser || isLoading) {
+    return (
+      <div className="profile-page">
+        <div className="profile-loading">
+          <div className="profile-loading-spinner" />
+          Loading profile...
+        </div>
+      </div>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <div className="profile-page">
+        <div className="profile-loading">
+          Failed to load profile data.
+        </div>
+      </div>
+    );
+  }
 
   const handleUpdate = async () => {
     setIsSaving(true);
@@ -63,147 +91,165 @@ export const Profile = () => {
     }
   };
 
+  const formatDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const stats = [
+    { label: 'Rating', value: profileData.rating, iconClass: 'rating', icon: Target },
+    { label: 'Wins', value: profileData.wins, iconClass: 'wins', icon: Trophy },
+    { label: 'Losses', value: profileData.losses, iconClass: 'losses', icon: XCircle },
+    { label: 'Draws', value: profileData.draws, iconClass: 'draws', icon: MinusCircle },
+  ];
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <h2 className="text-3xl font-bold text-white mb-6">Your Profile</h2>
-
-      <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700 flex flex-col md:flex-row gap-8 items-center md:items-start">
-        <div className="w-32 h-32 bg-gray-700 rounded-full flex items-center justify-center text-4xl text-gray-400 font-bold border-4 border-primary-500 shadow-lg">
-          {profileData.username.charAt(0).toUpperCase()}
-        </div>
-        
-        <div className="flex-1 space-y-6 w-full">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
-            <input 
-              type="text" 
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-3 text-white outline-none focus:border-primary-500" 
-            />
+    <div className="profile-page">
+      {/* Header */}
+      <div className="profile-header">
+        <div className="profile-header-row">
+          <div className="profile-header-icon">
+            <User size={22} />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Email</label>
-            <input 
-              type="text" 
-              disabled
-              value={profileData.email}
-              className="w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg p-3 text-gray-500 cursor-not-allowed" 
-            />
-          </div>
-          <button 
-            onClick={handleUpdate}
-            disabled={isSaving || username === profileData.username}
-            className="bg-primary-600 hover:bg-primary-500 text-white font-bold py-2 px-6 rounded-lg transition disabled:opacity-50"
-          >
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </button>
+          <h1>Your <span>Profile</span></h1>
         </div>
+        <p className="profile-header-sub">View and manage your account</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col items-center text-center">
-          <div className="p-3 bg-yellow-500/10 text-yellow-500 rounded-xl mb-3">
-            <Target className="w-6 h-6" />
+      {/* Scrollable content */}
+      <div className="profile-scroll">
+        {/* Profile card */}
+        <motion.div
+          className="profile-card"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+        >
+          <div className="profile-avatar-container">
+            <div className="profile-avatar">
+              {profileData.username.charAt(0).toUpperCase()}
+            </div>
+            <div className="profile-avatar-ring" />
+            <div className="profile-online-dot" />
           </div>
-          <p className="text-gray-400 text-sm font-semibold">Rating</p>
-          <p className="text-white font-bold text-2xl">{profileData.rating}</p>
-        </div>
-        
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col items-center text-center">
-          <div className="p-3 bg-green-500/10 text-green-500 rounded-xl mb-3">
-            <Trophy className="w-6 h-6" />
-          </div>
-          <p className="text-gray-400 text-sm font-semibold">Wins</p>
-          <p className="text-white font-bold text-2xl">{profileData.wins}</p>
-        </div>
-        
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col items-center text-center">
-          <div className="p-3 bg-red-500/10 text-red-500 rounded-xl mb-3">
-            <XCircle className="w-6 h-6" />
-          </div>
-          <p className="text-gray-400 text-sm font-semibold">Losses</p>
-          <p className="text-white font-bold text-2xl">{profileData.losses}</p>
-        </div>
-        
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 flex flex-col items-center text-center">
-          <div className="p-3 bg-gray-500/10 text-gray-400 rounded-xl mb-3">
-            <MinusCircle className="w-6 h-6" />
-          </div>
-          <p className="text-gray-400 text-sm font-semibold">Draws</p>
-          <p className="text-white font-bold text-2xl">{profileData.draws}</p>
-        </div>
-      </div>
 
-      {/* Match History */}
-      <div className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
-        <div className="p-6 border-b border-gray-700 bg-gray-800/50">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary-400" />
-            Recent Matches
-          </h3>
-        </div>
-        
-        {recentGames.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
-            No matches played yet. Go play a game!
+          <div className="profile-info">
+            <div className="profile-form-group">
+              <label className="profile-form-label">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="profile-form-input"
+              />
+            </div>
+            <div className="profile-form-group">
+              <label className="profile-form-label">Email</label>
+              <input
+                type="text"
+                disabled
+                value={profileData.email}
+                className="profile-form-input"
+              />
+            </div>
+            <button
+              onClick={handleUpdate}
+              disabled={isSaving || username === profileData.username}
+              className="profile-save-btn"
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-900/50 text-gray-400 text-sm">
-                  <th className="p-4 font-semibold">Date</th>
-                  <th className="p-4 font-semibold">Result</th>
-                  <th className="p-4 font-semibold">Moves</th>
-                  <th className="p-4 font-semibold">Analysis</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700/50">
-                {recentGames.map((game, i) => (
-                  <tr key={game.id || i} className="hover:bg-gray-700/30 transition">
-                    <td className="p-4 text-gray-300">
-                      {format(new Date(game.createdAt), 'MMM d, yyyy h:mm a')}
-                    </td>
-                    <td className="p-4">
-                      {game.winnerId === profileData.id ? (
-                        <span className="inline-flex items-center gap-1 text-green-400 bg-green-400/10 px-2 py-1 rounded-md text-sm font-medium">
-                          <CheckCircle2 className="w-4 h-4" /> Won
-                        </span>
-                      ) : game.winnerId ? (
-                        <span className="inline-flex items-center gap-1 text-red-400 bg-red-400/10 px-2 py-1 rounded-md text-sm font-medium">
-                          <XCircle className="w-4 h-4" /> Lost
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-gray-400 bg-gray-400/10 px-2 py-1 rounded-md text-sm font-medium">
-                          <MinusCircle className="w-4 h-4" /> Draw
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 text-gray-400">
-                      {/* Calculate roughly how many moves from PGN */}
-                      {game.pgn ? Math.ceil(game.pgn.split(' ').length / 3) : '?'} moves
-                    </td>
-                    <td className="p-4">
-                      <button 
-                        onClick={() => {
-                          // Could copy to clipboard, or route to analysis page
-                          navigator.clipboard.writeText(game.pgn);
-                          toast.success('PGN copied to clipboard');
-                        }}
-                        className="text-primary-400 hover:text-primary-300 text-sm font-medium"
-                      >
-                        Copy PGN
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+        </motion.div>
 
+        {/* Stats grid */}
+        <div className="profile-stats-grid">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              className="profile-stat-card"
+              variants={itemVariants}
+              initial="hidden"
+              animate="show"
+              custom={i}
+            >
+              <div className={`profile-stat-icon ${stat.iconClass}`}>
+                <stat.icon size={20} />
+              </div>
+              <span className="profile-stat-label">{stat.label}</span>
+              <span className="profile-stat-value">{stat.value}</span>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Match history */}
+        <motion.div
+          className="profile-matches"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.4, ease: 'easeOut' }}
+        >
+          <div className="profile-matches-header">
+            <Clock size={18} className="profile-matches-header-icon" />
+            <span className="profile-matches-title">Recent Matches</span>
+          </div>
+
+          {recentGames.length === 0 ? (
+            <div className="profile-matches-empty">
+              No matches played yet. Go play a game!
+            </div>
+          ) : (
+            <>
+              <div className="profile-matches-table-head">
+                <span>Date</span>
+                <span>Result</span>
+                <span>Moves</span>
+                <span>Analysis</span>
+              </div>
+              {recentGames.map((game, i) => (
+                <div key={game.id || i} className="profile-match-row">
+                  <span className="profile-match-date">
+                    {formatDate(game.createdAt)}
+                  </span>
+                  <span>
+                    {game.winnerId === profileData.id ? (
+                      <span className="profile-match-result won">
+                        <CheckCircle2 size={12} /> Won
+                      </span>
+                    ) : game.winnerId ? (
+                      <span className="profile-match-result lost">
+                        <XCircle size={12} /> Lost
+                      </span>
+                    ) : (
+                      <span className="profile-match-result draw">
+                        <MinusCircle size={12} /> Draw
+                      </span>
+                    )}
+                  </span>
+                  <span className="profile-match-moves">
+                    {game.pgn ? Math.ceil(game.pgn.split(' ').length / 3) : '?'} moves
+                  </span>
+                  <span>
+                    <button
+                      className="profile-pgn-btn"
+                      onClick={() => {
+                        navigator.clipboard.writeText(game.pgn);
+                        toast.success('PGN copied to clipboard');
+                      }}
+                    >
+                      Copy PGN
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 };
