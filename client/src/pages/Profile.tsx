@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { Target, Trophy, Clock, XCircle, MinusCircle, CheckCircle2, User } from 'lucide-react';
 import './Profile.css';
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: { opacity: 0, y: 16 },
-  show: (i: number) => ({
+  show: (custom: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, type: 'spring', stiffness: 400, damping: 30 }
+    transition: { delay: custom * 0.08, type: 'spring', stiffness: 400, damping: 30 }
   })
 };
 

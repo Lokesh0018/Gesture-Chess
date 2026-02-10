@@ -1,14 +1,15 @@
 import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { Settings, Hand, Palette, Accessibility, Volume2, VolumeX, Eye } from 'lucide-react';
 import { useSettingsStore } from '../store/useSettingsStore';
 import './Settings.css';
 
-const sectionVariants = {
+const sectionVariants: Variants = {
   hidden: { opacity: 0, y: 16 },
-  show: (i: number) => ({
+  show: (custom: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, type: 'spring', stiffness: 400, damping: 30 }
+    transition: { delay: custom * 0.1, type: 'spring' as const, stiffness: 400, damping: 30 }
   })
 };
 

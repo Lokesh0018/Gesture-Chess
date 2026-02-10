@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { Trophy, Crown, Medal, Swords, Users } from 'lucide-react';
 import './Leaderboard.css';
 
@@ -12,7 +13,7 @@ interface LeaderboardUser {
   gamesPlayed: number;
 }
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.08 } }
 };
