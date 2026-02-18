@@ -16,7 +16,7 @@ export const OnlineGame = () => {
   const prevPinching = useRef(isPinching);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:3001');
+    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001');
     setSocket(newSocket);
 
     newSocket.on('connect', () => setStatus('Connected to server. Create or Join a room.'));
