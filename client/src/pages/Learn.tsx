@@ -50,11 +50,14 @@ export function Learn() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<Set<number>>(new Set());
 
+  const [selectedSquare, setSelectedSquare] = useState<string>('');
+
   const currentLesson = LESSONS[currentLessonIndex];
 
   useEffect(() => {
     setGame(new Chess(currentLesson.fen));
     setIsCompleted(false);
+    setSelectedSquare('');
   }, [currentLessonIndex]);
 
   const onPieceDrop = (args: any) => {
@@ -70,6 +73,7 @@ export function Learn() {
       });
 
       if (move === null) return false;
+      setSelectedSquare('');
 
       if (move.san === currentLesson.targetMove) {
         setGame(gameCopy);
@@ -99,6 +103,34 @@ export function Learn() {
   const resetLesson = () => {
     setGame(new Chess(currentLesson.fen));
     setIsCompleted(false);
+    setSelectedSquare('');
+  };
+
+  const handleSquareClick = (square: any) => {
+    if (isCompleted) return;
+    const sq = typeof square === 'string' ? square : square?.square;
+    if (!sq) return;
+
+    if (!selectedSquare) {
+      const piece = game.get(sq as any);
+      if (piece && piece.color === game.turn()) setSelectedSquare(sq);
+      return;
+    }
+
+    if (sq === selectedSquare) {
+      setSelectedSquare('');
+      return;
+    }
+
+    const success = onPieceDrop({ sourceSquare: selectedSquare, targetSquare: sq });
+    if (!success) {
+      const piece = game.get(sq as any);
+      if (piece && piece.color === game.turn()) {
+        setSelectedSquare(sq);
+      } else {
+        setSelectedSquare('');
+      }
+    }
   };
 
   const customPieces = useMemo(() => {
@@ -230,7 +262,10 @@ export function Learn() {
                 darkSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#475569' : '#779556'},
                 lightSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#cbd5e1' : '#EBECD0' },
                 pieces: customPieces,
-                allowDragging: !isCompleted
+                allowDragging: !isCompleted,
+                onSquareClick: handleSquareClick,
+                onPieceClick: handleSquareClick,
+                squareStyles: selectedSquare ? { [selectedSquare]: { backgroundColor: 'rgba(59, 130, 246, 0.5)' } } : {}
               }}
             />
           </div>
