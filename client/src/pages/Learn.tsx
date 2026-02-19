@@ -57,7 +57,7 @@ export function Learn() {
     setIsCompleted(false);
   }, [currentLessonIndex]);
 
-  const onPieceDrop = ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
+  const onPieceDrop = (sourceSquare: string, targetSquare: string) => {
     if (isCompleted || !targetSquare) return false;
 
     try {
@@ -225,8 +225,8 @@ export function Learn() {
                 boardOrientation: "white",
                 animationDurationInMs: 300,
                 showNotation: true,
-                darkSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#779556' : '#2C3E50' },
-                lightSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#EBECD0' : '#ECF0F1' },
+                darkSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#475569' : '#779556'},
+                lightSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#cbd5e1' : '#EBECD0' },
                 pieces: customPieces,
                 allowDragging: !isCompleted
               }}

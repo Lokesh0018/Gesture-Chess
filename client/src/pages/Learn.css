@@ -309,15 +309,16 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
+  min-height: 0;
 }
 
 .learn-board-wrapper {
   width: 100%;
-  max-width: min(560px, 100%);
+  max-width: min(560px, 100%, 65vh);
   aspect-ratio: 1;
   position: relative;
   border-radius: 12px;
-  overflow: hidden;
+
 }
 
 /* Glowing ring around board */
