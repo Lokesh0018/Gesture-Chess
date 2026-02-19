@@ -57,11 +57,13 @@ export function Learn() {
     setIsCompleted(false);
   }, [currentLessonIndex]);
 
-  const onPieceDrop = (sourceSquare: string, targetSquare: string) => {
+  const onPieceDrop = (args: any) => {
+    const { sourceSquare, targetSquare } = args;
     if (isCompleted || !targetSquare) return false;
 
     try {
-      const move = game.move({
+      const gameCopy = new Chess(game.fen());
+      const move = gameCopy.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: 'q'
@@ -70,17 +72,17 @@ export function Learn() {
       if (move === null) return false;
 
       if (move.san === currentLesson.targetMove) {
+        setGame(gameCopy);
         setIsCompleted(true);
         setCompletedLessons(prev => new Set(prev).add(currentLessonIndex));
         toast.success("Correct!", { icon: "✅" });
         return true;
       } else {
         toast.error("Not quite. Try finding a better move.", { icon: "❌" });
+        setGame(gameCopy);
         setTimeout(() => {
-          const undoGame = new Chess(game.fen());
-          undoGame.undo();
-          setGame(undoGame);
-        }, 300);
+          setGame(new Chess(game.fen()));
+        }, 400);
         return true;
       }
     } catch (e) {
