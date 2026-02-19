@@ -2,7 +2,10 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_chess_key';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 interface Player {
   id: string; // Database User ID
@@ -241,8 +244,59 @@ export const initializeSocket = (io: Server) => {
     });
 
     socket.on('disconnect', () => {
-      // Basic cleanup (if host disconnects, might want to destroy room)
-      // If player disconnects mid-match, auto-resign them.
+      // Remove from matchmaking queues
+      for (const [tc, queue] of matchmakingQueues.entries()) {
+        matchmakingQueues.set(tc, queue.filter(p => p.socketId !== socket.id));
+      }
+
+      // Handle tournament disconnects
+      for (const [roomId, t] of tournaments.entries()) {
+        if (t.status === 'waiting') {
+          t.players = t.players.filter(p => p.socketId !== socket.id);
+          io.to(roomId).emit('players_update', { players: t.players.map(p => ({ id: p.id, username: p.username })) });
+        } else if (t.status === 'in_progress') {
+          const match = t.matches.find(m => m.status === 'ongoing' && (m.white.socketId === socket.id || m.black.socketId === socket.id));
+          if (match) {
+            const winnerId = match.white.socketId === socket.id ? match.black.id : match.white.id;
+            match.status = 'finished';
+            match.winnerId = winnerId;
+            
+            const loserId = match.white.socketId === socket.id ? match.white.id : match.black.id;
+            const loser = t.players.find(p => p.id === loserId);
+            if (loser) loser.isEliminated = true;
+
+            io.to(match.id).emit('match_finished', { winnerId });
+
+            const allFinished = t.matches.every(m => m.status === 'finished');
+            if (allFinished) {
+              const activePlayers = t.players.filter(p => !p.isEliminated);
+              if (activePlayers.length === 1) {
+                t.status = 'finished';
+                prisma.tournament.create({
+                  data: {
+                    name: `Room ${t.id}`,
+                    status: 'completed',
+                    creatorId: t.players[0].id,
+                    winnerId: activePlayers[0].id,
+                    timeControl: t.timeControl,
+                    participants: {
+                      create: t.players.map(p => ({
+                        userId: p.id,
+                        status: p.isEliminated ? 'eliminated' : 'winner',
+                        score: p.isEliminated ? 0 : 1
+                      }))
+                    }
+                  }
+                }).catch(console.error);
+                io.to(t.id).emit('tournament_finished', { winnerId: activePlayers[0].id, winnerName: activePlayers[0].username });
+              } else {
+                t.round++;
+                setTimeout(() => pairRound(t, io), 3000);
+              }
+            }
+          }
+        }
+      }
     });
   });
 };

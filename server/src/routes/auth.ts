@@ -7,7 +7,10 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 
 export const authRouter = Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -77,9 +80,14 @@ authRouter.post('/register', authLimiter, async (req, res) => {
 
     // Fetch the created user to ensure types are correct
     const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(500).json({ error: 'Failed to retrieve created user' });
+    }
+
+    const { passwordHash: _, ...safeUser } = user;
 
     const token = jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ user, token });
+    res.json({ user: safeUser, token });
   } catch (err) {
     console.error('Registration error:', err);
     res.status(500).json({ error: 'Server error' });
@@ -104,8 +112,10 @@ authRouter.post('/login', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
+    const { passwordHash: _, ...safeUser } = user;
+
     const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ user, token });
+    res.json({ user: safeUser, token });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
