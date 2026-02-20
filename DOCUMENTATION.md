@@ -10,8 +10,8 @@ Gesture Chess operates as a monorepo containing two main parts:
 - **Client**: A React Single Page Application (SPA) built with Vite.
 - **Server**: A Node.js Express server that handles REST APIs and real-time Socket.io connections.
 
-### 1.1 Database Schema (Prisma & MongoDB)
-The application uses MongoDB as its primary datastore, managed via Prisma ORM. Core models include:
+### 1.1 Database Schema (Prisma & PostgreSQL)
+The application uses PostgreSQL as its primary datastore, managed via Prisma ORM. Core models include:
 - **User**: Stores authentication details, username, email, ELO ratings (bullet, blitz, rapid), and preferences.
 - **Match / Game**: Stores move history (PGN), FEN state, players involved, and match results.
 - **Activity / Achievement**: Tracks user progress, tactics solved, and milestones reached.
@@ -108,7 +108,8 @@ Gesture-Chess/
     │   ├── socket/           # Socket.io orchestration
     │   └── index.ts          # Server entry point
     ├── prisma/
-    │   └── schema.prisma     # MongoDB models
+    │   ├── schema.prisma     # PostgreSQL models
+    │   └── migrations/       # Database migrations
     ├── .env                  # Environment variables
     └── package.json
 ```

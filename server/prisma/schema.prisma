@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  id            String    @id @default(uuid())
   email         String    @unique
   passwordHash  String?
   googleId      String?
@@ -34,8 +34,8 @@ model User {
 }
 
 model Settings {
-  id                 String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId             String  @unique @db.ObjectId
+  id                 String  @id @default(uuid())
+  userId             String  @unique 
   user               User    @relation(fields: [userId], references: [id])
   cursorSensitivity  Float   @default(1.0)
   gestureSensitivity Float   @default(1.0)
@@ -47,13 +47,13 @@ model Settings {
 }
 
 model Game {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  whiteId       String?  @db.ObjectId
-  blackId       String?  @db.ObjectId
+  id            String   @id @default(uuid())
+  whiteId       String?  
+  blackId       String?  
   white         User?    @relation("WhitePlayer", fields: [whiteId], references: [id])
   black         User?    @relation("BlackPlayer", fields: [blackId], references: [id])
   status        String   // "ongoing", "completed", "drawn", "abandoned"
-  winnerId      String?  @db.ObjectId
+  winnerId      String?  
   pgn           String
   fen           String   @default("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
   createdAt     DateTime @default(now())
@@ -61,20 +61,20 @@ model Game {
 }
 
 model Friend {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  friendId  String   @db.ObjectId
+  id        String   @id @default(uuid())
+  userId    String   
+  friendId  String   
   status    String   // "pending", "accepted"
   user      User     @relation("UserFriends", fields: [userId], references: [id])
   friend    User     @relation("FriendUsers", fields: [friendId], references: [id])
 }
 
 model Tournament {
-  id           String                  @id @default(auto()) @map("_id") @db.ObjectId
+  id           String                  @id @default(uuid())
   name         String
   status       String                  // "waiting", "in_progress", "completed"
-  creatorId    String                  @db.ObjectId
-  winnerId     String?                 @db.ObjectId
+  creatorId    String                  
+  winnerId     String?                 
   timeControl  String                  // e.g. "3|0", "5|0"
   createdAt    DateTime                @default(now())
   updatedAt    DateTime                @updatedAt
@@ -82,9 +82,9 @@ model Tournament {
 }
 
 model TournamentParticipant {
-  id           String      @id @default(auto()) @map("_id") @db.ObjectId
-  tournamentId String      @db.ObjectId
-  userId       String      @db.ObjectId
+  id           String      @id @default(uuid())
+  tournamentId String      
+  userId       String      
   status       String      // "active", "eliminated", "spectating", "winner"
   score        Int         @default(0)
   
@@ -93,8 +93,8 @@ model TournamentParticipant {
 }
 
 model Activity {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @db.ObjectId
+  id         String   @id @default(uuid())
+  userId     String   
   type       String   // "game", "puzzle", "achievement"
   title      String
   subtitle   String?
@@ -106,8 +106,8 @@ model Activity {
 }
 
 model Achievement {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @db.ObjectId
+  id          String   @id @default(uuid())
+  userId      String   
   badgeName   String
   description String
   icon        String   // "Trophy", "Flame", "Target"
@@ -121,7 +121,7 @@ model Achievement {
 }
 
 model Puzzle {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(uuid())
   fen       String
   moves     String[] // ["e2e4", "e7e5"]
   rating    Int

@@ -24,14 +24,14 @@ A modern, full-stack chess application with real-time multiplayer capabilities, 
 ### Backend (Server)
 - **Runtime**: Node.js & Express.js
 - **Real-Time**: Socket.io
-- **Database**: MongoDB with Prisma ORM
+- **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: JWT (JSON Web Tokens) & bcrypt
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js (v18 or higher recommended)
-- MongoDB instance (Local or Atlas)
+- PostgreSQL instance
 
 ### Installation
 
@@ -51,7 +51,7 @@ A modern, full-stack chess application with real-time multiplayer capabilities, 
    Navigate to the `server/` directory and create a `.env` file with the following configurations:
    ```env
    PORT=5000
-   DATABASE_URL="mongodb://localhost:27017/gesture_chess" # Or your MongoDB connection string
+   DATABASE_URL="postgresql://postgres:password@localhost:5432/chess_db" # Or your PostgreSQL connection string
    JWT_SECRET="your_super_secret_jwt_string"
    CLIENT_URL="http://localhost:5173"
    ```
