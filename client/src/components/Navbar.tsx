@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { Pointer , User, LogOut, Home, Sun } from 'lucide-react';
+import { Pointer, User, LogOut, Home } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuthStore();
@@ -29,9 +29,6 @@ export const Navbar = () => {
 
       {/* Right: Auth & Theme */}
       <div className="nav-section right">
-        <button className="nav-btn-icon">
-          <Sun style={{ width: '20px', height: '20px' }} />
-        </button>
         {user ? (
           <>
             <Link to="/profile" className="nav-link">
