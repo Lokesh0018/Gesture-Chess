@@ -11,13 +11,15 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Profile } from './pages/Profile';
 import { Leaderboard } from './pages/Leaderboard';
+import { NotFound } from './pages/NotFound';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { PageTransition } from './components/PageTransition';
 
 function App() {
   const location = useLocation();
   return (
-    <>
+    <ErrorBoundary>
       <Toaster position="top-right" />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
@@ -38,11 +40,11 @@ function App() {
               <Route path="profile" element={<PageTransition><Profile /></PageTransition>} />
             </Route>
             
-            <Route path="*" element={<PageTransition><div className="p-8 text-center text-gray-400">Page under construction</div></PageTransition>} />
+            <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
           </Route>
         </Routes>
       </AnimatePresence>
-    </>
+    </ErrorBoundary>
   );
 }
 
