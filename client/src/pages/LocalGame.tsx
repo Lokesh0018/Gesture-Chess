@@ -13,159 +13,188 @@ const PROMOTION_PIECES: PieceSymbol[] = ['q', 'r', 'b', 'n'];
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const INITIAL_TIME = 600;
 
-type PieceStyleId = 'classic' | 'neo' | 'alpha' | 'symbols';
+type PieceStyleId = 'classic' | 'neon' | 'crystal' | 'royal';
 
-// Metadata used in the UI (dropdown preview, player card avatar, captured pieces sidebar)
+// UI metadata for the dropdown (label, description, colour swatches)
 const PIECE_STYLES: {
   id: PieceStyleId;
   label: string;
-  whiteKing: string;
-  blackKing: string;
+  description: string;
+  previewColors: [string, string]; // [white swatch, black swatch]
   map: Record<string, Record<PieceSymbol, string>>;
 }[] = [
   {
     id: 'classic',
     label: 'Classic',
-    whiteKing: '\u2654',
-    blackKing: '\u265a',
+    description: 'Default',
+    previewColors: ['#F8FAFC', '#1E293B'],
     map: {
       w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
       b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
     },
   },
   {
-    id: 'neo',
-    label: 'Neo',
-    whiteKing: '\ud83e\udd34',
-    blackKing: '\ud83d\udc51',
+    id: 'neon',
+    label: 'Neon',
+    description: 'Electric glow',
+    previewColors: ['#00FFEA', '#FF2D78'],
     map: {
-      w: { p: '\ud83e\uddd1', n: '\ud83d\udc34', b: '\u26ea', r: '\ud83c\udff0', q: '\ud83d\udc78', k: '\ud83e\udd34' },
-      b: { p: '\ud83e\udddf', n: '\ud83e\udd84', b: '\ud83d\udd2e', r: '\ud83d\uddfc', q: '\ud83e\uddd9', k: '\ud83d\udc51' },
+      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
+      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
     },
   },
   {
-    id: 'alpha',
-    label: 'Alpha',
-    whiteKing: 'K',
-    blackKing: 'k',
+    id: 'crystal',
+    label: 'Crystal',
+    description: 'Ice glass',
+    previewColors: ['#B8E8FF', '#4B6EAF'],
     map: {
-      w: { p: 'P', n: 'N', b: 'B', r: 'R', q: 'Q', k: 'K' },
-      b: { p: 'p', n: 'n', b: 'b', r: 'r', q: 'q', k: 'k' },
+      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
+      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
     },
   },
   {
-    id: 'symbols',
-    label: 'Symbols',
-    whiteKing: '\u2726',
-    blackKing: '\u2727',
+    id: 'royal',
+    label: 'Royal',
+    description: 'Gold & steel',
+    previewColors: ['#FFE066', '#8090A8'],
     map: {
-      w: { p: '\u25c6', n: '\u2605', b: '\u2726', r: '\u25a0', q: '\u2b1f', k: '\u2726' },
-      b: { p: '\u25c7', n: '\u2606', b: '\u2727', r: '\u25a1', q: '\u2b21', k: '\u2727' },
+      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
+      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
     },
   },
 ];
 
-// ─── Custom board-piece renderers for react-chessboard ────────────────────────
-// The library key format is uppercase FEN: wP wN wB wR wQ wK / bP bN bB bR bQ bK
-// Each renderer receives { fill?, square?, svgStyle? } and must return JSX.Element
+// ─── Standard SVG Chess Piece Paths (viewBox 0 0 45 45) ────────────────────
+// Standard chess silhouette shapes (public-domain "Cases" set)
+const SVG_PATHS: Record<PieceSymbol, string> = {
+  p: 'M 22.5,9 C 20.29,9 18.5,10.79 18.5,13 C 18.5,13.89 18.79,14.71 19.28,15.38 C 17.33,16.5 16,18.59 16,21 C 16,23.03 16.94,24.84 18.41,26.03 L 17,36 H 28 L 26.59,26.03 C 28.06,24.84 29,23.03 29,21 C 29,18.59 27.67,16.5 25.72,15.38 C 26.21,14.71 26.5,13.89 26.5,13 C 26.5,10.79 24.71,9 22.5,9 Z M 14,38 C 14,38.55 14.45,39 15,39 H 30 C 30.55,39 31,38.55 31,38 V 37 H 14 Z',
+  r: 'M 9,39 H 36 V 36 H 9 Z M 12,36 V 32 H 33 V 36 Z M 12.5,32 V 14 H 32.5 V 32 Z M 10,14 H 14 V 10 H 10 Z M 31,14 H 35 V 10 H 31 Z M 19,14 H 26 V 10 H 19 Z M 10,14 H 35 V 12 H 10 Z',
+  n: 'M 22,10 C 19.24,10 17,11.79 17,14 C 17,15.06 17.49,16.03 18.31,16.72 C 16.44,17.86 15,20.27 15,23 C 15,25.42 16.19,27.56 18.09,28.85 L 17,36 H 28 L 26.78,28.48 C 28.39,27.08 29.5,24.9 29.5,22.5 C 29.5,19.07 27.31,16.22 24.31,15.26 C 25.23,14.61 25.8,13.55 25.8,13 C 25.8,11 24.5,10 22,10 Z M 20,12.5 C 21.5,11.8 24.5,12.3 24.5,13.5 C 24.5,14.5 22.5,15 21,15 Z M 14.5,38 H 30.5 C 31.05,38 31.5,37.55 31.5,37 V 36 H 13.5 V 37 C 13.5,37.55 13.95,38 14.5,38 Z',
+  b: 'M 22.5,8 C 20,8 18,9.79 18,12 C 18,13.27 18.63,14.39 19.59,15.09 L 15,30 H 30 L 25.41,15.09 C 26.37,14.39 27,13.27 27,12 C 27,9.79 25,8 22.5,8 Z M 22.5,10 C 23.88,10 25,11.12 25,12.5 C 25,13.88 23.88,15 22.5,15 C 21.12,15 20,13.88 20,12.5 C 20,11.12 21.12,10 22.5,10 Z M 9,36 C 12.39,35.03 19.11,35.55 22.5,34 C 25.89,35.55 32.61,35.03 36,36 V 37 C 32.61,36.03 25.89,36.55 22.5,38 C 19.11,36.55 12.39,36.03 9,37 Z M 15,32 C 17.5,34.5 27.5,34.5 30,32 V 30 C 27.5,32.5 17.5,32.5 15,30 Z',
+  q: 'M 6.5,13.5 A 2,2 0 1 1 6.5,13.501 M 14,10.9 A 2,2 0 1 1 14,10.901 M 22.5,8 A 2,2 0 1 1 22.5,8.001 M 31,10.9 A 2,2 0 1 1 31,10.901 M 38.5,13.5 A 2,2 0 1 1 38.5,13.501 M 9,26 C 17.5,24.5 30,24.5 36,26 L 38.5,13.5 L 31,25 L 30.7,10.9 L 22.5,24 L 14.3,10.9 L 14,25 L 6.5,13.5 Z M 9,26 C 9,28 10.5,28 11.5,30 C 12.5,31.5 12.5,31 12,33.5 C 10.5,34.5 11,36 11,36 H 34 C 34,36 34.5,34.5 33,33.5 C 32.5,31 32.5,31.5 33.5,30 C 34.5,28 36,28 36,26 C 27.5,24.5 17.5,24.5 9,26 Z',
+  k: 'M 22.5,11.63 L 22.5,6 M 20,8 H 25 M 22.5,25 C 22.5,25 27,17.5 25.5,14.5 C 25.5,14.5 24.5,12 22.5,12 C 20.5,12 19.5,14.5 19.5,14.5 C 18,17.5 22.5,25 22.5,25 Z M 11.5,37 C 17,40.5 27,40.5 33.5,37 L 34,34 C 28,38 17,38 11,34 Z M 11,34 C 17,37.5 27,37.5 34,34 L 31,25 C 26,29 19,29 14,25 Z M 14,25 C 17,27 21,28 22.5,28 C 24,28 28,27 31,25 L 31.5,22.5 C 27.5,25.5 17.5,25.5 13.5,22.5 Z M 13.5,22.5 C 15,24 21,26 22.5,26 C 24,26 30,24 31.5,22.5 L 34,17.5 C 29,21.5 16,21.5 11,17.5 Z M 11,17.5 C 12.5,20 18.5,22.5 22.5,22.5 C 26.5,22.5 32.5,20 34,17.5 L 33.5,15 C 29,18.5 16,18.5 11.5,15 Z',
+};
+
 type PieceRenderObject = Record<string, (props?: { fill?: string; square?: string; svgStyle?: React.CSSProperties }) => React.JSX.Element>;
 
-const NEO_MAP: Record<string, string> = {
-  wK: '\ud83e\udd34', wQ: '\ud83d\udc78', wR: '\ud83c\udff0', wB: '\u26ea', wN: '\ud83d\udc34', wP: '\ud83e\uddd1',
-  bK: '\ud83d\udc51', bQ: '\ud83e\uddd9', bR: '\ud83d\uddfc', bB: '\ud83d\udd2e', bN: '\ud83e\udd84', bP: '\ud83e\udddf',
+const PIECE_CODE_META: Record<string, { type: PieceSymbol; isWhite: boolean }> = {
+  wK: { type: 'k', isWhite: true },  wQ: { type: 'q', isWhite: true },
+  wR: { type: 'r', isWhite: true },  wB: { type: 'b', isWhite: true },
+  wN: { type: 'n', isWhite: true },  wP: { type: 'p', isWhite: true },
+  bK: { type: 'k', isWhite: false }, bQ: { type: 'q', isWhite: false },
+  bR: { type: 'r', isWhite: false }, bB: { type: 'b', isWhite: false },
+  bN: { type: 'n', isWhite: false }, bP: { type: 'p', isWhite: false },
 };
 
-const ALPHA_MAP: Record<string, string> = {
-  wK: 'K', wQ: 'Q', wR: 'R', wB: 'B', wN: 'N', wP: 'P',
-  bK: 'K', bQ: 'Q', bR: 'R', bB: 'B', bN: 'N', bP: 'P',
-};
+function ChessPieceSVG({ code, styleId }: { code: string; styleId: PieceStyleId }): React.JSX.Element {
+  const { type, isWhite } = PIECE_CODE_META[code];
+  const d = SVG_PATHS[type];
+  const uid = `${styleId}-${code}`;
 
-// For symbols style we use the standard unicode chess set (same glyphs, different colour treatment)
-const SYMBOLS_MAP: Record<string, string> = {
-  wK: '\u2654', wQ: '\u2655', wR: '\u2656', wB: '\u2657', wN: '\u2658', wP: '\u2659',
-  bK: '\u265a', bQ: '\u265b', bR: '\u265c', bB: '\u265d', bN: '\u265e', bP: '\u265f',
-};
+  if (styleId === 'neon') {
+    const color = isWhite ? '#00FFEA' : '#FF2D78';
+    const fid = `nf-${uid}`;
+    return (
+      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
+        style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+        <defs>
+          <filter id={fid} x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+        <path d={d} fill="none" stroke={color} strokeWidth="3.5"
+          filter={`url(#${fid})`} opacity="0.65" />
+        <path d={d} fill={isWhite ? 'rgba(0,255,234,0.1)' : 'rgba(255,45,120,0.1)'}
+          stroke={color} strokeWidth="1" strokeLinejoin="round" />
+        <path d={d} fill="none"
+          stroke={isWhite ? '#AAFFF8' : '#FF9EC2'} strokeWidth="0.4" opacity="0.9" />
+      </svg>
+    );
+  }
+
+  if (styleId === 'crystal') {
+    const base = isWhite ? '#C8EEFF' : '#4464A8';
+    const shine = isWhite ? '#FFFFFF' : '#8AB0FF';
+    const border = isWhite ? '#50AADD' : '#1E3670';
+    return (
+      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
+        style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+        <defs>
+          <linearGradient id={`cg-${uid}`} x1="15%" y1="0%" x2="85%" y2="100%">
+            <stop offset="0%"   stopColor={shine} stopOpacity="0.98" />
+            <stop offset="38%"  stopColor={base}  stopOpacity="0.88" />
+            <stop offset="100%" stopColor={border} stopOpacity="0.95" />
+          </linearGradient>
+          <linearGradient id={`cs-${uid}`} x1="0%" y1="0%" x2="55%" y2="65%">
+            <stop offset="0%"   stopColor="#FFFFFF" stopOpacity="0.62" />
+            <stop offset="55%"  stopColor="#FFFFFF" stopOpacity="0.08" />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+          <filter id={`cf-${uid}`} x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0.5" dy="1.5" stdDeviation="2"
+              floodColor={isWhite ? '#2090CC' : '#0A1A60'} floodOpacity="0.55" />
+          </filter>
+        </defs>
+        <path d={d} fill={border} opacity="0.18" transform="translate(1.2,1.8)" />
+        <path d={d} fill={`url(#cg-${uid})`} stroke={border} strokeWidth="0.7"
+          strokeLinejoin="round" filter={`url(#cf-${uid})`} />
+        <path d={d} fill={`url(#cs-${uid})`} />
+      </svg>
+    );
+  }
+
+  if (styleId === 'royal') {
+    const g0 = isWhite ? '#FFF5C0' : '#D8E8F8';
+    const g1 = isWhite ? '#D4A017' : '#8090A8';
+    const g2 = isWhite ? '#6B3A00' : '#202838';
+    const stroke = isWhite ? '#9A6800' : '#101820';
+    return (
+      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
+        style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+        <defs>
+          <linearGradient id={`rg-${uid}`} x1="15%" y1="0%" x2="85%" y2="100%">
+            <stop offset="0%"   stopColor={g0} />
+            <stop offset="42%"  stopColor={g1} />
+            <stop offset="100%" stopColor={g2} />
+          </linearGradient>
+          <linearGradient id={`rs-${uid}`} x1="0%" y1="0%" x2="45%" y2="55%">
+            <stop offset="0%"   stopColor="#FFFFFF" stopOpacity={isWhite ? '0.5' : '0.28'} />
+            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          </linearGradient>
+          <filter id={`rf-${uid}`} x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="1" dy="2" stdDeviation="2"
+              floodColor={isWhite ? 'rgba(160,100,0,0.55)' : 'rgba(0,0,0,0.65)'} />
+          </filter>
+        </defs>
+        <path d={d} fill={g2} opacity="0.28" transform="translate(1.2,1.6)" />
+        <path d={d} fill={`url(#rg-${uid})`} stroke={stroke} strokeWidth="0.75"
+          strokeLinejoin="round" filter={`url(#rf-${uid})`} />
+        <path d={d} fill={`url(#rs-${uid})`} />
+      </svg>
+    );
+  }
+
+  return <svg viewBox="0 0 45 45" />;
+}
 
 const ALL_PIECE_CODES = ['wK','wQ','wR','wB','wN','wP','bK','bQ','bR','bB','bN','bP'];
 
 function buildCustomPieces(styleId: PieceStyleId): PieceRenderObject | undefined {
-  if (styleId === 'classic') return undefined; // use default react-chessboard SVG
-
+  if (styleId === 'classic') return undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const obj: Record<string, any> = {};
-
-  if (styleId === 'neo') {
-    for (const code of ALL_PIECE_CODES) {
-      const emoji = NEO_MAP[code];
-      obj[code] = () => (
-        <div style={{
-          width: '100%', height: '100%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '68%', lineHeight: 1,
-          userSelect: 'none',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.55))',
-        }}>
-          {emoji}
-        </div>
-      );
-    }
-    return obj as PieceRenderObject;
+  for (const code of ALL_PIECE_CODES) {
+    const c = code;
+    obj[c] = () => <ChessPieceSVG code={c} styleId={styleId} />;
   }
-
-  if (styleId === 'alpha') {
-    for (const code of ALL_PIECE_CODES) {
-      const isWhite = code.startsWith('w');
-      const letter = ALPHA_MAP[code];
-      obj[code] = () => (
-        <div style={{
-          width: '100%', height: '100%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'Georgia', 'Times New Roman', serif",
-          fontWeight: 900,
-          fontStyle: 'italic',
-          fontSize: '60%',
-          lineHeight: 1,
-          color: isWhite ? '#F8FAFC' : '#0F172A',
-          textShadow: isWhite
-            ? '0 2px 6px rgba(0,0,0,0.7), 0 0 12px rgba(255,255,255,0.15)'
-            : '0 2px 6px rgba(0,0,0,0.85)',
-          WebkitTextStroke: isWhite ? '1px rgba(200,220,255,0.4)' : '1.5px rgba(200,210,220,0.55)',
-          userSelect: 'none',
-        }}>
-          {letter}
-        </div>
-      );
-    }
-    return obj as PieceRenderObject;
-  }
-
-  if (styleId === 'symbols') {
-    for (const code of ALL_PIECE_CODES) {
-      const isWhite = code.startsWith('w');
-      const sym = SYMBOLS_MAP[code];
-      obj[code] = () => (
-        <div style={{
-          width: '100%', height: '100%',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '70%',
-          lineHeight: 1,
-          color: isWhite ? '#FDE68A' : '#A78BFA',
-          textShadow: isWhite
-            ? '0 0 14px rgba(251,191,36,0.65), 0 2px 4px rgba(0,0,0,0.55)'
-            : '0 0 14px rgba(139,92,246,0.65), 0 2px 4px rgba(0,0,0,0.55)',
-          WebkitTextStroke: isWhite ? '0.5px rgba(251,191,36,0.45)' : '0.5px rgba(167,139,250,0.45)',
-          filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))',
-          userSelect: 'none',
-        }}>
-          {sym}
-        </div>
-      );
-    }
-    return obj as PieceRenderObject;
-  }
-
-  return undefined;
+  return obj as PieceRenderObject;
 }
+
+
+
+
 
 
 function getKingSquare(game: Chess): string | null {
@@ -389,8 +418,8 @@ export const LocalGame = () => {
     const match = move.match(/^[NBRQK]/);
     if (!match) return <span>{move}</span>;
     const map: Record<string, Record<string, string>> = {
-      'w': { N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔' },
-      'b': { N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚' }
+      'w': { N: 'ÔÖÿ', B: 'ÔÖù', R: 'ÔÖû', Q: 'ÔÖò', K: 'ÔÖö' },
+      'b': { N: 'ÔÖ×', B: 'ÔÖØ', R: 'ÔÖ£', Q: 'ÔÖø', K: 'ÔÖÜ' }
     };
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
@@ -452,7 +481,7 @@ export const LocalGame = () => {
       setShowEndModal(true);
     } else if (game.isCheck()) {
       toast('Check!', {
-        icon: '⚠️',
+        icon: 'ÔÜá´©Å',
         style: { borderRadius: '12px', background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-color)' }
       });
     }
@@ -675,7 +704,7 @@ export const LocalGame = () => {
     const captured = color === 'w' ? capturedByWhite : capturedByBlack;
     const matAdv = color === 'w' ? material.w : material.b;
     const label = color === 'w' ? 'White' : 'Black';
-    const kingSymbol = color === 'w' ? currentStyle.whiteKing : currentStyle.blackKing;
+    const kingSymbol = <div style={{ width: 28, height: 28 }}><ChessPieceSVG code={color === 'w' ? 'wK' : 'bK'} styleId={pieceStyle} /></div>;
     const isLowTime = timeLeft <= 30 && isActive;
 
     return (
@@ -703,7 +732,7 @@ export const LocalGame = () => {
                 </span>
               ))}
               {captured.length > 8 && <span className="player-cap-more">+{captured.length - 8}</span>}
-              {captured.length === 0 && <span className="player-cap-empty">—</span>}
+              {captured.length === 0 && <span className="player-cap-empty">ÔÇö</span>}
               {matAdv > 0 && <span className="player-material">+{matAdv}</span>}
             </div>
           </div>
@@ -937,7 +966,7 @@ export const LocalGame = () => {
                         className="dropdown-menu"
                         style={{ bottom: 'calc(100% + 6px)', left: 0, right: 'auto', minWidth: '140px' }}
                       >
-                        {[{ id: 'classic', label: 'Classic', icon: '⬜' }, { id: 'wood', label: 'Wood', icon: '🪵' }, { id: 'neon', label: 'Neon', icon: '💡' }].map(t => (
+                        {[{ id: 'classic', label: 'Classic', icon: 'Ô¼£' }, { id: 'wood', label: 'Wood', icon: '­ƒ¬Á' }, { id: 'neon', label: 'Neon', icon: '­ƒÆí' }].map(t => (
                           <button
                             key={t.id}
                             onClick={(e) => { e.stopPropagation(); setBoardTheme(t.id as 'classic' | 'wood' | 'neon'); setThemeDropdownOpen(false); }}
@@ -972,7 +1001,9 @@ export const LocalGame = () => {
                     <span className="control-text">
                       Pieces: <span style={{ color: 'var(--color-accent)' }}>{currentStyle.label}</span>
                     </span>
-                    <span style={{ marginLeft: 'auto', fontSize: '18px', lineHeight: 1 }}>{currentStyle.whiteKing}</span>
+                    <span style={{ marginLeft: 'auto', width: '20px', height: '20px' }}>
+                      <ChessPieceSVG code="wK" styleId={pieceStyle} />
+                    </span>
                   </button>
                   <AnimatePresence>
                     {pieceStyleDropdownOpen && (
@@ -991,8 +1022,8 @@ export const LocalGame = () => {
                             className={`dropdown-item ${pieceStyle === s.id ? 'active' : ''}`}
                           >
                             <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontSize: '20px', lineHeight: 1, minWidth: '24px', textAlign: 'center' }}>{s.whiteKing}</span>
-                              <span style={{ fontSize: '20px', lineHeight: 1, minWidth: '24px', textAlign: 'center' }}>{s.blackKing}</span>
+                              <span style={{ width: '24px', height: '24px' }}><ChessPieceSVG code="wK" styleId={s.id} /></span>
+                              <span style={{ width: '24px', height: '24px' }}><ChessPieceSVG code="bK" styleId={s.id} /></span>
                               <span style={{ fontSize: '14px' }}>{s.label}</span>
                             </span>
                             {pieceStyle === s.id && <div className="dropdown-dot" />}
