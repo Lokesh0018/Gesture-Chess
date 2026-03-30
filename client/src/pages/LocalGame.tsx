@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess, type Color, type PieceSymbol, type Square } from 'chess.js';
-import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers } from 'lucide-react';
+import { RotateCcw, RefreshCw, Flag, Trophy, Download, Handshake, Volume2, VolumeX, Palette, Target, Zap, Layers, Box } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CameraPanel } from '../components/CameraPanel';
@@ -315,6 +315,7 @@ export const LocalGame = () => {
   const [blackTime, setBlackTime] = useState(INITIAL_TIME);
   const [boardTheme, setBoardTheme] = useState<'classic' | 'wood' | 'neon'>('classic');
   const [pieceStyle, setPieceStyle] = useState<PieceStyleId>('classic');
+  const [is3D, setIs3D] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [hoveredMove, setHoveredMove] = useState<{ from: string, to: string } | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -727,8 +728,8 @@ export const LocalGame = () => {
             </div>
             <div className="player-captured-row">
               {captured.slice(0, 8).map((p, i) => (
-                <span key={i} className={`player-cap-icon player-cap-${color === 'w' ? 'b' : 'w'}`}>
-                  {currentStyle.map[color === 'w' ? 'b' : 'w'][p]}
+                <span key={i} style={{ width: '18px', height: '18px', display: 'inline-block' }}>
+                  <ChessPieceSVG code={`${color === 'w' ? 'b' : 'w'}${p.toUpperCase()}`} styleId={pieceStyle} />
                 </span>
               ))}
               {captured.length > 8 && <span className="player-cap-more">+{captured.length - 8}</span>}
@@ -833,7 +834,7 @@ export const LocalGame = () => {
 
           <div
             ref={boardContainerRef}
-            className={`board-wrapper ${boardShake ? 'shake-error' : ''} ${game.isCheck() ? 'check-alert' : game.turn() === 'w' ? 'turn-white' : 'turn-black'}`}
+            className={`board-wrapper ${is3D ? 'is-3d' : ''} ${boardShake ? 'shake-error' : ''} ${game.isCheck() ? 'check-alert' : game.turn() === 'w' ? 'turn-white' : 'turn-black'}`}
             style={{ height: '100%', maxHeight: '100%', flexShrink: 1, minWidth: 0, minHeight: 0, display: 'flex', justifyContent: 'center' }}
           >
             <Chessboard
@@ -941,6 +942,11 @@ export const LocalGame = () => {
               <div className="controls-row" style={{ gridTemplateColumns: '1fr' }}>
                 <button onClick={onRestart} className="control-btn primary" aria-label="New Game" tabIndex={0}>
                   <RotateCcw style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>New Game</span>
+                </button>
+              </div>
+              <div className="controls-row" style={{ gridTemplateColumns: '1fr' }}>
+                <button onClick={() => setIs3D(!is3D)} className={`control-btn ${is3D ? 'active' : ''}`} aria-label="Toggle 3D View" tabIndex={0}>
+                  <Box style={{ width: '16px', height: '16px' }} /> <span className="control-text" style={{ display: 'inline' }}>3D View: {is3D ? 'ON' : 'OFF'}</span>
                 </button>
               </div>
               <div className="controls-row" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
