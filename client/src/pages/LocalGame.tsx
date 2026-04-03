@@ -13,7 +13,7 @@ const PROMOTION_PIECES: PieceSymbol[] = ['q', 'r', 'b', 'n'];
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const INITIAL_TIME = 600;
 
-type PieceStyleId = 'classic' | 'neon' | 'crystal' | 'royal';
+type PieceStyleId = 'classic' | 'neon' | 'crystal' | 'royal' | 'character';
 
 // UI metadata for the dropdown (label, description, colour swatches)
 const PIECE_STYLES: {
@@ -63,6 +63,16 @@ const PIECE_STYLES: {
       b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
     },
   },
+  {
+    id: 'character',
+    label: 'Character',
+    description: 'Cartoon Faces',
+    previewColors: ['#F8FAFC', '#1E293B'],
+    map: {
+      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
+      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
+    },
+  },
 ];
 
 // ─── Standard SVG Chess Piece Paths (viewBox 0 0 45 45) ────────────────────
@@ -74,6 +84,15 @@ const SVG_PATHS: Record<PieceSymbol, string> = {
   b: 'M 22.5,8 C 20,8 18,9.79 18,12 C 18,13.27 18.63,14.39 19.59,15.09 L 15,30 H 30 L 25.41,15.09 C 26.37,14.39 27,13.27 27,12 C 27,9.79 25,8 22.5,8 Z M 22.5,10 C 23.88,10 25,11.12 25,12.5 C 25,13.88 23.88,15 22.5,15 C 21.12,15 20,13.88 20,12.5 C 20,11.12 21.12,10 22.5,10 Z M 9,36 C 12.39,35.03 19.11,35.55 22.5,34 C 25.89,35.55 32.61,35.03 36,36 V 37 C 32.61,36.03 25.89,36.55 22.5,38 C 19.11,36.55 12.39,36.03 9,37 Z M 15,32 C 17.5,34.5 27.5,34.5 30,32 V 30 C 27.5,32.5 17.5,32.5 15,30 Z',
   q: 'M 6.5,13.5 A 2,2 0 1 1 6.5,13.501 M 14,10.9 A 2,2 0 1 1 14,10.901 M 22.5,8 A 2,2 0 1 1 22.5,8.001 M 31,10.9 A 2,2 0 1 1 31,10.901 M 38.5,13.5 A 2,2 0 1 1 38.5,13.501 M 9,26 C 17.5,24.5 30,24.5 36,26 L 38.5,13.5 L 31,25 L 30.7,10.9 L 22.5,24 L 14.3,10.9 L 14,25 L 6.5,13.5 Z M 9,26 C 9,28 10.5,28 11.5,30 C 12.5,31.5 12.5,31 12,33.5 C 10.5,34.5 11,36 11,36 H 34 C 34,36 34.5,34.5 33,33.5 C 32.5,31 32.5,31.5 33.5,30 C 34.5,28 36,28 36,26 C 27.5,24.5 17.5,24.5 9,26 Z',
   k: 'M 22.5,11.63 L 22.5,6 M 20,8 H 25 M 22.5,25 C 22.5,25 27,17.5 25.5,14.5 C 25.5,14.5 24.5,12 22.5,12 C 20.5,12 19.5,14.5 19.5,14.5 C 18,17.5 22.5,25 22.5,25 Z M 11.5,37 C 17,40.5 27,40.5 33.5,37 L 34,34 C 28,38 17,38 11,34 Z M 11,34 C 17,37.5 27,37.5 34,34 L 31,25 C 26,29 19,29 14,25 Z M 14,25 C 17,27 21,28 22.5,28 C 24,28 28,27 31,25 L 31.5,22.5 C 27.5,25.5 17.5,25.5 13.5,22.5 Z M 13.5,22.5 C 15,24 21,26 22.5,26 C 24,26 30,24 31.5,22.5 L 34,17.5 C 29,21.5 16,21.5 11,17.5 Z M 11,17.5 C 12.5,20 18.5,22.5 22.5,22.5 C 26.5,22.5 32.5,20 34,17.5 L 33.5,15 C 29,18.5 16,18.5 11.5,15 Z',
+};
+
+const CHARACTER_SVG_PATHS: Record<PieceSymbol, string> = {
+  k: '<path d="M 8,18 L 10,8 L 17,14 L 22.5,6 L 28,14 L 35,8 L 37,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 10,18 Q 5,28 12,35 Q 22.5,45 33,35 Q 40,28 35,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 15,18 Q 12,24 15,28 Q 22.5,32 30,28 Q 33,24 30,18 Z" fill="FACE" stroke="none"/><circle cx="19" cy="23" r="1.5" fill="EYE" stroke="none"/><circle cx="26" cy="23" r="1.5" fill="EYE" stroke="none"/><path d="M 17,20.5 L 21,21" stroke="EYE" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M 28,20.5 L 24,21" stroke="EYE" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M 18,29 Q 22.5,27 27,29 Q 22.5,31 18,29" fill="EYE" stroke="none"/>',
+  q: '<path d="M 6,18 L 8,10 L 15,14 L 22.5,8 L 30,14 L 37,10 L 39,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 8,18 Q 2,28 8,40 L 37,40 Q 43,28 37,18 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,18 Q 10,26 14,32 Q 22.5,36 31,32 Q 35,26 31,18 Z" fill="FACE" stroke="none"/><circle cx="20" cy="23" r="1.5" fill="EYE" stroke="none"/><circle cx="25" cy="23" r="1.5" fill="EYE" stroke="none"/><path d="M 21.5,29 C 22,30 23,30 23.5,29" stroke="EYE" stroke-width="1.5" stroke-linecap="round" fill="none"/>',
+  b: '<path d="M 12,20 L 22.5,4 L 33,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 22.5,8 L 22.5,14 M 19.5,11 L 25.5,11" stroke="FACE" stroke-width="1.5" fill="none"/><path d="M 14,20 Q 9,28 14,35 Q 22.5,42 31,35 Q 36,28 31,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 16,20 Q 13,26 16,30 Q 22.5,33 29,30 Q 32,26 29,20 Z" fill="FACE" stroke="none"/><circle cx="20" cy="24" r="1.5" fill="EYE" stroke="none"/><circle cx="25" cy="24" r="1.5" fill="EYE" stroke="none"/><path d="M 14,36 L 31,36 L 35,42 L 10,42 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/>',
+  n: '<path d="M 28,10 Q 35,15 32,28 Q 28,40 18,40 L 10,40 Q 12,30 15,25 L 10,20 Q 12,12 20,8 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 24,12 Q 30,15 28,26 Q 24,35 18,36 L 14,36 Q 16,30 18,25 L 14,21 Q 16,14 22,12 Z" fill="FACE" stroke="none"/><circle cx="21" cy="18" r="1.5" fill="EYE" stroke="none"/><circle cx="16" cy="23" r="1" fill="EYE" stroke="none"/><path d="M 30,10 L 26,4 L 23,9 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/>',
+  r: '<path d="M 12,8 H 33 V 15 H 12 Z M 10,15 H 35 V 40 H 10 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 10,8 H 15 V 4 H 10 Z M 20,8 H 25 V 4 H 20 Z M 30,8 H 35 V 4 H 30 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,18 H 31 V 32 H 14 Z" fill="FACE" stroke="none"/><rect x="18" y="22" width="3" height="3" fill="EYE" stroke="none"/><rect x="24" y="22" width="3" height="3" fill="EYE" stroke="none"/><path d="M 19,29 H 26" stroke="EYE" stroke-width="2" fill="none"/>',
+  p: '<circle cx="22.5" cy="14" r="8" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 14,20 Q 10,32 15,38 L 30,38 Q 35,32 31,20 Z" fill="OUTLINE" stroke="OUTLINE" stroke-width="1"/><path d="M 16,20 Q 14,28 17,32 Q 22.5,35 28,32 Q 31,28 29,20 Z" fill="FACE" stroke="none"/><circle cx="20" cy="24" r="1.5" fill="EYE" stroke="none"/><circle cx="25" cy="24" r="1.5" fill="EYE" stroke="none"/>',
 };
 
 type PieceRenderObject = Record<string, (props?: { fill?: string; square?: string; svgStyle?: React.CSSProperties }) => React.JSX.Element>;
@@ -172,6 +191,23 @@ function ChessPieceSVG({ code, styleId }: { code: string; styleId: PieceStyleId 
         <path d={d} fill={`url(#rg-${uid})`} stroke={stroke} strokeWidth="0.75"
           strokeLinejoin="round" filter={`url(#rf-${uid})`} />
         <path d={d} fill={`url(#rs-${uid})`} />
+      </svg>
+    );
+  }
+
+  if (styleId === 'character') {
+    const outlineColor = isWhite ? '#1E293B' : '#F8FAFC'; // White pieces have dark outline, black pieces have light outline
+    const faceColor = isWhite ? '#F8FAFC' : '#1E293B';
+    const eyeColor = outlineColor;
+    const rawSvg = CHARACTER_SVG_PATHS[type]
+      .replace(/FACE/g, faceColor)
+      .replace(/EYE/g, eyeColor)
+      .replace(/OUTLINE/g, outlineColor);
+
+    return (
+      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg"
+        style={{ width: '100%', height: '100%', overflow: 'visible', filter: 'drop-shadow(0 4px 4px rgba(0,0,0,0.4))' }}>
+        <g dangerouslySetInnerHTML={{ __html: rawSvg }} />
       </svg>
     );
   }
