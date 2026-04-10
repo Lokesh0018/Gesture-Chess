@@ -122,12 +122,49 @@ function ChessPieceSVG({ code, styleId }: { code: string; styleId: PieceStyleId 
   const uid = `${styleId}-${code}`;
 
   if (styleId === '3d') {
-    const pieceNames: Record<PieceSymbol, string> = { p: 'Pawn', n: 'Horse', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' };
-    const pieceName = pieceNames[type];
-    const colorPrefix = isWhite ? 'White' : 'Black';
-    const src = `/asserts/${colorPrefix}${pieceName}.png`;
+    const isWhitePiece = isWhite;
+    const baseColor = isWhitePiece ? '#f9f9f9' : '#333333';
+    const highlight = isWhitePiece ? '#ffffff' : '#5a5a5a';
+    const shadow = isWhitePiece ? '#a0b0c0' : '#1a1a1a';
+    
+    const gradId = `grad-${uid}`;
+    const filterId = `filter-${uid}`;
+    
     return (
-      <img src={src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} draggable={false} alt={`${colorPrefix} ${pieceName}`} />
+      <svg viewBox="0 0 45 45" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+        <defs>
+          <radialGradient id={gradId} cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stopColor={highlight} />
+            <stop offset="50%" stopColor={baseColor} />
+            <stop offset="100%" stopColor={shadow} />
+          </radialGradient>
+          
+          <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
+            {/* Inner highlight (top-left) */}
+            <feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur1" />
+            <feOffset dx="-2" dy="-2" result="offsetBlur1" />
+            <feComposite in="SourceAlpha" in2="offsetBlur1" operator="out" result="inv1" />
+            <feFlood floodColor="#ffffff" floodOpacity={isWhitePiece ? "0.9" : "0.3"} result="color1" />
+            <feComposite in="color1" in2="inv1" operator="in" result="highlight" />
+
+            {/* Inner shadow (bottom-right) */}
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur2" />
+            <feOffset dx="2" dy="2" result="offsetBlur2" />
+            <feComposite in="SourceAlpha" in2="offsetBlur2" operator="out" result="inv2" />
+            <feFlood floodColor="#000000" floodOpacity={isWhitePiece ? "0.4" : "0.9"} result="color2" />
+            <feComposite in="color2" in2="inv2" operator="in" result="innerShadow" />
+
+            <feMerge result="mergedInner">
+               <feMergeNode in="SourceGraphic" />
+               <feMergeNode in="highlight" />
+               <feMergeNode in="innerShadow" />
+            </feMerge>
+            <feDropShadow dx="1" dy="4" stdDeviation="2.5" floodColor="#000" floodOpacity="0.5" />
+          </filter>
+        </defs>
+        
+        <path d={d} fill={`url(#${gradId})`} filter={`url(#${filterId})`} stroke={isWhitePiece ? '#888' : '#000'} strokeWidth="0.5" />
+      </svg>
     );
   }
 
