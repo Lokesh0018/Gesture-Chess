@@ -13,7 +13,7 @@ const PROMOTION_PIECES: PieceSymbol[] = ['q', 'r', 'b', 'n'];
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const INITIAL_TIME = 600;
 
-type PieceStyleId = 'classic' | 'neon' | 'crystal' | 'royal' | 'character';
+type PieceStyleId = 'classic' | 'neon' | 'crystal' | 'royal' | 'character' | '3d';
 
 // UI metadata for the dropdown (label, description, colour swatches)
 const PIECE_STYLES: {
@@ -73,6 +73,16 @@ const PIECE_STYLES: {
       b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
     },
   },
+  {
+    id: '3d',
+    label: '3D Render',
+    description: 'Original Set',
+    previewColors: ['#D1D5DB', '#374151'],
+    map: {
+      w: { p: '\u2659', n: '\u2658', b: '\u2657', r: '\u2656', q: '\u2655', k: '\u2654' },
+      b: { p: '\u265f', n: '\u265e', b: '\u265d', r: '\u265c', q: '\u265b', k: '\u265a' },
+    },
+  },
 ];
 
 // ─── Standard SVG Chess Piece Paths (viewBox 0 0 45 45) ────────────────────
@@ -110,6 +120,16 @@ function ChessPieceSVG({ code, styleId }: { code: string; styleId: PieceStyleId 
   const { type, isWhite } = PIECE_CODE_META[code];
   const d = SVG_PATHS[type];
   const uid = `${styleId}-${code}`;
+
+  if (styleId === '3d') {
+    const pieceNames: Record<PieceSymbol, string> = { p: 'Pawn', n: 'Horse', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' };
+    const pieceName = pieceNames[type];
+    const colorPrefix = isWhite ? 'White' : 'Black';
+    const src = `/asserts/${colorPrefix}${pieceName}.png`;
+    return (
+      <img src={src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} draggable={false} alt={`${colorPrefix} ${pieceName}`} />
+    );
+  }
 
   if (styleId === 'neon') {
     const color = isWhite ? '#00FFEA' : '#FF2D78';
