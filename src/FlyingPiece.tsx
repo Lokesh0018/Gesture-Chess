@@ -27,14 +27,14 @@ export default function FlyingPiece({ startSquare, targetSquare, pieceType, piec
 
   useEffect(() => {
     const squareEl = document.querySelector(`[data-square="${startSquare}"]`);
-    
+
     if (targetSquare) {
-      const tEl = document.querySelector(`[data-square="${targetSquare}"]`);
-      if (squareEl && tEl) {
+      const boardRect = document.querySelector('.react-board-wrapper')?.getBoundingClientRect();
+      if (squareEl && tEl && boardRect) {
         const squareRect = squareEl.getBoundingClientRect();
         const targetRect = tEl.getBoundingClientRect();
-        setStartPos({ x: squareRect.left, y: squareRect.top, width: squareRect.width });
-        setEndPos({ x: targetRect.left, y: targetRect.top });
+        setStartPos({ x: squareRect.left - boardRect.left, y: squareRect.top - boardRect.top, width: squareRect.width });
+        setEndPos({ x: targetRect.left - boardRect.left, y: targetRect.top - boardRect.top });
       } else {
         onComplete();
       }
@@ -48,17 +48,19 @@ export default function FlyingPiece({ startSquare, targetSquare, pieceType, piec
     if (squareEl && targetEl) {
       const squareRect = squareEl.getBoundingClientRect();
       const targetRect = targetEl.getBoundingClientRect();
-      
+      const boardRect = document.querySelector('.react-board-wrapper')?.getBoundingClientRect() || squareRect;
+
       setStartPos({
-        x: squareRect.left,
-        y: squareRect.top,
+        x: squareRect.left - boardRect.left,
+        y: squareRect.top - boardRect.top,
         width: squareRect.width
       });
 
-      // Fly to the bottom center of the respective panel
+      // targetRect is relative to viewport, but we need it relative to boardElement
+      // So subtract boardRect.left and boardRect.top
       setEndPos({
-        x: targetRect.left + targetRect.width / 2 - 25,
-        y: targetRect.bottom - 50
+        x: targetRect.left + targetRect.width / 2 - 25 - boardRect.left,
+        y: targetRect.bottom - 50 - boardRect.top
       });
     } else {
       // If we can't find elements, just abort
@@ -69,30 +71,30 @@ export default function FlyingPiece({ startSquare, targetSquare, pieceType, piec
   if (!startPos || !endPos) return null;
 
   const src = `/asserts/Black${pieceNames[pieceType]}.png`;
-  const filterBase = pieceColor === 'w' 
+  const filterBase = pieceColor === 'w'
     ? 'brightness(0) invert(1) drop-shadow(1px 0px 0px #000) drop-shadow(0px 1px 0px #000) drop-shadow(-1px 0px 0px #000) drop-shadow(0px -1px 0px #000)'
     : 'drop-shadow(1px 0px 0px rgba(255,255,255,0.5)) drop-shadow(0px 1px 0px rgba(255,255,255,0.5)) drop-shadow(-1px 0px 0px rgba(255,255,255,0.5)) drop-shadow(0px -1px 0px rgba(255,255,255,0.5))';
 
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ 
-          x: startPos.x, 
-          y: startPos.y, 
-          scale: 1, 
+        initial={{
+          x: startPos.x,
+          y: startPos.y,
+          scale: 1,
           opacity: 1,
           rotate: 0,
         }}
-        animate={{ 
-          x: endPos.x, 
-          y: endPos.y, 
-          scale: isUndo ? 1 : 0.6, 
+        animate={{
+          x: endPos.x,
+          y: endPos.y,
+          scale: isUndo ? 1 : 0.6,
           opacity: isUndo ? 0 : 0.2,
           rotate: isUndo ? 0 : (capturedBy === 'white' ? 180 : -180),
           filter: isUndo ? 'sepia(100%) hue-rotate(90deg) saturate(300%) blur(2px)' : 'none'
         }}
-        transition={{ 
-          duration: isUndo ? 0.2 : 0.6, 
+        transition={{
+          duration: isUndo ? 0.2 : 0.6,
           ease: isUndo ? "easeIn" : "easeInOut",
           type: isUndo ? "tween" : "spring",
           stiffness: 80,
@@ -100,7 +102,7 @@ export default function FlyingPiece({ startSquare, targetSquare, pieceType, piec
         }}
         onAnimationComplete={onComplete}
         style={{
-          position: 'fixed',
+          position: 'absolute',
           top: 0,
           left: 0,
           width: startPos.width,
@@ -112,9 +114,9 @@ export default function FlyingPiece({ startSquare, targetSquare, pieceType, piec
           alignItems: 'center'
         }}
       >
-        <img 
-          src={src} 
-          style={{ width: '90%', height: '90%', objectFit: 'contain', filter: `${filterBase} drop-shadow(0px 15px 15px rgba(0,0,0,0.8))` }} 
+        <img
+          src={src}
+          style={{ width: '90%', height: '90%', objectFit: 'contain', filter: `${filterBase} drop-shadow(0px 15px 15px rgba(0,0,0,0.8))` }}
         />
       </motion.div>
     </AnimatePresence>

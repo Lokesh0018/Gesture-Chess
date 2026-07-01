@@ -11,6 +11,7 @@ import GameLayout from './GameLayout';
 import type { MoveHistory } from './GameLayout';
 import PromotionCinematic from './PromotionCinematic';
 import CaptureAnimation from './CaptureAnimation';
+import MoveAnimation from './MoveAnimation';
 import PostGameModal from './PostGameModal';
 import GameStartSequence from './GameStartSequence';
 import FlyingPiece from './FlyingPiece';
@@ -51,6 +52,7 @@ export default function OnlineGame() {
   const [boardWidth, setBoardWidth] = useState(window.innerWidth > 850 ? 500 : window.innerWidth - 60);
   const [cinematic, setCinematic] = useState<{ square: string, color: 'w' | 'b', type: 'q' | 'r' | 'b' | 'n' } | null>(null);
   const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b', capturedBy: 'white' | 'black' } | null>(null);
+  const [moveAnim, setMoveAnim] = useState<{ startSquare: string, targetSquare: string, pieceType: string, pieceColor: string } | null>(null);
   const [checkState, setCheckState] = useState<{ king: string, attacker: string | null } | null>(null);
   const [checkmateState, setCheckmateState] = useState<{ color: 'w' | 'b', text: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
@@ -187,6 +189,13 @@ export default function OnlineGame() {
             audio.promote();
             setCinematic({ square: result.to, color: result.color as 'w' | 'b', type: result.promotion as 'q' | 'r' | 'b' | 'n' });
           }
+
+          setMoveAnim({
+            startSquare: result.from,
+            targetSquare: result.to,
+            pieceType: result.piece.toUpperCase(),
+            pieceColor: result.color
+          });
         } catch (e) { }
         return newGame;
       });
@@ -294,6 +303,13 @@ export default function OnlineGame() {
           }
         });
       }
+
+      setMoveAnim({
+        startSquare: result.from,
+        targetSquare: result.to,
+        pieceType: result.piece.toUpperCase(),
+        pieceColor: result.color
+      });
 
       return result;
     } catch (e) {
@@ -631,6 +647,17 @@ export default function OnlineGame() {
             />
           </>
         )}
+        {moveAnim && (
+          <MoveAnimation
+            startSquare={moveAnim.startSquare}
+            targetSquare={moveAnim.targetSquare}
+            pieceType={moveAnim.pieceType}
+            pieceColor={moveAnim.pieceColor}
+            orientation={playerRole === 'Black' ? 'black' : 'white'}
+            boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
+            onComplete={() => setMoveAnim(null)}
+          />
+        )}
         {checkState && !checkmateState && (
           <CheckIndicator
             kingSquare={checkState.king}
@@ -657,6 +684,7 @@ export default function OnlineGame() {
           arePremovesAllowed={true}
           clearPremovesOnRightClick={true}
           areArrowsAllowed={true}
+          animationDuration={0}
         />
         {renderFloatingChats()}
       </GameLayout>

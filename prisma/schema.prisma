@@ -1,0 +1,61 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String?
+  username       String    @unique
+  avatarUrl      String?
+  rating         Int       @default(1200)
+  wins           Int       @default(0)
+  losses         Int       @default(0)
+  draws          Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  gamesAsWhite   Game[]    @relation("WhitePlayer")
+  gamesAsBlack   Game[]    @relation("BlackPlayer")
+  settings       Setting?
+}
+
+model Game {
+  id             String    @id @default(uuid())
+  whitePlayerId  String?
+  blackPlayerId  String?
+  whitePlayer    User?     @relation("WhitePlayer", fields: [whitePlayerId], references: [id])
+  blackPlayer    User?     @relation("BlackPlayer", fields: [blackPlayerId], references: [id])
+  
+  pgn            String?   // Portable Game Notation for moves
+  fen            String?   // Forsyth-Edwards Notation for current state
+  result         String?   // "1-0", "0-1", "1/2-1/2", "*"
+  mode           String    @default("pvp_online") // "pvp_online", "pvp_local", "pve"
+  timeControl    String?   // e.g. "10+0"
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Setting {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id])
+  
+  gestureSensitivity  Float    @default(1.0)
+  cameraMode          String   @default("mirror")
+  theme               String   @default("dark")
+  pieceTheme          String   @default("classic")
+  boardTheme          String   @default("wood")
+  soundVolume         Float    @default(0.8)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

@@ -42,10 +42,16 @@ function Lobby() {
 
 import VFXLayer from './VFXLayer';
 import BackgroundLayer from './BackgroundLayer';
+import { VirtualCursor } from './components/VirtualCursor';
+import { CameraPanel } from './components/CameraPanel';
+import { DebugPanel } from './components/DebugPanel';
 
 function App() {
   return (
     <>
+      <DebugPanel />
+      <VirtualCursor />
+      <CameraPanel />
       <BackgroundLayer />
       <VFXLayer />
       <Router>

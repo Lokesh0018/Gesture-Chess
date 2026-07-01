@@ -21,7 +21,7 @@ export default function CheckIndicator({ kingSquare, attackerSquare, orientation
       const rank = parseInt(sq[1]) - 1;
       const i = orientation === 'white' ? 7 - rank : rank;
       const j = orientation === 'white' ? file : 7 - file;
-      return { x: boardRect.left + j * squareSize, y: boardRect.top + i * squareSize, size: squareSize };
+      return { x: j * squareSize, y: i * squareSize, size: squareSize };
     };
 
     if (kingSquare) setKingPos(getPos(kingSquare));
@@ -38,7 +38,7 @@ export default function CheckIndicator({ kingSquare, attackerSquare, orientation
         animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.05, 1] }}
         transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         style={{
-          position: 'fixed',
+          position: 'absolute',
           left: kingPos.x,
           top: kingPos.y,
           width: kingPos.size,
@@ -50,7 +50,7 @@ export default function CheckIndicator({ kingSquare, attackerSquare, orientation
         }}
       />
       <div style={{
-        position: 'fixed',
+        position: 'absolute',
         left: kingPos.x,
         top: kingPos.y,
         width: kingPos.size,
@@ -66,7 +66,7 @@ export default function CheckIndicator({ kingSquare, attackerSquare, orientation
           animate={{ opacity: 0 }}
           transition={{ duration: 1.5, ease: 'easeOut', delay: 0.5 }}
           style={{
-            position: 'fixed',
+            position: 'absolute',
             left: attackerPos.x,
             top: attackerPos.y,
             width: attackerPos.size,

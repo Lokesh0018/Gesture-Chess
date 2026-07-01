@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { vfx } from './vfx-manager';
+import { useGestureStore } from '../store/useGestureStore';
 
 type PieceProps = {
   type: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
@@ -117,7 +118,7 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
   const rowNum = rowMatch ? parseInt(rowMatch[0]) : 1;
   // Delay calculation: center pieces fall first, outer fall later
   const delay = isFalling ? (8 - rowNum) * 0.1 : 0;
-
+  
   // FIX: react-chessboard sometimes passes the full board width instead of the square width to the drag layer!
   let actualSquareWidth = squareWidth;
   if (isDragging && squareWidth > 200) {
@@ -129,18 +130,21 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
       <img
         src={src}
         style={{
-          width: actualSquareWidth * 1.3, // Scale up slightly to look like it's lifted
+          width: actualSquareWidth * 1.3,
           height: actualSquareWidth * 1.3,
           objectFit: 'contain',
           filter: filterDrag,
           cursor: 'grabbing',
-          transform: `translate(-10%, -10%)`, // Center the scaled image on the cursor
+          transform: `translate(-10%, -10%)`,
           pointerEvents: 'none'
         }}
         draggable={false}
       />
     );
   }
+
+  const { dragState, selectedSquare } = useGestureStore();
+  const isGestureDraggingThis = dragState === 'dragging' && selectedSquare === square;
 
   return (
     <div data-piece-square={square} className={isFalling ? "falling-piece" : ""} style={{ 
@@ -163,9 +167,9 @@ export default function Piece({ type, color, squareWidth = 50, isDragging = fals
         } : { rotateZ: 0, y: 0, scale: 1 }}
         transition={isDefeated ? { duration: 1.0, ease: "easeIn" } : { duration: 0 }}
         style={{ 
-          width: '100%', height: '100%', 
-          transformOrigin: 'bottom right', 
-          display: 'flex', justifyContent: 'center', alignItems: 'center' 
+          width: '100%', height: '100%', transformOrigin: 'bottom right',
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          opacity: isGestureDraggingThis ? 0.3 : 1
         }}
       >
         <motion.img

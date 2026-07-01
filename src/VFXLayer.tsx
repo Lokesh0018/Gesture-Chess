@@ -100,7 +100,7 @@ function VFXLayer() {
   const spawnCaptureParticles = (x: number, y: number, color = '#ebecd0', pieceType?: string) => {
     const newParticles: Particle[] = [];
     const baseColor = color === 'black' ? '#4a4a4a' : '#f0d9b5';
-    
+
     const computedStyle = getComputedStyle(document.body);
     const accent = computedStyle.getPropertyValue('--accent').trim() || '#10b981';
 
@@ -111,32 +111,32 @@ function VFXLayer() {
     let emberColor = '#38bdf8'; // Default secondary
 
     if (pieceType === 'P') {
-      glowCount = 10; emberCount = 15; dustCount = 10;
+      glowCount = 20; emberCount = 30; dustCount = 20;
     } else if (pieceType === 'N') {
-      glowCount = 15; emberCount = 25; dustCount = 15;
+      glowCount = 30; emberCount = 50; dustCount = 30;
     } else if (pieceType === 'B') {
-      glowCount = 20; emberCount = 30; dustCount = 15;
+      glowCount = 40; emberCount = 60; dustCount = 30;
       emberColor = '#a855f7'; // Purple magic
     } else if (pieceType === 'R') {
-      glowCount = 25; emberCount = 20; dustCount = 30; // More rubble
+      glowCount = 50; emberCount = 40; dustCount = 60; // Huge rubble
     } else if (pieceType === 'Q') {
-      glowCount = 40; emberCount = 50; dustCount = 20; // Supernova
+      glowCount = 80; emberCount = 100; dustCount = 40; // Massive Supernova
       emberColor = accent; // Intense
     } else if (pieceType === 'K') {
-      glowCount = 50; emberCount = 60; dustCount = 30;
-      emberColor = '#fbbf24'; // Golden shockwave
+      glowCount = 100; emberCount = 120; dustCount = 60;
+      emberColor = '#fbbf24'; // Colossal Golden shockwave
     }
 
     // Intense glowing core burst
     for (let i = 0; i < glowCount; i++) {
       newParticles.push({
-        x: x + (Math.random() - 0.5) * 20,
-        y: y + (Math.random() - 0.5) * 20,
-        vx: (Math.random() - 0.5) * (pieceType === 'Q' ? 600 : 400),
-        vy: (Math.random() - 0.5) * (pieceType === 'Q' ? 600 : 400),
-        size: Math.random() * 8 + (pieceType === 'K' ? 8 : 4),
-        life: 0.3 + Math.random() * 0.3,
-        maxLife: pieceType === 'K' ? 1.0 : 0.6,
+        x: x + (Math.random() - 0.5) * 30,
+        y: y + (Math.random() - 0.5) * 30,
+        vx: (Math.random() - 0.5) * (pieceType === 'Q' || pieceType === 'K' ? 1000 : 600),
+        vy: (Math.random() - 0.5) * (pieceType === 'Q' || pieceType === 'K' ? 1000 : 600),
+        size: Math.random() * 12 + (pieceType === 'K' ? 12 : 6),
+        life: 0.4 + Math.random() * 0.4,
+        maxLife: pieceType === 'K' ? 1.5 : 0.8,
         color: glowColor,
         type: 'glow'
       });
@@ -145,13 +145,13 @@ function VFXLayer() {
     // Glowing embers shooting outwards and falling
     for (let i = 0; i < emberCount; i++) {
       newParticles.push({
-        x: x + (Math.random() - 0.5) * 30,
-        y: y + (Math.random() - 0.5) * 30,
-        vx: (Math.random() - 0.5) * 300,
-        vy: (Math.random() - 1) * 300, // biased upwards initially
-        size: Math.random() * 4 + 2,
-        life: 0.5 + Math.random() * 1.5,
-        maxLife: 2.0,
+        x: x + (Math.random() - 0.5) * 40,
+        y: y + (Math.random() - 0.5) * 40,
+        vx: (Math.random() - 0.5) * 500,
+        vy: (Math.random() - 1) * 500, // biased upwards initially
+        size: Math.random() * 6 + 3,
+        life: 0.8 + Math.random() * 2.0,
+        maxLife: 3.0,
         color: emberColor,
         type: 'ember'
       });
@@ -160,13 +160,13 @@ function VFXLayer() {
     // Scattered piece dust
     for (let i = 0; i < dustCount; i++) {
       newParticles.push({
-        x: x + (Math.random() - 0.5) * 40,
-        y: y + (Math.random() - 0.5) * 40,
-        vx: (Math.random() - 0.5) * 150,
-        vy: (Math.random() - 0.5) * 150 - 50,
-        size: Math.random() * 5 + 2,
-        life: 0.8 + Math.random() * 0.4,
-        maxLife: 1.2,
+        x: x + (Math.random() - 0.5) * 50,
+        y: y + (Math.random() - 0.5) * 50,
+        vx: (Math.random() - 0.5) * 250,
+        vy: (Math.random() - 0.5) * 250 - 100,
+        size: Math.random() * 8 + 3,
+        life: 1.0 + Math.random() * 0.6,
+        maxLife: 1.6,
         color: baseColor,
         type: 'dust'
       });
@@ -214,7 +214,7 @@ function VFXLayer() {
   const spawnTrail = (x: number, y: number, color?: string) => {
     const computedStyle = getComputedStyle(document.body);
     const accent = computedStyle.getPropertyValue('--accent').trim() || '#10b981';
-    
+
     particlesRef.current.push({
       x: x + (Math.random() - 0.5) * 10,
       y: y + (Math.random() - 0.5) * 10,

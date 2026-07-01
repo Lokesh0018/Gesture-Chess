@@ -9,9 +9,11 @@ import GameLayout from './GameLayout';
 import type { MoveHistory } from './GameLayout';
 import PromotionCinematic from './PromotionCinematic';
 import CaptureAnimation from './CaptureAnimation';
+import MoveAnimation from './MoveAnimation';
 import PostGameModal from './PostGameModal';
 import GameStartSequence from './GameStartSequence';
 import FlyingPiece from './FlyingPiece';
+import { useGestureStore } from './store/useGestureStore';
 
 import Piece from './Piece';
 
@@ -43,12 +45,16 @@ export default function LocalGame() {
   const [boardWidth, setBoardWidth] = useState(window.innerWidth > 850 ? 500 : window.innerWidth - 60);
   const [cinematic, setCinematic] = useState<{ square: string, color: 'w' | 'b', type: 'q' | 'r' | 'b' | 'n' } | null>(null);
   const [captureAnim, setCaptureAnim] = useState<{ square: string, pieceType: 'P' | 'N' | 'B' | 'R' | 'Q' | 'K', pieceColor: 'w' | 'b', capturedBy: 'white' | 'black' } | null>(null);
+  const [moveAnim, setMoveAnim] = useState<{ startSquare: string, targetSquare: string, pieceType: string, pieceColor: string } | null>(null);
   const [checkState, setCheckState] = useState<{ king: string, attacker: string | null } | null>(null);
   const [checkmateState, setCheckmateState] = useState<{ color: 'w' | 'b', text: string } | null>(null);
   const [undoAnim, setUndoAnim] = useState<{ from: string, to: string, pieceType: string, pieceColor: string } | null>(null);
   const [gameOverMsg, setGameOverMsg] = useState<string | null>(null);
   const [showActions, setShowActions] = useState(false);
   const navigate = useNavigate();
+  
+  const { isPinching, cursorX, cursorY, isActive } = useGestureStore();
+  const prevPinching = useRef(false);
 
   const timingSetting = localStorage.getItem('match_timing') || '10';
   const orientationSetting = localStorage.getItem('match_orientation') || 'auto';
@@ -170,16 +176,23 @@ export default function LocalGame() {
         audio.capture();
         const capturedColor = result.color === 'w' ? 'b' : 'w';
         const capturedType = result.captured.toUpperCase() as 'P' | 'N' | 'B' | 'R' | 'Q' | 'K';
-        vfx.triggerFromSquare('capture', result.to, 'white', boardElement, undefined, capturedType);
+        vfx.triggerFromSquare('capture', result.to, boardOrientation, boardElement, undefined, capturedType);
         setCaptureAnim({ square: result.to, pieceType: capturedType, pieceColor: capturedColor, capturedBy: result.color === 'w' ? 'white' : 'black' });
       } else if (!result.promotion) {
         audio.playThud();
       }
 
-      if (result.promotion) { 
+      if (result.promotion) {
         audio.promote();
         setCinematic({ square: result.to, color: result.color as 'w' | 'b', type: result.promotion as 'q' | 'r' | 'b' | 'n' });
       }
+
+      setMoveAnim({
+        startSquare: move.from,
+        targetSquare: move.to,
+        pieceType: movedPiece.toUpperCase(),
+        pieceColor: result.color
+      });
 
       return result;
     } catch (e) {
@@ -298,6 +311,84 @@ export default function LocalGame() {
       setOptionSquares({});
     }
   }
+
+  const { setDragState, dragState, selectedSquare, selectedPiece } = useGestureStore();
+  
+  useEffect(() => {
+    if (!isActive) return;
+
+    const pixelX = (1 - cursorX) * window.innerWidth;
+    const pixelY = cursorY * window.innerHeight;
+    const element = document.elementFromPoint(pixelX, pixelY);
+
+    // Find square under cursor
+    let hoveredSq: string | null = null;
+    if (element) {
+      let target: HTMLElement | null = element as HTMLElement;
+      while (target && !target.dataset?.square) {
+        target = target.parentElement;
+      }
+      if (target && target.dataset.square) {
+        hoveredSq = target.dataset.square;
+      }
+    }
+
+    const storeState = useGestureStore.getState();
+    const currentDragState = storeState.dragState;
+
+    if (isPinching && !prevPinching.current) {
+      // Pinch Started
+      if (hoveredSq) {
+        const piece = game.get(hoveredSq as import('chess.js').Square);
+        if (piece && piece.color === game.turn()) {
+          const pieceString = piece.color + piece.type.toUpperCase();
+          setDragState('dragging', hoveredSq, hoveredSq, pieceString);
+          
+          // Trigger legal move indicators
+          getMoveOptions(hoveredSq);
+        } else {
+          // Empty square or wrong color
+          setDragState('hover', hoveredSq, null, null);
+        }
+      } else {
+        setDragState('idle', null, null, null);
+      }
+    } else if (isPinching && prevPinching.current) {
+      // Pinch Held - Dragging
+      if (currentDragState === 'dragging') {
+        setDragState('dragging', hoveredSq, storeState.selectedSquare, storeState.selectedPiece);
+      }
+    } else if (!isPinching && prevPinching.current) {
+      // Pinch Released - Drop
+      if (currentDragState === 'dragging' && storeState.selectedSquare) {
+        if (hoveredSq && hoveredSq !== storeState.selectedSquare) {
+          // Attempt Move
+          const moves = game.moves({ square: storeState.selectedSquare as import('chess.js').Square, verbose: true }) as any[];
+          const validMove = moves.find((m) => m.to === hoveredSq);
+          
+          if (validMove) {
+            if (validMove.promotion) {
+              moveFromRef.current = storeState.selectedSquare;
+              promoteToRef.current = hoveredSq;
+              setPromotionSquare(storeState.selectedSquare);
+            } else {
+              makeAMove({ from: storeState.selectedSquare, to: hoveredSq });
+            }
+          }
+        }
+        setOptionSquares({});
+      }
+      setDragState('hover', hoveredSq, null, null);
+    } else if (!isPinching && !prevPinching.current) {
+      // Just hovering
+      if (currentDragState !== 'hover' || storeState.hoveredSquare !== hoveredSq) {
+        setDragState(hoveredSq ? 'hover' : 'idle', hoveredSq, null, null);
+      }
+    }
+
+    prevPinching.current = isPinching;
+  }, [isPinching, cursorX, cursorY, isActive, game]);
+
 
   const handleUndo = () => {
     const gameCopy = new Chess();
@@ -533,6 +624,17 @@ export default function LocalGame() {
             />
           </>
         )}
+        {moveAnim && (
+          <MoveAnimation
+            startSquare={moveAnim.startSquare}
+            targetSquare={moveAnim.targetSquare}
+            pieceType={moveAnim.pieceType}
+            pieceColor={moveAnim.pieceColor}
+            orientation={boardOrientation}
+            boardElement={document.querySelector('.react-board-wrapper') as HTMLElement}
+            onComplete={() => setMoveAnim(null)}
+          />
+        )}
         {undoAnim && (
           <FlyingPiece
             startSquare={undoAnim.from}
@@ -570,6 +672,7 @@ export default function LocalGame() {
           arePremovesAllowed={true}
           clearPremovesOnRightClick={true}
           areArrowsAllowed={true}
+          animationDuration={0}
         />
       </GameLayout>
       <PostGameModal
