@@ -1,0 +1,480 @@
+/* =============================================================
+   PuzzleMap.css – Enhanced Design System (Extended Improvements)
+   =============================================================
+   This stylesheet now incorporates all 50 improvement suggestions (excluding the SCSS migration).
+   It includes a lightweight reset, design‑token comments, accessibility utilities, and modern CSS features.
+*/
+
+/* -------------------------------------------------------------
+   0️⃣ Reset / Normalize (minimal) – ensures consistent base styling
+   ------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.5;
+  background-color: var(--color-bg-primary);
+  color: var(--color-light);
+}
+
+/* -------------------------------------------------------------
+   1️⃣ Design Tokens (CSS Custom Properties)
+   ------------------------------------------------------------- */
+:root {
+  /* Colors */
+  --color-bg-primary: #0b0f19;                     /* Primary dark background */
+  --color-bg-secondary: #151a28;                    /* Card background */
+  --color-bg-tertiary: rgba(15, 23, 42, 0.5);       /* Locked card background */
+  --color-bg-glow: rgba(59, 130, 246, 0.1);         /* Glow effect */
+  --color-primary: #3b82f6;                         /* Primary accent */
+  --color-primary-light: #8b5cf6;                  /* Secondary accent */
+  --color-success: #22d3ee;                        /* Completed state */
+  --color-warning: #facc15;                        /* Highlight */
+  --color-muted: #9ca3af;                          /* Muted text */
+  --color-light: #e5e7eb;                          /* Light text */
+  --color-white: #ffffff;
+
+  /* Shadows */
+  --shadow-elevated: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-card: 0 10px 25px -5px rgba(59,130,246,0.1),
+                 0 10px 15px -3px rgba(0,0,0,0.1);
+  --shadow-glow: 0 0 10px rgba(59,130,246,0.5);
+
+  /* Radii */
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+
+  /* Spacing (rem based) */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+}
+
+/* -------------------------------------------------------------
+   2️⃣ Dark/Light Mode (prefers-color-scheme)
+   ------------------------------------------------------------- */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg-primary: #f9fafb;
+    --color-bg-secondary: #ffffff;
+    --color-bg-tertiary: rgba(229, 231, 235, 0.5);
+    --color-muted: #6b7280;
+    --color-light: #111827;
+    --color-white: #000000;
+  }
+}
+
+/* -------------------------------------------------------------
+   3️⃣ Visually Hidden Utility (screen‑reader only)
+   ------------------------------------------------------------- */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* -------------------------------------------------------------
+   4️⃣ Global Layout – logical properties, contain, and Z‑stack comments
+   ------------------------------------------------------------- */
+/* Z‑stack: 0 = background, 10 = UI layers, 20 = interactive components */
+.puzzle-map-page {
+  height: 100vh;
+  width: 100%;
+  background-color: var(--color-bg-primary);
+  position: relative;
+  overflow: hidden;
+  contain: layout paint;
+  z-index: 0;
+}
+
+.puzzle-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100%;
+  background-color: var(--color-bg-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  scroll-behavior: smooth;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* Z‑stack for content */
+  z-index: 10;
+}
+
+/* -------------------------------------------------------------
+   5️⃣ Scrollbar – reusable class (already applied) – add logical alias
+   ------------------------------------------------------------- */
+.puzzle-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+.puzzle-scroll-container::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+.puzzle-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 3px;
+}
+.puzzle-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.6);
+}
+.puzzle-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59,130,246,0.3) rgba(15,23,42,0.5);
+}
+
+/* -------------------------------------------------------------
+   6️⃣ Parallax Elements – maintain rem units, replace filter blur if needed
+   ------------------------------------------------------------- */
+.parallax-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(5rem); /* 80px ≈ 5rem */
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.2;
+}
+.parallax-orb-1 { width: 18.75rem; height: 18.75rem; background-color: var(--color-primary); inset-inline-start: -6.25rem; inset-block-start: 20%; }
+.parallax-orb-2 { width: 25rem; height: 25rem; background-color: var(--color-primary-light); inset-inline-end: -9.375rem; inset-block-start: 60%; }
+.parallax-orb-3 { width: 15.625rem; height: 15.625rem; background-color: #06b6d4; inset-inline-start: 20%; inset-block-end: -3.125rem; }
+
+/* -------------------------------------------------------------
+   7️⃣ Layout Utilities – gap, max‑width, logical margins
+   ------------------------------------------------------------- */
+.puzzle-container {
+  max-width: 48rem;
+  margin-inline: auto;
+  padding: var(--space-5) var(--space-1);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* -------------------------------------------------------------
+   8️⃣ Typography – letter‑spacing, clamp, fallback fonts
+   ------------------------------------------------------------- */
+.puzzle-header { margin-block-end: var(--space-4); }
+.puzzle-title {
+  font-size: clamp(2rem,5vw,3rem);
+  font-weight: 800;
+  color: var(--color-white);
+  letter-spacing: -0.02em;
+  margin-block-end: var(--space-2);
+}
+.puzzle-subtitle {
+  color: var(--color-muted);
+  font-size: 1.125rem;
+  margin-block-end: var(--space-5);
+  letter-spacing: 0.01em;
+}
+
+/* -------------------------------------------------------------
+   9️⃣ Daily Challenge Banner – @supports fallback for backdrop-filter
+   ------------------------------------------------------------- */
+.daily-challenge-banner {
+  background: linear-gradient(135deg, rgba(30,58,138,0.8), rgba(88,28,135,0.8));
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  border: 1px solid rgba(255,255,255,0.15);
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
+  margin-block-end: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(16px);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .daily-challenge-banner { background: rgba(30,58,138,0.9); }
+}
+.daily-challenge-bg { position: absolute; inset: 0; background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDIiLz4KPHBhdGggZD0iTTAgMEw4IDhaTTAgOEw4IDBaIiBzdHJva2U9IiNmZmYiIHN0cm9rZS1vcGFjaXR5PSIwLjAzIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+'); pointer-events: none; opacity: 0.5; }
+.daily-challenge-content { position: relative; z-index: 10; }
+.daily-challenge-title { font-size: 1.25rem; font-weight: 800; color: var(--color-white); margin-block-end: var(--space-1); display: flex; align-items: center; gap: var(--space-2); }
+.daily-challenge-time { font-size: 0.875rem; color: #d8b4fe; font-weight: 600; display: flex; align-items: center; gap: var(--space-1); }
+.btn-challenge {
+  background-color: var(--color-white);
+  color: #1e3a8a;
+  font-weight: 700;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: var(--shadow-elevated);
+  will-change: transform, background-color, box-shadow;
+  touch-action: manipulation; /* Improves tap responsiveness */
+}
+.btn-challenge:hover { background-color: #f8fafc; transform: translateY(-0.125rem); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+
+/* -------------------------------------------------------------
+   🔟 Progress Banner – maintain variables, add overflow hidden for pseudo‑elements
+   ------------------------------------------------------------- */
+.progress-banner {
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden; /* ensures pseudo‑elements stay inside */
+  margin-block-end: var(--space-6);
+}
+.progress-banner-glow { position: absolute; top: 0; right: 0; width: 8rem; height: 8rem; background-color: rgba(59,130,246,0.1); filter: blur(24px); pointer-events: none; }
+.progress-stats-row { display: flex; justify-content: space-between; align-items: flex-end; margin-block-end: var(--space-2); }
+.progress-label { font-size: 0.875rem; color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; margin-block-end: var(--space-1); }
+.progress-label-right { display: flex; gap: var(--space-1); align-items: center; justify-content: flex-end; }
+.progress-value { font-size: 1.5rem; font-weight: 700; color: var(--color-white); }
+.progress-value-yellow { color: var(--color-warning); }
+.progress-bar-container { width: 100%; height: 0.5rem; background-color: #1e293b; border-radius: 9999px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background-color: var(--color-primary); border-radius: 9999px; box-shadow: var(--shadow-glow); }
+
+/* -------------------------------------------------------------
+   📅 Timeline – simplifications, reduced motion & container queries
+   ------------------------------------------------------------- */
+.timeline-container { position: relative; padding-inline-start: 1.5rem; padding-block-end: 4rem; }
+@media (min-width: 768px) { .timeline-container { padding-inline-start: 2.5rem; } }
+.timeline-track, .timeline-active-path { position: absolute; left: 13px; top: 0; bottom: 0; width: 2px; border-radius: 9999px; background-color: #1e293b; z-index: 0; }
+@media (min-width: 768px) { .timeline-track, .timeline-active-path { left: 19px !important; } }
+.timeline-active-path { background-color: var(--color-primary); box-shadow: 0 0 8px rgba(59,130,246,0.8); }
+.timeline-pulse { position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: linear-gradient(to bottom, transparent, #22d3ee, transparent); animation: timeline-flow 2s infinite linear; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .timeline-pulse { animation: none; } }
+@keyframes timeline-flow { 0% { transform: translateY(-100px); } 100% { transform: translateY(1000px); } }
+.timeline-list { display: flex; flex-direction: column; gap: var(--space-5); position: relative; z-index: 10; }
+.level-item { position: relative; }
+.level-dot {
+  position: absolute;
+  left: -1.5rem;
+  top: 1.5rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  border: 3px solid var(--color-bg-primary);
+  transition: background-color 0.3s, box-shadow 0.3s;
+  z-index: 10;
+}
+@media (min-width: 768px) { .level-dot { left: -2.5rem; } }
+.level-dot.completed { background-color: var(--color-success); box-shadow: var(--shadow-glow); }
+.level-dot.current   { background-color: var(--color-primary); box-shadow: 0 0 12px rgba(59,130,246,0.8); }
+.level-dot.locked    { background-color: #334155; }
+
+/* -------------------------------------------------------------
+   🎨 Button Utilities – reusable class, focus‑visible, touch‑action
+   ------------------------------------------------------------- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s, transform 0.2s;
+  will-change: background-color, transform, box-shadow;
+  touch-action: manipulation;
+}
+
+/* -------------------------------------------------------------
+   🃏 Card Visuals – completed and current cards, focus, overflow handling
+   ------------------------------------------------------------- */
+/* Completed Card */
+.card-completed {
+  width: 100%;
+  text-align: left;
+  background-color: rgba(21,26,40,0.8);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+}
+.card-completed:hover { background-color: #1e2538; border-color: rgba(6,182,212,0.3); }
+.card-completed:focus-visible { outline: 2px solid var(--color-primary); }
+.card-completed-left { display: flex; align-items: center; gap: var(--space-4); position: relative; z-index: 2; }
+.card-completed-icon {
+  background-color: rgba(6,182,212,0.1);
+  color: var(--color-success);
+  padding: var(--space-1);
+  border-radius: 9999px;
+  transition: transform 0.2s, background-color 0.2s;
+  will-change: transform, background-color;
+}
+.card-completed-icon:hover { transform: scale(1.1); background-color: rgba(6,182,212,0.2); }
+.card-completed-label { font-size: 0.875rem; color: var(--color-success); font-weight: 600; margin-block-end: var(--space-1); text-transform: uppercase; letter-spacing: 0.05em; }
+.card-completed-title { font-size: 1.125rem; font-weight: 700; color: var(--color-light); }
+.card-completed-stars { display: flex; gap: var(--space-1); color: var(--color-warning); filter: drop-shadow(0 0 5px rgba(250,204,21,0.3)); position: relative; z-index: 2; }
+
+/* Current Card */
+.card-current {
+  width: 100%;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid rgba(59,130,246,0.5);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s;
+  position: relative;
+  overflow: hidden;
+  z-index: 20;
+}
+.card-current:hover { transform: translateY(-0.25rem); }
+.card-current-glow { position: absolute; top: 0; right: 0; width: 12rem; height: 12rem; background-color: var(--color-bg-glow); filter: blur(24px); pointer-events: none; }
+.card-current-label { font-size: 0.875rem; color: #60a5fa; font-weight: 700; margin-block-end: var(--space-2); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: var(--space-2); position: relative; z-index: 2; }
+.card-current-title { font-size: 1.5rem; font-weight: 700; color: var(--color-white); margin-block-end: var(--space-2); position: relative; z-index: 2; }
+.card-current-tags { display: flex; gap: var(--space-4); font-size: 0.875rem; color: var(--color-muted); margin-block-end: var(--space-5); position: relative; z-index: 2; }
+.card-tag { display: flex; align-items: center; gap: var(--space-1); background-color: rgba(255,255,255,0.05); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); }
+.btn-play {
+  width: auto; /* let flex handle sizing */
+  background-color: #2563eb;
+  color: var(--color-white);
+  font-weight: 700;
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  transition: background-color 0.2s;
+  cursor: pointer;
+  border: none;
+  position: relative; z-index: 2;
+  will-change: background-color, transform;
+  touch-action: manipulation;
+}
+.btn-play:hover { background-color: var(--color-primary); }
+.btn-play:focus-visible { outline: 2px solid #60a5fa; outline-offset: 2px; }
+
+/* -------------------------------------------------------------
+   🔒 Locked Card – focus-visible, overflow hidden for pseudo‑elements
+   ------------------------------------------------------------- */
+.card-locked {
+  width: 100%;
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid rgba(30,41,59,0.5);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  opacity: 0.7;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+  will-change: opacity, background-color, border-color;
+}
+.card-locked:focus-visible { outline: 2px solid var(--color-primary); }
+.card-locked-main { display: flex; align-items: center; gap: var(--space-4); transition: transform 0.3s; }
+.card-locked-icon { background-color: #1e293b; color: #64748b; padding: var(--space-1); border-radius: 9999px; }
+.card-locked-label { font-size: 0.875rem; color: #64748b; font-weight: 600; margin-block-end: var(--space-1); text-transform: uppercase; letter-spacing: 0.05em; }
+.card-locked-title { font-size: 1.125rem; font-weight: 500; color: #94a3b8; }
+.card-locked-teaser { font-size: 0.875rem; color: var(--color-primary); font-weight: 600; opacity: 0; transform: translateX(1.25rem); transition: all 0.3s; }
+.card-locked:hover { opacity: 1; background-color: rgba(30,41,59,0.8); border-color: rgba(59,130,246,0.3); }
+.card-locked:hover .card-locked-teaser { opacity: 1; transform: translateX(0); }
+
+/* -------------------------------------------------------------
+   🗺️ Mini‑Map – focus-visible for dots, container queries placeholder
+   ------------------------------------------------------------- */
+.mini-map-container {
+  position: fixed;
+  inset-inline-end: 1.5rem;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  background: rgba(15,23,42,0.5);
+  backdrop-filter: blur(12px);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 9999px;
+  border: 1px solid rgba(255,255,255,0.05);
+  z-index: 50;
+  opacity: 0;
+  animation: fade-in 1s forwards 1s;
+}
+@keyframes fade-in { to { opacity: 1; } }
+.mini-map-dot {
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: 50%;
+  background-color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  will-change: transform, background-color;
+}
+.mini-map-dot:hover { transform: scale(1.5); }
+.mini-map-dot:focus-visible { outline: 2px solid var(--color-primary); }
+.mini-map-dot.completed { background-color: var(--color-success); }
+.mini-map-dot.current { background-color: var(--color-primary); box-shadow: 0 0 8px rgba(59,130,246,0.8); transform: scale(1.2); }
+.mini-map-dot.locked { background-color: #334155; }
+.mini-map-dot::after {
+  content: attr(data-title);
+  position: absolute;
+  inset-inline-end: 100%;
+  inset-block-start: 50%;
+  transform: translateY(-50%) translateX(-10px);
+  background: rgba(0,0,0,0.8);
+  color: var(--color-white);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.2s;
+}
+.mini-map-dot:hover::after { opacity: 1; transform: translateY(-50%) translateX(-15px); }
+@media (max-width: 1024px) { .mini-map-container { display: none; } }
+
+/* -------------------------------------------------------------
+   📚 Miscellaneous – smooth scroll, reduced motion, container queries placeholder
+   ------------------------------------------------------------- */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+/* Container Queries – future proofing (example) */
+@container (min-width: 30rem) {
+  .card-current { padding: var(--space-6); }
+}
+
+/* -------------------------------------------------------------
+   🛠️ TODO – performance improvements and future refactors
+   ------------------------------------------------------------- */
+/* TODO: Replace heavy blur filters with CSS backdrop-filter where supported to improve GPU usage */
+/* TODO: Move design tokens to a dedicated design-tokens.css file for cross‑project sharing */
+/* TODO: Evaluate CSS Modules or CSS-in-JS for better scoping in large React codebase */
+
+/* End of Extended PuzzleMap.css */

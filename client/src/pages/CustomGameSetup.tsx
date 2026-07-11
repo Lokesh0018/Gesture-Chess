@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Undo2, Redo2,
   Trash2, AlertTriangle, CheckCircle2, Save,
-  PaintBucket, CopyX, ArrowRightLeft, 
-  FlipVertical, 
+  PaintBucket, CopyX, ArrowRightLeft,
+  FlipVertical
 } from 'lucide-react';
 import { CustomBoard } from '../components/CustomBoard';
 import { PIECE_ASSET_MAP } from '../utils/pieces';
@@ -47,13 +47,12 @@ export const CustomGameSetup = () => {
   const [startingSide, setStartingSide] = useState<'w' | 'b'>('w');
   const [winCondition, setWinCondition] = useState<WinCondition>('capture_all');
 
-  
-  
-  
-  
-  
-  
-  
+  const castleWK = true;
+  const castleWQ = true;
+  const castleBK = true;
+  const castleBQ = true;
+  const enPassant = false;
+  const pawnPromotion = true;
 
   const [validationPopover, setValidationPopover] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -62,7 +61,6 @@ export const CustomGameSetup = () => {
   const [qbPiece, setQbPiece] = useState<string>('R');
   const [qbCount, setQbCount] = useState<number>(32);
 
-  const [arsenalTab, setArsenalTab] = useState<'w' | 'b'>('w');
 
   const [confirmModal, setConfirmModal] = useState<{ action: string, title: string, message: string } | null>(null);
 
@@ -308,28 +306,6 @@ export const CustomGameSetup = () => {
 
   const pieceNames: Record<string, string> = {
     'K': 'King', 'Q': 'Queen', 'R': 'Rook', 'B': 'Bishop', 'N': 'Knight', 'P': 'Pawn'
-  };
-
-  const formatBattleSummary = () => {
-    const pieces = Object.values(designerPosition);
-    if (pieces.length === 0) return "Empty Board";
-
-    const getSideSummary = (side: string) => {
-      const counts: Record<string, number> = {};
-      pieces.filter(p => p.startsWith(side)).forEach(p => {
-        counts[p[1]] = (counts[p[1]] || 0) + 1;
-      });
-      const types = Object.keys(counts);
-      if (types.length === 0) return "0 Pieces";
-      if (types.length === 1) return `${counts[types[0]]} ${pieceNames[types[0]]}s`;
-      return types.map(t => `${counts[t]} ${pieceNames[t]}${counts[t] > 1 ? 's' : ''}`).join(', ');
-    };
-
-    const wSum = getSideSummary('w');
-    const bSum = getSideSummary('b');
-    const t = pieces.length;
-
-    return `White: ${wSum} • Black: ${bSum} • ${t} Pieces • ${startingSide === 'w' ? 'White' : 'Black'} to move`;
   };
 
   return (

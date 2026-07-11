@@ -2,47 +2,25 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Chess, type Square, type Move } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { CheckCircle2, XCircle } from 'lucide-react';
-
-
-interface Puzzle {
-  id: string;
-  fen: string;
-  moves: string[]; // sequence of moves e.g., ["g4h5", "g6g5", "h5h6"]
-  rating: number;
-  theme: string;
-}
-
-// A few hardcoded high-quality puzzles for Phase 1
-const PUZZLES: Puzzle[] = [
-  {
-    id: "1",
-    fen: "r1bq1rk1/1pp2ppp/p1np1n2/2b1p3/2B1P3/2PP1N2/PP3PPP/RNBQR1K1 w - - 0 8",
-    moves: ["c1g5", "h7h6", "g5h4"], // Just an opening sequence example
-    rating: 800,
-    theme: "Opening"
-  },
-  {
-    id: "2", // Mate in 2
-    fen: "r1b1k2r/pp3ppp/2p5/2bpq3/B3n3/5P2/PPP3PP/RNBQ1R1K b kq - 0 11",
-    moves: ["e4g3", "h2g3", "e5h5"],
-    rating: 1200,
-    theme: "Mate in 2"
-  },
-  {
-    id: "3", // Scholar's mate
-    fen: "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3",
-    moves: ["f3f7"],
-    rating: 600,
-    theme: "Mate in 1"
-  }
-];
+import { CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { PUZZLES } from '../data/puzzles';
+import confetti from 'canvas-confetti';
+import { playMoveSound } from '../utils/audio';
 
 export const Puzzles = () => {
-  const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(0);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  
+  // Find puzzle by id from URL, default to first puzzle if not found or no id
+  const initialIndex = id ? PUZZLES.findIndex(p => p.id === id) : 0;
+  const validInitialIndex = initialIndex >= 0 ? initialIndex : 0;
+
+  const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(validInitialIndex);
   const [game, setGame] = useState(new Chess());
   const [moveIndex, setMoveIndex] = useState(0);
   const [status, setStatus] = useState<'playing' | 'correct' | 'incorrect' | 'solved'>('playing');
+  const [isLoading, setIsLoading] = useState(true);
   
   const [selectedSquare, setSelectedSquare] = useState<string>('');
   
@@ -53,11 +31,29 @@ export const Puzzles = () => {
 
   // Initialize Puzzle
   useEffect(() => {
-    const newGame = new Chess(currentPuzzle.fen);
-    setGame(newGame);
-    setMoveIndex(0);
-    setStatus('playing');
-    setSelectedSquare('');
+    // If URL id changes, update state
+    if (id) {
+      const idx = PUZZLES.findIndex(p => p.id === id);
+      if (idx >= 0 && idx !== currentPuzzleIndex) {
+        setCurrentPuzzleIndex(idx);
+      }
+    }
+  }, [id]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const newGame = new Chess(currentPuzzleIndex >= 0 ? PUZZLES[currentPuzzleIndex].fen : PUZZLES[0].fen);
+    
+    // Simulate network delay for skeleton loader
+    const timer = setTimeout(() => {
+      setGame(newGame);
+      setMoveIndex(0);
+      setStatus('playing');
+      setSelectedSquare('');
+      setIsLoading(false);
+    }, 600);
+    
+    return () => clearTimeout(timer);
   }, [currentPuzzleIndex]);
 
   const customPieces = useMemo(() => {
@@ -77,7 +73,10 @@ export const Puzzles = () => {
     if (history.length > 0) {
       const last = history[history.length - 1];
       styles[last.from] = { backgroundColor: 'rgba(234, 179, 8, 0.4)' };
-      styles[last.to] = { backgroundColor: 'rgba(234, 179, 8, 0.6)' };
+      styles[last.to] = { 
+        backgroundColor: 'rgba(234, 179, 8, 0.6)',
+        boxShadow: 'inset 0 0 20px rgba(255, 255, 255, 0.5)' // Highlight trail
+      };
     }
     if (selectedSquare) {
       styles[selectedSquare] = { backgroundColor: 'rgba(59, 130, 246, 0.5)' };
@@ -132,13 +131,24 @@ export const Puzzles = () => {
       setGame(new Chess(game.fen()));
       setSelectedSquare('');
       
+      if (navigator.vibrate) navigator.vibrate([50]);
+      
       const nextIndex = moveIndex + 1;
       setMoveIndex(nextIndex);
 
       if (nextIndex >= currentPuzzle.moves.length) {
         setStatus('solved');
+        playMoveSound('success');
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#3B82F6', '#10B981', '#8A2BE2', '#FFFFFF']
+        });
       } else {
         setStatus('correct');
+        playMoveSound(moveObj.captured ? 'capture' : 'move');
+        
         // Make opponent's automatic response
         setTimeout(() => {
           const opponentMoveUci = currentPuzzle.moves[nextIndex];
@@ -150,12 +160,17 @@ export const Puzzles = () => {
           setGame(new Chess(game.fen()));
           setMoveIndex(nextIndex + 1);
           setStatus('playing');
+          playMoveSound('move');
+          if (navigator.vibrate) navigator.vibrate([30]);
         }, 600); // slight delay for realism
       }
       return true;
     } else {
       // Incorrect move!
       setStatus('incorrect');
+      playMoveSound('invalid');
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      
       setTimeout(() => {
         setStatus('playing');
       }, 1500);
@@ -189,7 +204,8 @@ export const Puzzles = () => {
   }
 
   const nextPuzzle = () => {
-    setCurrentPuzzleIndex((i) => (i + 1) % PUZZLES.length);
+    const nextIdx = (currentPuzzleIndex + 1) % PUZZLES.length;
+    navigate(`/puzzles/${PUZZLES[nextIdx].id}`);
   };
 
   return (
@@ -198,8 +214,16 @@ export const Puzzles = () => {
       <div className="w-full max-w-[600px] flex flex-col gap-4">
         
         {/* Puzzle Header */}
-        <div className="player-card w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center shadow-lg transition-all">
-          <h1 className="text-3xl font-bold text-white mb-2">Daily Puzzle #{currentPuzzleIndex + 1}</h1>
+        <div className="player-card w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center shadow-lg transition-all relative">
+          <button 
+            onClick={() => navigate('/puzzle-setup')}
+            className="absolute left-4 top-4 text-[var(--text-secondary)] hover:text-white transition-colors flex items-center gap-2"
+          >
+            <ArrowLeft size={20} />
+            <span className="hidden sm:inline">Back to Map</span>
+          </button>
+          
+          <h1 className="text-3xl font-bold text-white mb-2 mt-4 sm:mt-0">Puzzle #{currentPuzzleIndex + 1}</h1>
           <div className="flex gap-4 text-[var(--text-secondary)] text-sm">
             <span className="bg-white/10 px-3 py-1 rounded-full">Rating: {currentPuzzle.rating}</span>
             <span className="bg-white/10 px-3 py-1 rounded-full">Theme: {currentPuzzle.theme}</span>
@@ -221,24 +245,38 @@ export const Puzzles = () => {
           </div>
         </div>
 
-        {/* Board */}
+        {/* Board or Skeleton */}
         <div className={`w-full aspect-square relative shadow-2xl rounded-sm overflow-hidden transition-all ${status === 'incorrect' ? 'ring-4 ring-red-500 animate-shake' : ''} ${status === 'solved' ? 'ring-4 ring-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.5)]' : ''}`}>
-          <Chessboard
-            options={{
-              id: "PuzzleBoard",
-              position: game.fen(),
-              onPieceDrop: onPieceDrop,
-              onSquareClick: onSquareClick,
-              boardOrientation: playerColor === 'w' ? 'white' : 'black',
-              animationDurationInMs: 300,
-              showNotation: true,
-              darkSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#779556' : '#2C3E50' },
-              lightSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#EBECD0' : '#ECF0F1' },
-              squareStyles: optionSquares,
-              pieces: customPieces,
-              allowDragging: status === 'playing'
-            }}
-          />
+          {isLoading ? (
+            <div className="w-full h-full bg-slate-800/50 animate-pulse grid grid-cols-8 grid-rows-8">
+              {Array.from({ length: 64 }).map((_, i) => {
+                const isDark = (Math.floor(i / 8) + (i % 8)) % 2 !== 0;
+                return (
+                  <div key={i} className={`${isDark ? 'bg-white/5' : 'bg-white/10'}`}></div>
+                );
+              })}
+              <div className="absolute inset-0 flex items-center justify-center backdrop-blur-[2px]">
+                <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+              </div>
+            </div>
+          ) : (
+            <Chessboard
+              options={{
+                id: "PuzzleBoard",
+                position: game.fen(),
+                onPieceDrop: onPieceDrop,
+                onSquareClick: onSquareClick,
+                boardOrientation: playerColor === 'w' ? 'white' : 'black',
+                animationDurationInMs: 300,
+                showNotation: true,
+                darkSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#779556' : '#2C3E50' },
+                lightSquareStyle: { backgroundColor: boardTheme === 'classic' ? '#EBECD0' : '#ECF0F1' },
+                squareStyles: optionSquares,
+                pieces: customPieces,
+                allowDragging: status === 'playing'
+              }}
+            />
+          )}
         </div>
 
         {/* Footer Actions */}

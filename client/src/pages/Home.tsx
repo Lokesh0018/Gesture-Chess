@@ -94,7 +94,7 @@ export const Home = () => {
               <Play size={20} fill="currentColor" />
               Play Now
             </Link>
-            <Link to="/puzzles" className="home-btn-secondary">
+            <Link to="/puzzle-setup" className="home-btn-secondary">
               <Puzzle size={20} />
               Daily Puzzle
             </Link>
@@ -116,7 +116,7 @@ export const Home = () => {
             <ChevronRight className="home-action-arrow" size={18} />
           </Link>
           
-          <Link to="/puzzles" className="home-action-card group">
+          <Link to="/puzzle-setup" className="home-action-card group">
             <div className="home-action-icon-wrapper home-action-icon-target">
               <Target size={24} />
             </div>
@@ -352,7 +352,7 @@ export const Home = () => {
                 </span>
               </div>
 
-              <Link to="/puzzles" className="home-btn-challenge">
+              <Link to="/puzzle-setup" className="home-btn-challenge">
                 Play Challenge
               </Link>
             </div>
