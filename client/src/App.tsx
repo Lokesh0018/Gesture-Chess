@@ -21,15 +21,28 @@ import { TournamentSetup } from './pages/TournamentSetup';
 import { TournamentLobby } from './pages/TournamentLobby';
 import { PlayBot } from './pages/PlayBot';
 import { BotSetup } from './pages/BotSetup';
+import { PuzzleMap } from './pages/PuzzleMap';
 import { Puzzles } from './pages/Puzzles';
 import { Analysis } from './pages/Analysis';
 import { Learn } from './pages/Learn';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PageTransition } from './components/PageTransition';
+import { useSettingsStore } from './store/useSettingsStore';
+import { useEffect } from 'react';
 
 function App() {
   const location = useLocation();
+  const highContrast = useSettingsStore(state => state.highContrast);
+
+  useEffect(() => {
+    if (highContrast) {
+      document.body.classList.add('high-contrast');
+    } else {
+      document.body.classList.remove('high-contrast');
+    }
+  }, [highContrast]);
+
   return (
     <ErrorBoundary>
       <Toaster
@@ -83,7 +96,8 @@ function App() {
                 <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
                 <Route path="profile" element={<PageTransition><Profile /></PageTransition>} />
                 <Route path="bot-setup" element={<PageTransition><BotSetup /></PageTransition>} />
-                <Route path="puzzles" element={<PageTransition><Puzzles /></PageTransition>} />
+                <Route path="puzzle-setup" element={<PageTransition><PuzzleMap /></PageTransition>} />
+                <Route path="puzzles/:id" element={<PageTransition><Puzzles /></PageTransition>} />
                 <Route path="analysis" element={<PageTransition><Analysis /></PageTransition>} />
                 <Route path="learn" element={<PageTransition><Learn /></PageTransition>} />
                 <Route path="leaderboard" element={<PageTransition><Leaderboard /></PageTransition>} />

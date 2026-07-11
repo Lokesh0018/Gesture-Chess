@@ -856,23 +856,6 @@ function BackgroundSequence({ scrollContainerRef }: { scrollContainerRef: React.
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imagesRef = useRef<HTMLImageElement[]>([]);
 
-  // Preload sequence frames
-  useEffect(() => {
-    let loaded = 0;
-    for (let i = 1; i <= FRAME_COUNT; i++) {
-      const img = new Image();
-      const num = i.toString().padStart(3, '0');
-      img.src = `/assets/sequence/ezgif-frame-${num}.jpg`;
-      img.onload = () => {
-        loaded++;
-        if (loaded === 1) {
-          drawFrame(0);
-        }
-      };
-      imagesRef.current[i - 1] = img;
-    }
-  }, []);
-
   const { scrollYProgress } = useScroll({
     container: scrollContainerRef,
     offset: ["start start", "end end"]
@@ -896,6 +879,24 @@ function BackgroundSequence({ scrollContainerRef }: { scrollContainerRef: React.
       ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
     }
   };
+
+  // Preload sequence frames
+  useEffect(() => {
+    let loaded = 0;
+    for (let i = 1; i <= FRAME_COUNT; i++) {
+      const img = new Image();
+      const num = i.toString().padStart(3, '0');
+      img.src = `/assets/sequence/ezgif-frame-${num}.jpg`;
+      img.onload = () => {
+        loaded++;
+        // If the newly loaded frame is the one we currently need, draw it!
+        if (i - 1 === Math.round(frameIndex.get())) {
+          drawFrame(i - 1);
+        }
+      };
+      imagesRef.current[i - 1] = img;
+    }
+  }, []);
 
   useEffect(() => {
     return frameIndex.on("change", (latest) => {
